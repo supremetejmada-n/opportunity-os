@@ -66,6 +66,9 @@ export async function initDatabase(): Promise<void> {
     { name: 'why_match', type: "TEXT" },
     { name: 'customer_type', type: "TEXT" },
     { name: 'earning_potential', type: "TEXT" },
+    { name: 'earning_basis', type: "TEXT" },
+    { name: 'earning_confidence', type: "TEXT DEFAULT 'Low'" },
+    { name: 'origin', type: "TEXT DEFAULT 'template'" },
     { name: 'action_plan', type: "TEXT DEFAULT '[]'" }
   ];
 

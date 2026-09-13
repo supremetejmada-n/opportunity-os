@@ -251,6 +251,8 @@ export const OpportunitiesScreen: React.FC = () => {
             const earning = opp.earningPotential || opp.earning_potential || '₹5,000–₹25,000/month';
             const customer = opp.customerType || opp.customer_type || opp.target_customer || 'Local Businesses';
             const breakdown = opp.scoreBreakdown || opp.score_breakdown;
+            const origin = opp.origin || (opp.discoveryId ? 'discovery_derived' : 'template');
+            const confidence = opp.confidence || 'Medium';
 
             return (
               <div
@@ -259,15 +261,25 @@ export const OpportunitiesScreen: React.FC = () => {
                 className="panel-card p-5 space-y-4 hover:border-indigo-500/50 cursor-pointer transition-all flex flex-col justify-between group"
               >
                 <div className="space-y-3">
-                  {/* Top line: Score & Save Button */}
+                  {/* Top line: Score, Origin, Confidence & Save Button */}
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <span className={`px-2.5 py-1 rounded text-xs font-mono font-bold ${
                         opp.score >= 85 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
                         opp.score >= 70 ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' :
                         'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                       }`}>
                         {opp.score}/100 Match
+                      </span>
+                      <span className={`badge-tag text-[10px] ${
+                        origin === 'discovery_derived' ? 'badge-emerald' : 'badge-slate'
+                      }`}>
+                        {origin === 'discovery_derived' ? 'Discovery-Backed' : origin === 'profile_hypothesis' ? 'Profile Hypothesis' : 'Template'}
+                      </span>
+                      <span className={`badge-tag text-[10px] ${
+                        confidence === 'High' ? 'badge-emerald' : confidence === 'Medium' ? 'badge-indigo' : 'badge-amber'
+                      }`}>
+                        {confidence} Confidence
                       </span>
                       <span className="badge-tag badge-slate text-[10px]">
                         {opp.difficulty}
@@ -280,7 +292,7 @@ export const OpportunitiesScreen: React.FC = () => {
 
                     <button
                       onClick={(e) => handleToggleSave(e, opp.id)}
-                      className={`p-1.5 rounded border transition-colors ${
+                      className={`p-1.5 rounded border transition-colors shrink-0 ${
                         opp.saved 
                           ? 'bg-amber-500/20 border-amber-500/40 text-amber-300' 
                           : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
@@ -304,7 +316,7 @@ export const OpportunitiesScreen: React.FC = () => {
                   {/* Earning & Customer Pills */}
                   <div className="grid grid-cols-2 gap-2 text-xs pt-1">
                     <div className="bg-slate-950 p-2 rounded border border-slate-800">
-                      <div className="text-[10px] font-mono uppercase text-slate-400">Earning Potential</div>
+                      <div className="text-[10px] font-mono uppercase text-slate-400">Earning Range (Hypothesis)</div>
                       <div className="font-semibold text-emerald-400 mt-0.5">{earning}</div>
                     </div>
                     <div className="bg-slate-950 p-2 rounded border border-slate-800">
@@ -354,6 +366,16 @@ export const OpportunitiesScreen: React.FC = () => {
                   }`}>
                     {selectedOpp.score}/100 Overall Score
                   </span>
+                  <span className={`badge-tag text-xs ${
+                    (selectedOpp.origin || (selectedOpp.discoveryId ? 'discovery_derived' : 'template')) === 'discovery_derived' ? 'badge-emerald' : 'badge-slate'
+                  }`}>
+                    {(selectedOpp.origin || (selectedOpp.discoveryId ? 'discovery_derived' : 'template')) === 'discovery_derived' ? 'Discovery-Backed' : 'Hypothesis Template'}
+                  </span>
+                  <span className={`badge-tag text-xs ${
+                    selectedOpp.confidence === 'High' ? 'badge-emerald' : selectedOpp.confidence === 'Medium' ? 'badge-indigo' : 'badge-amber'
+                  }`}>
+                    {selectedOpp.confidence || 'Medium'} Confidence
+                  </span>
                   <span className="badge-tag badge-slate text-xs">{selectedOpp.difficulty} Difficulty</span>
                   <span className="badge-tag badge-slate text-xs">
                     Time to Demo: {selectedOpp.timeToDemo || selectedOpp.time_to_demo || '1-2 days'}
@@ -381,6 +403,51 @@ export const OpportunitiesScreen: React.FC = () => {
                 {selectedOpp.whyMatch || selectedOpp.why_match || 'Matches your profile skills, zero-budget constraint, and available free tools.'}
               </p>
             </div>
+
+            {/* Earning Potential Hypothesis */}
+            <div className="bg-slate-950 border border-slate-800 rounded-lg p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">Earning Potential (Hypothesis)</span>
+                <span className="badge-tag badge-amber text-[10px]">Unverified Income Claim</span>
+              </div>
+              <div className="text-base font-bold text-emerald-400 font-mono">
+                {selectedOpp.earningPotential || selectedOpp.earning_potential || '₹5,000–₹25,000/month'}
+              </div>
+              <p className="text-xs text-slate-400 italic">
+                Basis: {selectedOpp.earningHypothesis?.basis || 'Initial service-pricing hypothesis — validate with real client demand.'}
+              </p>
+            </div>
+
+            {/* Preserved Discovery Evidence */}
+            {selectedOpp.discoveryId && (
+              <div className="bg-slate-950 border border-slate-800 rounded-lg p-4 space-y-2">
+                <span className="text-xs font-bold text-indigo-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <CheckCircle className="h-4 w-4 text-emerald-400" />
+                  Preserved Discovery Evidence
+                </span>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="text-slate-400">Discovery ID:</span>{' '}
+                    <span className="text-slate-300 font-mono">{selectedOpp.discoveryId}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400">Verification:</span>{' '}
+                    <span className="badge-tag badge-slate text-[10px]">{selectedOpp.evidence?.verificationStatus || 'unverified'}</span>
+                  </div>
+                </div>
+                {selectedOpp.evidence?.discoveryUrl && (
+                  <div className="text-xs">
+                    <span className="text-slate-400">Source URL:</span>{' '}
+                    <a href={selectedOpp.evidence.discoveryUrl} target="_blank" rel="noreferrer" className="text-indigo-400 hover:underline inline-flex items-center gap-1">
+                      {selectedOpp.evidence.discoveryUrl} <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+                )}
+                {selectedOpp.evidence?.marketEvidenceNote && (
+                  <p className="text-[11px] text-slate-400">{selectedOpp.evidence.marketEvidenceNote}</p>
+                )}
+              </div>
+            )}
 
             {/* 8-Factor Score Breakdown */}
             <div className="space-y-3 border-b border-slate-800 pb-5">

@@ -23,10 +23,11 @@ opportunitiesRouter.get('/', async (req: Request, res: Response) => {
       savedCount,
       bestOpportunity,
       opportunities,
+      message: opportunities.length === 0 ? 'No strong opportunities found from current evidence.' : undefined,
       worthKnowing: [
-        '8-Factor transparent scoring active (25% Skill, 20% Demand, 15% Tool, 15% Cost, 10% Time, 5% Learning, 5% Comp, 5% Simplicity).',
-        'Personal rules applied: ₹0 cost & free tools prioritized; paid APIs and heavy coding penalized.',
-        'Tool combinations (1 to 4 tools) automatically mapped.'
+        '8-Factor transparent conservative scoring active (25% Skill, 20% Demand, 15% Tool, 15% Cost, 10% Time, 5% Learning, 5% Comp, 5% Simplicity).',
+        'Market demand scored conservatively (unverified demand = neutral score).',
+        'Earning ranges labeled as initial hypotheses requiring real market validation.'
       ]
     });
   } catch (error: any) {

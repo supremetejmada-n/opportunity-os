@@ -120,6 +120,14 @@ export interface ScoreBreakdown {
   reasoning?: Record<string, string>;
 }
 
+export interface EarningHypothesis {
+  range: string;
+  basis: string;
+  confidence: 'Low' | 'Medium' | 'High';
+}
+
+export type OpportunityOrigin = 'discovery_derived' | 'profile_hypothesis' | 'template';
+
 export interface ActionPlanStep {
   dayOrPhase: string;
   title: string;
@@ -148,6 +156,10 @@ export interface Opportunity {
   customerType?: string;
   earning_potential?: string;
   earningPotential?: string;
+  earning_basis?: string;
+  earning_confidence?: 'Low' | 'Medium' | 'High';
+  earningHypothesis?: EarningHypothesis;
+  origin?: OpportunityOrigin;
   workflow: string[];
   required_tools?: string[];
   requiredTools?: string[];
