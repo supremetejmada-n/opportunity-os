@@ -243,7 +243,12 @@ interface PatternRule {
     requiredCaps: Exclude<NormalizedCapability, 'UNKNOWN'>[];
     description: string;
   }[];
-  synthesizeOutcome: (tools: UnifiedTool[], skills: UserSkill[], profile: UserProfile | null) => {
+  synthesizeOutcome: (
+    tools: UnifiedTool[],
+    skills: UserSkill[],
+    profile: UserProfile | null,
+    matchedStages?: CapabilityChainStage[]
+  ) => {
     title: string;
     summary: string;
     concreteOutcome: string;
@@ -272,9 +277,11 @@ const WORKFLOW_PATTERNS: PatternRule[] = [
         description: 'Composes copy and imagery into cohesive branded promotional templates and banners.'
       }
     ],
-    synthesizeOutcome: (tools) => {
-      const genTool = tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).some(c => ['TEXT_GENERATION', 'IMAGE_GENERATION', 'LOCAL_INFERENCE'].includes(c))) || tools[0];
-      const designTool = tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).includes('GRAPHIC_DESIGN')) || tools[1];
+    synthesizeOutcome: (tools, skills, profile, matchedStages) => {
+      const genTool = (matchedStages && tools.find(t => t.id === matchedStages[0]?.toolId)) ||
+        tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).some(c => ['TEXT_GENERATION', 'IMAGE_GENERATION', 'LOCAL_INFERENCE'].includes(c))) || tools[0];
+      const designTool = (matchedStages && tools.find(t => t.id === matchedStages[1]?.toolId)) ||
+        tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).includes('GRAPHIC_DESIGN')) || tools[1];
       return {
         title: `Branded Marketing Asset Suite using ${genTool.name} & ${designTool.name}`,
         summary: `Combine generative creation in ${genTool.name} with layout templates in ${designTool.name} to produce client-ready promotional packages.`,
@@ -313,9 +320,11 @@ const WORKFLOW_PATTERNS: PatternRule[] = [
         description: 'Splices highlights, trims silences, embeds styled kinetic captions, and formats for 9:16 screens.'
       }
     ],
-    synthesizeOutcome: (tools) => {
-      const audioTool = tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).some(c => ['AUDIO_PROCESSING', 'TEXT_GENERATION'].includes(c))) || tools[0];
-      const videoTool = tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).includes('VIDEO_EDITING')) || tools[1];
+    synthesizeOutcome: (tools, skills, profile, matchedStages) => {
+      const audioTool = (matchedStages && tools.find(t => t.id === matchedStages[0]?.toolId)) ||
+        tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).some(c => ['AUDIO_PROCESSING', 'TEXT_GENERATION'].includes(c))) || tools[0];
+      const videoTool = (matchedStages && tools.find(t => t.id === matchedStages[1]?.toolId)) ||
+        tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).includes('VIDEO_EDITING')) || tools[1];
       return {
         title: `Vertical Video Repurposing Pipeline with ${audioTool.name} & ${videoTool.name}`,
         summary: `Ingest long-form media, extract punchy segments with ${audioTool.name}, then edit into vertical short-form reels in ${videoTool.name}.`,
@@ -359,10 +368,13 @@ const WORKFLOW_PATTERNS: PatternRule[] = [
         description: 'Transmits categorized alerts to Slack, Discord, Email, or tabular storage.'
       }
     ],
-    synthesizeOutcome: (tools) => {
-      const capTool = tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).some(c => ['DATA_EXTRACTION', 'DOCUMENT_PROCESSING'].includes(c))) || tools[0];
-      const procTool = tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).some(c => ['TEXT_GENERATION', 'LOCAL_INFERENCE'].includes(c))) || tools[1];
-      const notifyTool = tools.find(t => t.id !== capTool.id && t.id !== procTool.id) || tools[tools.length - 1];
+    synthesizeOutcome: (tools, skills, profile, matchedStages) => {
+      const capTool = (matchedStages && tools.find(t => t.id === matchedStages[0]?.toolId)) ||
+        tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).some(c => ['DATA_EXTRACTION', 'DOCUMENT_PROCESSING'].includes(c))) || tools[0];
+      const procTool = (matchedStages && tools.find(t => t.id === matchedStages[1]?.toolId)) ||
+        tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).some(c => ['TEXT_GENERATION', 'LOCAL_INFERENCE'].includes(c))) || tools[1];
+      const notifyTool = (matchedStages && tools.find(t => t.id === matchedStages[2]?.toolId)) ||
+        tools.find(t => t.id !== capTool.id && t.id !== procTool.id) || tools[tools.length - 1];
       return {
         title: `Market Intelligence Scraper & Triage using ${capTool.name}, ${procTool.name} & ${notifyTool.name}`,
         summary: `Capture public market listings via ${capTool.name}, extract structured commercial signals with ${procTool.name}, and route alerts through ${notifyTool.name}.`,
@@ -406,10 +418,13 @@ const WORKFLOW_PATTERNS: PatternRule[] = [
         description: 'Updates records in database or dispatches automated notification.'
       }
     ],
-    synthesizeOutcome: (tools) => {
-      const autoTool = tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).some(c => ['WORKFLOW_AUTOMATION', 'CODE_DEVELOPMENT'].includes(c))) || tools[0];
-      const aiTool = tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).some(c => ['TEXT_GENERATION', 'LOCAL_INFERENCE'].includes(c))) || tools[1];
-      const dbTool = tools.find(t => t.id !== autoTool.id && t.id !== aiTool.id) || tools[tools.length - 1];
+    synthesizeOutcome: (tools, skills, profile, matchedStages) => {
+      const autoTool = (matchedStages && tools.find(t => t.id === matchedStages[0]?.toolId)) ||
+        tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).some(c => ['WORKFLOW_AUTOMATION', 'CODE_DEVELOPMENT'].includes(c))) || tools[0];
+      const aiTool = (matchedStages && tools.find(t => t.id === matchedStages[1]?.toolId)) ||
+        tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).some(c => ['TEXT_GENERATION', 'LOCAL_INFERENCE'].includes(c))) || tools[1];
+      const dbTool = (matchedStages && tools.find(t => t.id === matchedStages[2]?.toolId)) ||
+        tools.find(t => t.id !== autoTool.id && t.id !== aiTool.id) || tools[tools.length - 1];
       return {
         title: `Customer Triage Automation with ${autoTool.name}, ${aiTool.name} & ${dbTool.name}`,
         summary: `Connect ${autoTool.name} to receive inbound queries, process semantic intent with ${aiTool.name}, and update client records in ${dbTool.name}.`,
@@ -448,9 +463,11 @@ const WORKFLOW_PATTERNS: PatternRule[] = [
         description: 'Runs private on-device LLM with zero external cloud data transmission.'
       }
     ],
-    synthesizeOutcome: (tools) => {
-      const docTool = tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).some(c => ['DOCUMENT_PROCESSING', 'DATA_EXTRACTION', 'CODE_DEVELOPMENT'].includes(c))) || tools[0];
-      const localTool = tools.find(t => t.id !== docTool.id) || tools[1];
+    synthesizeOutcome: (tools, skills, profile, matchedStages) => {
+      const docTool = (matchedStages && tools.find(t => t.id === matchedStages[0]?.toolId)) ||
+        tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).some(c => ['DOCUMENT_PROCESSING', 'DATA_EXTRACTION', 'CODE_DEVELOPMENT'].includes(c))) || tools[0];
+      const localTool = (matchedStages && tools.find(t => t.id === matchedStages[1]?.toolId)) ||
+        tools.find(t => t.id !== docTool.id) || tools[1];
       return {
         title: `Zero-Cloud Confidential Document Auditor (${docTool.name} + ${localTool.name})`,
         summary: `Process private agreements and financial PDFs locally using ${docTool.name} and ${localTool.name}, guaranteeing zero sensitive client data leaves the machine.`,
@@ -494,10 +511,13 @@ const WORKFLOW_PATTERNS: PatternRule[] = [
         description: 'Formats insights into branded PDF or newsletter graphics.'
       }
     ],
-    synthesizeOutcome: (tools) => {
-      const extTool = tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).some(c => ['DATA_EXTRACTION', 'DOCUMENT_PROCESSING'].includes(c))) || tools[0];
-      const synthTool = tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).some(c => ['TEXT_GENERATION', 'LOCAL_INFERENCE'].includes(c))) || tools[1];
-      const pubTool = tools.find(t => t.id !== extTool.id && t.id !== synthTool.id) || tools[tools.length - 1];
+    synthesizeOutcome: (tools, skills, profile, matchedStages) => {
+      const extTool = (matchedStages && tools.find(t => t.id === matchedStages[0]?.toolId)) ||
+        tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).some(c => ['DATA_EXTRACTION', 'DOCUMENT_PROCESSING'].includes(c))) || tools[0];
+      const synthTool = (matchedStages && tools.find(t => t.id === matchedStages[1]?.toolId)) ||
+        tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).some(c => ['TEXT_GENERATION', 'LOCAL_INFERENCE'].includes(c))) || tools[1];
+      const pubTool = (matchedStages && tools.find(t => t.id === matchedStages[2]?.toolId)) ||
+        tools.find(t => t.id !== extTool.id && t.id !== synthTool.id) || tools[tools.length - 1];
       return {
         title: `Industry Intelligence Briefing via ${extTool.name}, ${synthTool.name} & ${pubTool.name}`,
         summary: `Monitor domain updates using ${extTool.name}, summarize executive briefings with ${synthTool.name}, and publish formatted decks through ${pubTool.name}.`,
@@ -541,10 +561,13 @@ const WORKFLOW_PATTERNS: PatternRule[] = [
         description: 'Delivers immediate push alerts with direct actionable links.'
       }
     ],
-    synthesizeOutcome: (tools) => {
-      const monTool = tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).some(c => ['DATA_EXTRACTION', 'WORKFLOW_AUTOMATION', 'CODE_DEVELOPMENT'].includes(c))) || tools[0];
-      const anaTool = tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).some(c => ['TEXT_GENERATION', 'LOCAL_INFERENCE', 'ANALYTICS_REPORTING'].includes(c))) || tools[1];
-      const alertTool = tools.find(t => t.id !== monTool.id && t.id !== anaTool.id) || tools[tools.length - 1];
+    synthesizeOutcome: (tools, skills, profile, matchedStages) => {
+      const monTool = (matchedStages && tools.find(t => t.id === matchedStages[0]?.toolId)) ||
+        tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).some(c => ['DATA_EXTRACTION', 'WORKFLOW_AUTOMATION', 'CODE_DEVELOPMENT'].includes(c))) || tools[0];
+      const anaTool = (matchedStages && tools.find(t => t.id === matchedStages[1]?.toolId)) ||
+        tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).some(c => ['TEXT_GENERATION', 'LOCAL_INFERENCE', 'ANALYTICS_REPORTING'].includes(c))) || tools[1];
+      const alertTool = (matchedStages && tools.find(t => t.id === matchedStages[2]?.toolId)) ||
+        tools.find(t => t.id !== monTool.id && t.id !== anaTool.id) || tools[tools.length - 1];
       return {
         title: `Real-Time Market Monitor with ${monTool.name}, ${anaTool.name} & ${alertTool.name}`,
         summary: `Track competitive price swings or inventory signals via ${monTool.name}, filter false positives using ${anaTool.name}, and notify stakeholders on ${alertTool.name}.`,
@@ -623,32 +646,54 @@ export function matchWorkflowPattern(tools: UnifiedTool[]): { patternRule: Patte
       continue;
     }
 
-    const assignedStages: CapabilityChainStage[] = [];
-    const usedTools = new Set<string>();
+    const n = rule.stages.length;
+    // Deterministic 1-to-1 matching via backtracking:
+    // assignment[stageIdx] = index in toolCaps
+    const assignment: number[] = new Array(n).fill(-1);
+    const usedTools = new Set<number>();
 
-    for (let sIdx = 0; sIdx < rule.stages.length; sIdx++) {
-      const stage = rule.stages[sIdx];
-      const candidate = toolCaps.find(tc =>
-        !usedTools.has(tc.tool.id) &&
-        stage.requiredCaps.some(rc => tc.caps.includes(rc))
-      );
+    function solveMatching(stageIdx: number): boolean {
+      if (stageIdx === n) {
+        return true;
+      }
 
-      if (candidate) {
-        usedTools.add(candidate.tool.id);
-        assignedStages.push({
+      const stage = rule.stages[stageIdx];
+      for (let tIdx = 0; tIdx < n; tIdx++) {
+        if (usedTools.has(tIdx)) continue;
+
+        const tc = toolCaps[tIdx];
+        const satisfiesStage = stage.requiredCaps.some(rc => tc.caps.includes(rc));
+        if (satisfiesStage) {
+          usedTools.add(tIdx);
+          assignment[stageIdx] = tIdx;
+
+          if (solveMatching(stageIdx + 1)) {
+            return true;
+          }
+
+          // Backtrack
+          usedTools.delete(tIdx);
+          assignment[stageIdx] = -1;
+        }
+      }
+
+      return false;
+    }
+
+    if (solveMatching(0)) {
+      const matchedStages: CapabilityChainStage[] = rule.stages.map((stage, sIdx) => {
+        const candidate = toolCaps[assignment[sIdx]];
+        return {
           stageIndex: sIdx + 1,
           toolId: candidate.tool.id,
           toolName: candidate.tool.name,
           capability: candidate.caps.join(', '),
           actionDescription: stage.description,
           accessStatus: evaluateToolAccess(candidate.tool)
-        });
-      }
-    }
+        };
+      });
 
-    // Strictly ensure every single tool in the combination is assigned to a distinct necessary stage
-    if (assignedStages.length === tools.length && usedTools.size === tools.length) {
-      return { patternRule: rule, matchedStages: assignedStages };
+      return { patternRule: rule, matchedStages };
     }
   }
 
@@ -944,7 +989,7 @@ export function evaluateCombination(
   }
 
   // Synthesize concrete outcome & deliverable
-  const outcome = patternRule.synthesizeOutcome(tools, userSkills, profile);
+  const outcome = patternRule.synthesizeOutcome(tools, userSkills, profile, matchedStages);
 
   // Discovery linking & Origin validation (Section 14)
   const discoveryTools = tools.filter(t => t.source === 'discovery');
@@ -1211,7 +1256,7 @@ export async function getStoredCombinations(filters: { savedOnly?: boolean; minS
     customer_type: r.customer_type,
     target_customer: r.target_customer,
     monetization_hypothesis: JSON.parse(r.monetization_hypothesis || '{}'),
-    startup_cost: Number(r.startup_cost) || 0,
+    startup_cost: r.startup_cost !== null && r.startup_cost !== undefined ? Number(r.startup_cost) : -1,
     is_zero_cost: Boolean(r.is_zero_cost),
     time_to_demo: r.time_to_demo,
     difficulty: r.difficulty,
@@ -1243,7 +1288,7 @@ export async function getStoredCombinationById(id: string): Promise<ToolCombinat
     customer_type: r.customer_type,
     target_customer: r.target_customer,
     monetization_hypothesis: JSON.parse(r.monetization_hypothesis || '{}'),
-    startup_cost: Number(r.startup_cost) || 0,
+    startup_cost: r.startup_cost !== null && r.startup_cost !== undefined ? Number(r.startup_cost) : -1,
     is_zero_cost: Boolean(r.is_zero_cost),
     time_to_demo: r.time_to_demo,
     difficulty: r.difficulty,

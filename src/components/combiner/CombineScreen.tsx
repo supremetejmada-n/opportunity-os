@@ -463,7 +463,13 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools }) => {
                             {stage.toolName}
                           </span>
                           <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">
-                            {stage.accessStatus === 'already_have' ? 'Owned' : 'Free Tool'}
+                            {stage.accessStatus === 'already_have'
+                              ? 'Owned'
+                              : stage.accessStatus === 'free_to_obtain'
+                              ? 'Free Tool'
+                              : stage.accessStatus === 'requires_paid_access'
+                              ? 'Paid Tool'
+                              : 'Unverified Access'}
                           </span>
                         </div>
                         <p className="text-[11px] text-slate-400 leading-snug">

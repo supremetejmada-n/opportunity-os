@@ -9,9 +9,11 @@ import {
   evaluateCombination,
   generateSubsets,
   normalizeCapabilities,
+  getStoredCombinationById,
   UnifiedTool
 } from '../services/combineEngine.js';
 import { UserSkill, UserProfile } from '../../src/types/index.js';
+import { initDatabase, dbRun } from '../db/sqlite.js';
 
 // ============================================================================
 // Sample Test Fixtures
@@ -687,6 +689,175 @@ describe('Phase 5: "Combine My Tools" Engine Test Suite', () => {
     assert.ok(combo !== null);
     assert.ok(combo.score <= 100, `Score (${combo.score}) must never exceed 100`);
     assert.ok(combo.score >= 0, `Score (${combo.score}) must be >= 0`);
+  });
+
+  // ==========================================================================
+  // Phase 5.2 Surgical Correctness Tests (Tests AK through AM)
+  // ==========================================================================
+
+  // Test AK: Ambiguous capability matching succeeds where greedy matching fails
+  it('Test AK: resolves ambiguous multi-capability tool assignment where greedy matcher would fail', () => {
+    // Tool A has both X (Text Generation) and Y (Graphic Design)
+    const multiCapToolA: UnifiedTool = {
+      id: 'tool_multi_a',
+      name: 'MultiGen Suite',
+      category: 'Generative Design',
+      capabilities: ['text generation', 'graphic design'],
+      accessType: 'Free',
+      costPerMonth: 0,
+      source: 'profile'
+    };
+
+    // Tool B has only X (Text Generation)
+    const singleCapToolB: UnifiedTool = {
+      id: 'tool_single_b',
+      name: 'PureText Engine',
+      category: 'AI Text',
+      capabilities: ['text generation'],
+      accessType: 'Free',
+      costPerMonth: 0,
+      source: 'profile'
+    };
+
+    // GENERATE_DESIGN has 2 stages:
+    // Stage 1: Content Generation (requires TEXT_GENERATION, IMAGE_GENERATION, or LOCAL_INFERENCE)
+    // Stage 2: Visual Design & Layout (requires GRAPHIC_DESIGN)
+    //
+    // When passed in order [multiCapToolA, singleCapToolB]:
+    // A greedy matcher picks multiCapToolA for Stage 1, leaving singleCapToolB for Stage 2 (which fails because singleCapToolB lacks GRAPHIC_DESIGN).
+    // The 1-to-1 backtracking matcher correctly finds the valid assignment:
+    // Stage 1 -> singleCapToolB (PureText Engine)
+    // Stage 2 -> multiCapToolA (MultiGen Suite)
+    const match = matchWorkflowPattern([multiCapToolA, singleCapToolB]);
+    assert.ok(match !== null, 'Valid 1-to-1 matching must be found');
+    assert.equal(match.patternRule.pattern, 'GENERATE_DESIGN');
+    assert.equal(match.matchedStages.length, 2);
+
+    // Verify exact stage assignment
+    assert.equal(match.matchedStages[0].toolId, 'tool_single_b', 'Stage 1 (Content Generation) must be assigned to PureText Engine');
+    assert.equal(match.matchedStages[1].toolId, 'tool_multi_a', 'Stage 2 (Visual Design & Layout) must be assigned to MultiGen Suite');
+
+    // Also verify through evaluateCombination
+    const combo = evaluateCombination([multiCapToolA, singleCapToolB], sampleSkills, sampleProfile);
+    assert.ok(combo !== null, 'Combination must be successfully formed and accepted');
+    assert.equal(combo.workflow_pattern, 'GENERATE_DESIGN');
+    assert.equal(combo.capability_chain[0].toolId, 'tool_single_b');
+    assert.equal(combo.capability_chain[1].toolId, 'tool_multi_a');
+  });
+
+  // Test AL: Reject combinations where distinct stage capabilities cannot be satisfied
+  it('Test AL: returns null when two stages require capabilities that cannot be satisfied by distinct tools', () => {
+    const textTool1: UnifiedTool = {
+      id: 'tool_text_1',
+      name: 'Text Engine 1',
+      category: 'AI Text',
+      capabilities: ['text generation'],
+      accessType: 'Free',
+      costPerMonth: 0,
+      source: 'profile'
+    };
+    const textTool2: UnifiedTool = {
+      id: 'tool_text_2',
+      name: 'Text Engine 2',
+      category: 'AI Text',
+      capabilities: ['text generation'],
+      accessType: 'Free',
+      costPerMonth: 0,
+      source: 'profile'
+    };
+
+    // Both tools only have TEXT_GENERATION. Neither has GRAPHIC_DESIGN (for GENERATE_DESIGN) or VIDEO_EDITING (for GENERATE_EDIT) or DOCUMENT_PROCESSING (for LOCAL_AI_DOCUMENT_OUTPUT).
+    const match = matchWorkflowPattern([textTool1, textTool2]);
+    assert.equal(match, null, 'Must return null when distinct stage requirements cannot be met');
+
+    const combo = evaluateCombination([textTool1, textTool2], sampleSkills, sampleProfile);
+    assert.equal(combo, null, 'Must return null combination when distinct stage requirements cannot be met');
+  });
+
+  // Test AM: End-to-end unknown startup cost persistence, retrieval, and API serialization
+  it('Test AM: proves unknown startup cost (-1) survives SQLite persistence, DB retrieval, and API serialization without becoming 0', async () => {
+    await initDatabase();
+
+    const toolWithUnknownCost: UnifiedTool = {
+      id: 'disc_cloud_unknown_pricing',
+      name: 'Enterprise Cloud Vision Model',
+      category: 'AI API',
+      capabilities: ['text generation'],
+      accessType: 'Unknown',
+      costPerMonth: 0,
+      source: 'discovery',
+      openSource: false,
+      pricingStatus: 'unclear_pricing'
+    };
+
+    const combo = evaluateCombination([toolWithUnknownCost, profileToolCanva], sampleSkills, sampleProfile);
+    assert.ok(combo !== null, 'Combination must be produced');
+
+    // 1. Engine check
+    assert.equal(combo.startup_cost, -1, 'Engine must assign -1 for unverified startup cost');
+    assert.equal(combo.is_zero_cost, false, 'is_zero_cost must strictly be false');
+    assert.ok(combo.score_breakdown.zeroCostFeasibility < 10, 'Must not receive full 10 zero-cost feasibility points');
+
+    // 2. Persist to real SQLite database
+    await dbRun(
+      `INSERT INTO tool_combinations (
+        id, title, summary, tool_ids, tool_names, discovery_ids, origin, market_evidence,
+        capability_chain, workflow_pattern, workflow_steps, concrete_outcome, customer_type,
+        target_customer, monetization_hypothesis, startup_cost, is_zero_cost, time_to_demo,
+        difficulty, score, score_breakdown, confidence, saved, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        startup_cost = excluded.startup_cost,
+        is_zero_cost = excluded.is_zero_cost;`,
+      [
+        combo.id,
+        combo.title,
+        combo.summary,
+        JSON.stringify(combo.tool_ids),
+        JSON.stringify(combo.tool_names),
+        JSON.stringify(combo.discovery_ids || []),
+        combo.origin || 'discovery_derived',
+        combo.market_evidence || 'limited / hypothesis',
+        JSON.stringify(combo.capability_chain),
+        combo.workflow_pattern,
+        JSON.stringify(combo.workflow_steps),
+        combo.concrete_outcome,
+        combo.customer_type,
+        combo.target_customer,
+        JSON.stringify(combo.monetization_hypothesis),
+        combo.startup_cost,
+        combo.is_zero_cost ? 1 : 0,
+        combo.time_to_demo,
+        combo.difficulty,
+        combo.score,
+        JSON.stringify(combo.score_breakdown),
+        combo.confidence,
+        0,
+        combo.created_at || new Date().toISOString()
+      ]
+    );
+
+    // 3. Database retrieval
+    const retrieved = await getStoredCombinationById(combo.id);
+    assert.ok(retrieved !== null, 'Stored combination must be retrievable from SQLite');
+    assert.equal(retrieved.startup_cost, -1, 'Retrieved startup_cost from SQLite must strictly be -1');
+    assert.equal(retrieved.is_zero_cost, false, 'Retrieved is_zero_cost must strictly be false');
+
+    // 4. API Serialization (simulate express res.json payload roundtrip)
+    const apiPayload = JSON.parse(JSON.stringify(retrieved));
+    assert.equal(apiPayload.startup_cost, -1, 'API serialized payload must preserve -1');
+    assert.equal(apiPayload.is_zero_cost, false, 'API serialized payload must preserve is_zero_cost = false');
+
+    // 5. Frontend interpretation simulation (exact logic from CombineScreen.tsx)
+    const renderedBadge = apiPayload.is_zero_cost
+      ? '₹0 Upfront Cost'
+      : apiPayload.startup_cost === -1
+      ? 'Cost: Unverified'
+      : `~$${apiPayload.startup_cost} Upfront Cost`;
+    assert.equal(renderedBadge, 'Cost: Unverified', 'Frontend must render Cost: Unverified and NEVER ₹0 Upfront Cost');
+
+    // Clean up test combo
+    await dbRun('DELETE FROM tool_combinations WHERE id = ?;', [combo.id]);
   });
 });
 
