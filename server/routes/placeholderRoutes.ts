@@ -2,35 +2,10 @@ import { Router, Request, Response } from 'express';
 
 export const discoveriesRouter = Router();
 export const opportunitiesRouter = Router();
-export const combinerRouter = Router();
 export const progressRouter = Router();
 export const scanRouter = Router();
 
 // Discoveries API (Phase 3 placeholder)
-discoveriesRouter.get('/', (req: Request, res: Response) => {
-  res.json({
-    discoveries: [],
-    message: 'Discovery Engine connected (Phase 1 empty state). Run a scan to discover real open-source tools & models.'
-  });
-});
-
-// Opportunities API (Phase 4 placeholder)
-opportunitiesRouter.get('/', (req: Request, res: Response) => {
-  res.json({
-    opportunities: [],
-    bestOpportunity: null,
-    worthKnowing: [],
-    message: 'Opportunity Engine standby. No opportunities evaluated yet.'
-  });
-});
-
-// Combiner API (Phase 5 placeholder)
-combinerRouter.post('/generate', (req: Request, res: Response) => {
-  res.json({
-    combinations: [],
-    message: 'Tool Combiner Engine standby.'
-  });
-});
 
 // Progress & Feedback API (Phase 6 placeholder)
 progressRouter.get('/metrics', (req: Request, res: Response) => {

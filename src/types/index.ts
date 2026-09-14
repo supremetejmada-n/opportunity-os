@@ -90,6 +90,8 @@ export interface Discovery {
   pricing_cost?: string;
   free_status?: PricingStatus;
   pricingStatus?: PricingStatus;
+  freeTier?: boolean;
+  free_tier?: number | boolean;
   open_source_status?: boolean;
   openSource?: boolean;
   openWeight?: boolean;
@@ -226,3 +228,73 @@ export interface FeedbackSubmission {
   comments?: string;
   created_at?: string;
 }
+
+// ==========================================
+// Phase 5: "Combine My Tools" Engine Types
+// ==========================================
+
+export type ToolAccessStatus = 'already_have' | 'free_to_obtain' | 'requires_paid_access' | 'unknown';
+
+export type WorkflowPattern =
+  | 'GENERATE_DESIGN'
+  | 'GENERATE_EDIT'
+  | 'CAPTURE_PROCESS_RESPOND'
+  | 'TRIGGER_AI_ACTION'
+  | 'LOCAL_AI_DOCUMENT_OUTPUT'
+  | 'EXTRACT_SYNTHESIZE_PUBLISH'
+  | 'MONITOR_ANALYZE_ALERT';
+
+export interface CapabilityChainStage {
+  stageIndex: number;
+  toolId: string;
+  toolName: string;
+  capability: string;
+  actionDescription: string;
+  accessStatus?: ToolAccessStatus;
+}
+
+export interface CombinerScoreBreakdown {
+  userToolAvailability: number;         // 20% (0-20)
+  capabilitySynergy: number;            // 20% (0-20)
+  personalSkillFit: number;             // 15% (0-15)
+  outcomeUsefulness: number;            // 15% (0-15)
+  zeroCostFeasibility: number;          // 10% (0-10)
+  executionSimplicity: number;          // 10% (0-10)
+  timeToDemo: number;                   // 5% (0-5)
+  customerMonetizationPotential: number;// 5% (0-5)
+  reasoning?: Record<string, string>;
+}
+
+export interface CombinerMonetizationHypothesis {
+  range: string;
+  pricingModel: string;
+  targetCustomer: string;
+  basis: string;
+  confidence: 'Low' | 'Medium' | 'High';
+}
+
+export interface ToolCombination {
+  id: string;
+  title: string;
+  summary: string;
+  tool_ids: string[];
+  tool_names: string[];
+  capability_chain: CapabilityChainStage[];
+  workflow_pattern: WorkflowPattern;
+  workflow_steps: string[];
+  concrete_outcome: string;
+  customer_type: string;
+  target_customer: string;
+  monetization_hypothesis: CombinerMonetizationHypothesis;
+  startup_cost: number;
+  is_zero_cost: boolean;
+  time_to_demo: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  score: number;
+  score_breakdown: CombinerScoreBreakdown;
+  confidence: ConfidenceLevel;
+  saved: boolean;
+  created_at?: string;
+  is_demo_data?: boolean;
+}
+

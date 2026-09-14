@@ -196,4 +196,30 @@ CREATE TABLE IF NOT EXISTS progress_logs (
   notes TEXT,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Tool Combinations table (Phase 5 Combiner Engine)
+CREATE TABLE IF NOT EXISTS tool_combinations (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  summary TEXT,
+  tool_ids TEXT NOT NULL DEFAULT '[]',
+  tool_names TEXT NOT NULL DEFAULT '[]',
+  capability_chain TEXT NOT NULL DEFAULT '[]',
+  workflow_pattern TEXT NOT NULL,
+  workflow_steps TEXT NOT NULL DEFAULT '[]',
+  concrete_outcome TEXT NOT NULL,
+  customer_type TEXT NOT NULL,
+  target_customer TEXT NOT NULL,
+  monetization_hypothesis TEXT NOT NULL DEFAULT '{}',
+  startup_cost REAL DEFAULT 0,
+  is_zero_cost INTEGER DEFAULT 1,
+  time_to_demo TEXT DEFAULT '1-2 days',
+  difficulty TEXT DEFAULT 'Medium',
+  score REAL DEFAULT 0,
+  score_breakdown TEXT NOT NULL DEFAULT '{}',
+  confidence TEXT DEFAULT 'Medium',
+  saved INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  is_demo_data INTEGER DEFAULT 0
+);
 `;

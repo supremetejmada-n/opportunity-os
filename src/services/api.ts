@@ -1,4 +1,4 @@
-import { UserProfile, UserSkill, UserTool, UserGoal, UserInterest, UserProject, ProgressMetrics, Discovery, Opportunity } from '../types/index.js';
+import { UserProfile, UserSkill, UserTool, UserGoal, UserInterest, UserProject, ProgressMetrics, Discovery, Opportunity, ToolCombination } from '../types/index.js';
 
 const API_BASE = '/api';
 
@@ -24,6 +24,13 @@ export interface OpportunitiesResponse {
   bestOpportunity: Opportunity | null;
   opportunities: Opportunity[];
   worthKnowing: string[];
+}
+
+export interface CombinationsResponse {
+  count: number;
+  savedCount: number;
+  combinations: ToolCombination[];
+  message: string;
 }
 
 export const api = {
@@ -205,6 +212,39 @@ export const api = {
   async saveOpportunity(id: string): Promise<{ success: boolean; saved: boolean; opportunity: Opportunity }> {
     const res = await fetch(`${API_BASE}/opportunities/${id}/save`, { method: 'POST' });
     if (!res.ok) throw new Error('Failed to toggle opportunity save state');
+    return res.json();
+  },
+
+  // COMBINATIONS (Phase 5 Engine)
+  async getCombinations(params: Record<string, string> = {}): Promise<CombinationsResponse> {
+    const queryString = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE}/combinations?${queryString}`);
+    if (!res.ok) throw new Error('Failed to fetch tool combinations');
+    return res.json();
+  },
+
+  async getCombinationById(id: string): Promise<ToolCombination> {
+    const res = await fetch(`${API_BASE}/combinations/${id}`);
+    if (!res.ok) throw new Error('Failed to fetch combination detail');
+    return res.json();
+  },
+
+  async generateCombinations(options: { toolIds?: string[]; minScore?: number } = {}): Promise<CombinationsResponse> {
+    const res = await fetch(`${API_BASE}/combinations/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(options)
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || 'Failed to generate tool combinations');
+    }
+    return res.json();
+  },
+
+  async saveCombination(id: string): Promise<{ success: boolean; saved: boolean; combination: ToolCombination }> {
+    const res = await fetch(`${API_BASE}/combinations/${id}/save`, { method: 'POST' });
+    if (!res.ok) throw new Error('Failed to toggle combination save state');
     return res.json();
   }
 };
