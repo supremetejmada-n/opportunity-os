@@ -187,27 +187,77 @@ export interface Opportunity {
   is_demo_data?: boolean;
 }
 
-// Action Plan schema (ready for Phase 6)
+// Action Plan schema (Phase 6 Engine)
+export type ActionStepPhase = 'LEARN' | 'BUILD' | 'PORTFOLIO' | 'PROSPECT' | 'OUTREACH' | 'RESULT';
+export type ActionStepStatus = 'not_started' | 'in_progress' | 'completed' | 'skipped';
+export type ActionPlanStatus = 'not_started' | 'in_progress' | 'completed' | 'paused' | 'abandoned';
+
 export interface ActionStep {
-  dayOrPhase: string;
+  id: string;
+  action_plan_id: string;
+  step_order: number;
+  phase: ActionStepPhase;
   title: string;
   description: string;
-  estimatedHours: number;
-  toolsNeeded: string[];
+  estimated_time: string;
+  status: ActionStepStatus;
+  notes?: string;
+  completed_at?: string | null;
+  // Optional backward-compatibility helpers
+  dayOrPhase?: string;
+  estimatedHours?: number;
+  toolsNeeded?: string[];
   learningResources?: string[];
-  status: 'pending' | 'in_progress' | 'completed';
 }
 
 export interface ActionPlan {
   id: string;
-  opportunity_id: string;
+  opportunity_id?: string | null;
+  combination_id?: string | null;
+  title: string;
   objective: string;
-  target_timeframe: string;
+  summary: string;
+  estimated_total_time: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  status: ActionPlanStatus;
   steps: ActionStep[];
+  created_at: string;
+  updated_at?: string;
+  target_timeframe?: string;
+  progress_percentage?: number;
+  completed_steps_count?: number;
+  total_steps_count?: number;
+}
+
+// Progress & Feedback schema (Phase 6 & 7)
+export type ProgressResultType =
+  | 'demo_created'
+  | 'prospect_contacted'
+  | 'response_received'
+  | 'client_acquired'
+  | 'revenue_earned'
+  | 'hours_spent'
+  | 'rejected'
+  | 'abandoned'
+  | 'general_note';
+
+export type ProgressOutcome = 'positive' | 'neutral' | 'negative';
+
+export interface ProgressLog {
+  id: string;
+  action_plan_id?: string | null;
+  step_id?: string | null;
+  opportunity_id?: string | null;
+  combination_id?: string | null;
+  result_type: ProgressResultType;
+  outcome?: ProgressOutcome;
+  numeric_value?: number | null;
+  notes: string;
+  evidence_link?: string | null;
+  date?: string;
   created_at: string;
 }
 
-// Progress & Feedback schema (ready for Phase 6 & 7)
 export interface ProgressMetrics {
   opportunities_viewed: number;
   opportunities_saved: number;

@@ -159,17 +159,6 @@ CREATE TABLE IF NOT EXISTS opportunities (
   FOREIGN KEY (discovery_id) REFERENCES discoveries(id) ON DELETE SET NULL
 );
 
--- Action plans table (ready for Phase 6)
-CREATE TABLE IF NOT EXISTS action_plans (
-  id TEXT PRIMARY KEY,
-  opportunity_id TEXT NOT NULL,
-  objective TEXT NOT NULL,
-  target_timeframe TEXT DEFAULT '5 days',
-  steps TEXT DEFAULT '[]',
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (opportunity_id) REFERENCES opportunities(id) ON DELETE CASCADE
-);
-
 -- Feedback table (ready for Phase 6 & 7)
 CREATE TABLE IF NOT EXISTS feedback (
   id TEXT PRIMARY KEY,
@@ -181,11 +170,51 @@ CREATE TABLE IF NOT EXISTS feedback (
   FOREIGN KEY (opportunity_id) REFERENCES opportunities(id) ON DELETE CASCADE
 );
 
--- Progress tracking table (ready for Phase 6)
-CREATE TABLE IF NOT EXISTS progress_logs (
+-- Action Plans table (Phase 6 Engine)
+CREATE TABLE IF NOT EXISTS action_plans (
   id TEXT PRIMARY KEY,
   opportunity_id TEXT,
+  combination_id TEXT,
+  title TEXT NOT NULL,
+  objective TEXT NOT NULL,
+  summary TEXT,
+  estimated_total_time TEXT NOT NULL DEFAULT '4-8 hours',
+  difficulty TEXT NOT NULL DEFAULT 'Medium',
+  status TEXT NOT NULL DEFAULT 'not_started',
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (opportunity_id) REFERENCES opportunities(id) ON DELETE CASCADE,
+  FOREIGN KEY (combination_id) REFERENCES tool_combinations(id) ON DELETE CASCADE
+);
+
+-- Action Steps table (Phase 6 Engine)
+CREATE TABLE IF NOT EXISTS action_steps (
+  id TEXT PRIMARY KEY,
+  action_plan_id TEXT NOT NULL,
+  step_order INTEGER NOT NULL,
+  phase TEXT NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  estimated_time TEXT NOT NULL DEFAULT '1 hour',
+  status TEXT NOT NULL DEFAULT 'not_started',
+  notes TEXT,
+  completed_at TEXT,
+  FOREIGN KEY (action_plan_id) REFERENCES action_plans(id) ON DELETE CASCADE
+);
+
+-- Progress tracking table (Phase 6 Progress Engine)
+CREATE TABLE IF NOT EXISTS progress_logs (
+  id TEXT PRIMARY KEY,
   action_plan_id TEXT,
+  step_id TEXT,
+  opportunity_id TEXT,
+  combination_id TEXT,
+  result_type TEXT NOT NULL DEFAULT 'general_note',
+  outcome TEXT DEFAULT 'neutral',
+  numeric_value REAL,
+  notes TEXT,
+  evidence_link TEXT,
+  date TEXT,
   status_change TEXT,
   demos_created INTEGER DEFAULT 0,
   prospects_contacted INTEGER DEFAULT 0,
@@ -193,8 +222,11 @@ CREATE TABLE IF NOT EXISTS progress_logs (
   clients_acquired INTEGER DEFAULT 0,
   revenue_earned REAL DEFAULT 0,
   hours_spent REAL DEFAULT 0,
-  notes TEXT,
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (action_plan_id) REFERENCES action_plans(id) ON DELETE CASCADE,
+  FOREIGN KEY (step_id) REFERENCES action_steps(id) ON DELETE SET NULL,
+  FOREIGN KEY (opportunity_id) REFERENCES opportunities(id) ON DELETE CASCADE,
+  FOREIGN KEY (combination_id) REFERENCES tool_combinations(id) ON DELETE CASCADE
 );
 
 -- Tool Combinations table (Phase 5 Combiner Engine)

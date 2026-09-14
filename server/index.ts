@@ -7,7 +7,8 @@ import { discoveriesRouter } from './routes/discoveries.js';
 import { scanRouter } from './routes/scan.js';
 import { opportunitiesRouter } from './routes/opportunities.js';
 import { combinerRouter } from './routes/combiner.js';
-import { progressRouter } from './routes/placeholderRoutes.js';
+import { actionPlansRouter } from './routes/actionPlans.js';
+import { progressRouter } from './routes/progress.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -33,13 +34,14 @@ app.use('/api/scan', scanRouter);
 app.use('/api/opportunities', opportunitiesRouter);
 app.use('/api/combinations', combinerRouter);
 app.use('/api/combiner', combinerRouter);
+app.use('/api/action-plans', actionPlansRouter);
 app.use('/api/progress', progressRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    system: 'Personal AI Opportunity Engine V1 (Phase 5 Active)',
+    system: 'Personal AI Opportunity Engine V1 (Phase 6 Active)',
     timestamp: new Date().toISOString()
   });
 });

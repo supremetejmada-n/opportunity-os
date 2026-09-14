@@ -133,5 +133,69 @@ export async function initDatabase(): Promise<void> {
     }
   }
 
+  // Ensure Phase 6 Action Plans & Progress tables exist
+  const planCols = await dbAll<{ name: string }>("PRAGMA table_info(action_plans);");
+  const planColNames = new Set(planCols.map(c => c.name));
+  if (planCols.length > 0 && !planColNames.has('combination_id')) {
+    await dbRun(`DROP TABLE IF EXISTS action_plans;`);
+  }
+
+  await dbRun(`
+    CREATE TABLE IF NOT EXISTS action_plans (
+      id TEXT PRIMARY KEY,
+      opportunity_id TEXT,
+      combination_id TEXT,
+      title TEXT NOT NULL,
+      objective TEXT NOT NULL,
+      summary TEXT,
+      estimated_total_time TEXT NOT NULL DEFAULT '4-8 hours',
+      difficulty TEXT NOT NULL DEFAULT 'Medium',
+      status TEXT NOT NULL DEFAULT 'not_started',
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (opportunity_id) REFERENCES opportunities(id) ON DELETE CASCADE,
+      FOREIGN KEY (combination_id) REFERENCES tool_combinations(id) ON DELETE CASCADE
+    );
+  `);
+
+  await dbRun(`
+    CREATE TABLE IF NOT EXISTS action_steps (
+      id TEXT PRIMARY KEY,
+      action_plan_id TEXT NOT NULL,
+      step_order INTEGER NOT NULL,
+      phase TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL,
+      estimated_time TEXT NOT NULL DEFAULT '1 hour',
+      status TEXT NOT NULL DEFAULT 'not_started',
+      notes TEXT,
+      completed_at TEXT,
+      FOREIGN KEY (action_plan_id) REFERENCES action_plans(id) ON DELETE CASCADE
+    );
+  `);
+
+  // Ensure progress_logs has all required Phase 6 columns
+  const progCols = await dbAll<{ name: string }>("PRAGMA table_info(progress_logs);");
+  const progColNames = new Set(progCols.map(c => c.name));
+  const missingProgCols = [
+    { name: 'step_id', type: "TEXT" },
+    { name: 'combination_id', type: "TEXT" },
+    { name: 'result_type', type: "TEXT NOT NULL DEFAULT 'general_note'" },
+    { name: 'outcome', type: "TEXT DEFAULT 'neutral'" },
+    { name: 'numeric_value', type: "REAL" },
+    { name: 'evidence_link', type: "TEXT" },
+    { name: 'date', type: "TEXT" }
+  ];
+  for (const col of missingProgCols) {
+    if (!progColNames.has(col.name)) {
+      try {
+        await dbRun(`ALTER TABLE progress_logs ADD COLUMN ${col.name} ${col.type};`);
+        console.log(`[SQLite Migration] Added column '${col.name}' to progress_logs table.`);
+      } catch (err: any) {
+        console.warn(`[SQLite Migration] Note adding column ${col.name}:`, err?.message);
+      }
+    }
+  }
+
   console.log('[SQLite] All database tables initialized successfully.');
 }

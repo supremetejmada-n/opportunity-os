@@ -16,16 +16,18 @@ import {
   Check,
   AlertCircle,
   HelpCircle,
-  Info
+  Info,
+  Play
 } from 'lucide-react';
 import { UserTool, ToolCombination, WorkflowPattern } from '../../types/index.js';
 import { api } from '../../services/api.js';
 
 interface CombineScreenProps {
   tools: UserTool[];
+  onStartPlan?: (planId: string) => void;
 }
 
-export const CombineScreen: React.FC<CombineScreenProps> = ({ tools }) => {
+export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan }) => {
   // State
   const [selectedToolIds, setSelectedToolIds] = useState<string[]>(
     tools.slice(0, 4).map(t => t.id)
@@ -33,6 +35,7 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools }) => {
   const [combinations, setCombinations] = useState<ToolCombination[]>([]);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [startingPlanId, setStartingPlanId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -127,6 +130,24 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools }) => {
       }
     } catch (err: any) {
       console.error('Error toggling save:', err);
+    }
+  };
+
+  const handleStartActionPlan = async (comboId: string) => {
+    try {
+      setStartingPlanId(comboId);
+      const res = await api.generateActionPlan({ combinationId: comboId });
+      if (res && res.success && res.plan) {
+        await api.startActionPlan(res.plan.id);
+        if (onStartPlan) {
+          onStartPlan(res.plan.id);
+        }
+      }
+    } catch (err: any) {
+      console.error('Error starting action plan:', err);
+      setError(err.message || 'Failed to start action plan');
+    } finally {
+      setStartingPlanId(null);
     }
   };
 
@@ -428,6 +449,16 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools }) => {
                         {combo.confidence} Confidence
                       </span>
                     </div>
+
+                    <button
+                      onClick={() => handleStartActionPlan(combo.id)}
+                      disabled={startingPlanId === combo.id}
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs py-1.5 px-3 rounded-lg flex items-center gap-1.5 transition-all shadow-sm shadow-emerald-900/40"
+                      title="Start 6-Phase Action Plan"
+                    >
+                      <Play className={`h-3.5 w-3.5 ${startingPlanId === combo.id ? 'animate-spin' : ''}`} />
+                      <span className="hidden sm:inline">{startingPlanId === combo.id ? 'Starting...' : 'Start Action Plan'}</span>
+                    </button>
 
                     <button
                       onClick={() => handleToggleSave(combo.id)}

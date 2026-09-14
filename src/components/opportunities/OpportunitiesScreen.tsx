@@ -2,15 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { 
   Sparkles, Sliders, ShieldAlert, Award, Bookmark, BookmarkCheck, 
   ArrowRight, RefreshCw, Layers, Clock, TrendingUp, CheckCircle, AlertTriangle, 
-  X, ExternalLink, Zap
+  X, ExternalLink, Zap, Play
 } from 'lucide-react';
 import { api, OpportunitiesResponse } from '../../services/api.js';
 import { Opportunity } from '../../types/index.js';
 
-export const OpportunitiesScreen: React.FC = () => {
+interface OpportunitiesScreenProps {
+  onStartPlan?: (planId: string) => void;
+}
+
+export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStartPlan }) => {
   const [data, setData] = useState<OpportunitiesResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [evaluating, setEvaluating] = useState<boolean>(false);
+  const [startingPlan, setStartingPlan] = useState<boolean>(false);
   const [selectedOpp, setSelectedOpp] = useState<Opportunity | null>(null);
   const [filterSavedOnly, setFilterSavedOnly] = useState<boolean>(false);
   const [filterDifficulty, setFilterDifficulty] = useState<string>('all');
@@ -68,6 +73,23 @@ export const OpportunitiesScreen: React.FC = () => {
       }
     } catch (err) {
       console.error('Failed to toggle save state:', err);
+    }
+  };
+
+  const handleStartActionPlan = async (oppId: string) => {
+    try {
+      setStartingPlan(true);
+      const res = await api.generateActionPlan({ opportunityId: oppId });
+      if (res && res.success && res.plan) {
+        await api.startActionPlan(res.plan.id);
+        if (onStartPlan) {
+          onStartPlan(res.plan.id);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to start action plan:', err);
+    } finally {
+      setStartingPlan(false);
     }
   };
 
@@ -545,7 +567,7 @@ export const OpportunitiesScreen: React.FC = () => {
             )}
 
             {/* Modal Action Footer */}
-            <div className="pt-2 flex items-center justify-between">
+            <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-slate-800">
               <button
                 onClick={(e) => handleToggleSave(e, selectedOpp.id)}
                 className={`btn-secondary text-xs flex items-center gap-1.5 ${selectedOpp.saved ? 'text-amber-400 border-amber-500/40' : ''}`}
@@ -554,12 +576,23 @@ export const OpportunitiesScreen: React.FC = () => {
                 {selectedOpp.saved ? 'Saved Opportunity' : 'Save Opportunity'}
               </button>
 
-              <button
-                onClick={() => setSelectedOpp(null)}
-                className="btn-primary text-xs py-2 px-5"
-              >
-                Close View
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleStartActionPlan(selectedOpp.id)}
+                  disabled={startingPlan}
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs py-2 px-4 rounded-lg flex items-center gap-1.5 transition-all shadow-sm shadow-emerald-900/40"
+                >
+                  <Play className={`h-3.5 w-3.5 ${startingPlan ? 'animate-spin' : ''}`} />
+                  {startingPlan ? 'Preparing Plan...' : 'Start Action Plan'}
+                </button>
+
+                <button
+                  onClick={() => setSelectedOpp(null)}
+                  className="btn-secondary text-xs py-2 px-4"
+                >
+                  Close View
+                </button>
+              </div>
             </div>
           </div>
         </div>

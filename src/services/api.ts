@@ -1,4 +1,8 @@
-import { UserProfile, UserSkill, UserTool, UserGoal, UserInterest, UserProject, ProgressMetrics, Discovery, Opportunity, ToolCombination } from '../types/index.js';
+import { 
+  UserProfile, UserSkill, UserTool, UserGoal, UserInterest, UserProject, 
+  ProgressMetrics, Discovery, Opportunity, ToolCombination,
+  ActionPlan, ActionStep, ActionStepStatus, ProgressLog, ProgressResultType
+} from '../types/index.js';
 
 const API_BASE = '/api';
 
@@ -183,7 +187,7 @@ export const api = {
   },
 
   // PROGRESS METRICS
-  async getProgressMetrics(): Promise<{ metrics: ProgressMetrics }> {
+  async getProgressMetrics(): Promise<{ metrics: ProgressMetrics; activityLogs?: ProgressLog[] }> {
     const res = await fetch(`${API_BASE}/progress/metrics`);
     if (!res.ok) throw new Error('Failed to fetch progress metrics');
     return res.json();
@@ -245,6 +249,111 @@ export const api = {
   async saveCombination(id: string): Promise<{ success: boolean; saved: boolean; combination: ToolCombination }> {
     const res = await fetch(`${API_BASE}/combinations/${id}/save`, { method: 'POST' });
     if (!res.ok) throw new Error('Failed to toggle combination save state');
+    return res.json();
+  },
+
+  // ACTION PLANS (Phase 6 Engine)
+  async generateActionPlan(params: { opportunityId?: string; combinationId?: string }): Promise<{ success: boolean; plan: ActionPlan }> {
+    const res = await fetch(`${API_BASE}/action-plans/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to generate action plan');
+    }
+    return res.json();
+  },
+
+  async getActionPlans(params: Record<string, string> = {}): Promise<{ success: boolean; plans: ActionPlan[]; count: number }> {
+    const queryString = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE}/action-plans?${queryString}`);
+    if (!res.ok) throw new Error('Failed to fetch action plans');
+    return res.json();
+  },
+
+  async getActionPlanById(id: string): Promise<{ success: boolean; plan: ActionPlan }> {
+    const res = await fetch(`${API_BASE}/action-plans/${id}`);
+    if (!res.ok) throw new Error('Failed to fetch action plan');
+    return res.json();
+  },
+
+  async startActionPlan(id: string): Promise<{ success: boolean; plan: ActionPlan }> {
+    const res = await fetch(`${API_BASE}/action-plans/${id}/start`, { method: 'POST' });
+    if (!res.ok) throw new Error('Failed to start action plan');
+    return res.json();
+  },
+
+  async pauseActionPlan(id: string): Promise<{ success: boolean; plan: ActionPlan }> {
+    const res = await fetch(`${API_BASE}/action-plans/${id}/pause`, { method: 'POST' });
+    if (!res.ok) throw new Error('Failed to pause action plan');
+    return res.json();
+  },
+
+  async resumeActionPlan(id: string): Promise<{ success: boolean; plan: ActionPlan }> {
+    const res = await fetch(`${API_BASE}/action-plans/${id}/resume`, { method: 'POST' });
+    if (!res.ok) throw new Error('Failed to resume action plan');
+    return res.json();
+  },
+
+  async completeActionPlan(id: string): Promise<{ success: boolean; plan: ActionPlan }> {
+    const res = await fetch(`${API_BASE}/action-plans/${id}/complete`, { method: 'POST' });
+    if (!res.ok) throw new Error('Failed to complete action plan');
+    return res.json();
+  },
+
+  async deleteActionPlan(id: string): Promise<{ success: boolean }> {
+    const res = await fetch(`${API_BASE}/action-plans/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Failed to delete action plan');
+    return res.json();
+  },
+
+  async updateActionStep(stepId: string, updates: { status?: ActionStepStatus; notes?: string }): Promise<{ success: boolean; step: ActionStep }> {
+    const res = await fetch(`${API_BASE}/action-plans/steps/${stepId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates)
+    });
+    if (!res.ok) throw new Error('Failed to update action step');
+    return res.json();
+  },
+
+  // PROGRESS & RESULTS (Phase 6 Engine)
+  async getProgressLogs(params: Record<string, string> = {}): Promise<{ success: boolean; logs: ProgressLog[]; count: number }> {
+    const queryString = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE}/progress/logs?${queryString}`);
+    if (!res.ok) throw new Error('Failed to fetch progress logs');
+    return res.json();
+  },
+
+  async logProgressResult(data: {
+    actionPlanId?: string;
+    stepId?: string;
+    opportunityId?: string;
+    combinationId?: string;
+    resultType: ProgressResultType;
+    outcome?: 'positive' | 'neutral' | 'negative';
+    numericValue?: number;
+    notes: string;
+    evidenceLink?: string;
+    date?: string;
+  }): Promise<{ success: boolean; log: ProgressLog }> {
+    const res = await fetch(`${API_BASE}/progress/logs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to record progress log');
+    }
+    return res.json();
+  },
+
+  async deleteProgressLog(id: string): Promise<{ success: boolean }> {
+    const res = await fetch(`${API_BASE}/progress/logs/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Failed to delete progress log');
     return res.json();
   }
 };

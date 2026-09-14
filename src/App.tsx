@@ -238,11 +238,31 @@ export const App: React.FC = () => {
               <DiscoverScreen onScanClick={handleScanClick} isScanning={isScanning} />
             )}
 
-            {activeTab === 'opportunities' && <OpportunitiesScreen />}
+            {activeTab === 'opportunities' && (
+              <OpportunitiesScreen
+                onStartPlan={() => {
+                  setActiveTab('progress');
+                  loadProfile();
+                }}
+              />
+            )}
 
-            {activeTab === 'combine' && <CombineScreen tools={profileData?.tools || []} />}
+            {activeTab === 'combine' && (
+              <CombineScreen
+                tools={profileData?.tools || []}
+                onStartPlan={() => {
+                  setActiveTab('progress');
+                  loadProfile();
+                }}
+              />
+            )}
 
-            {activeTab === 'progress' && <ProgressScreen metrics={metrics} />}
+            {activeTab === 'progress' && (
+              <ProgressScreen
+                metrics={metrics}
+                onRefreshMetrics={loadProfile}
+              />
+            )}
           </>
         )}
       </main>
