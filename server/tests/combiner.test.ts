@@ -463,4 +463,230 @@ describe('Phase 5: "Combine My Tools" Engine Test Suite', () => {
     assert.deepEqual(run1.score_breakdown, run2.score_breakdown);
     assert.equal(run1.workflow_pattern, run2.workflow_pattern);
   });
+
+  // ==========================================================================
+  // Phase 5.1 Hardening Tests (Tests U through AJ)
+  // ==========================================================================
+
+  // Test U: Unknown capability remains UNKNOWN
+  it('Test U: ensures unknown capabilities remain UNKNOWN and do not fall back to coding or AI', () => {
+    const caps = normalizeCapabilities(['quantum_entanglement_matrix'], 'QuantumCore', 'Physics');
+    assert.deepEqual(caps, ['UNKNOWN'], 'Unrecognized capability must normalize to UNKNOWN');
+    assert.ok(!caps.includes('CODE_DEVELOPMENT'), 'Must not arbitrarily map to CODE_DEVELOPMENT');
+    assert.ok(!caps.includes('TEXT_GENERATION'), 'Must not arbitrarily map to TEXT_GENERATION');
+  });
+
+  // Test V: Open-source software does not imply free hosted API
+  it('Test V: open-source software does not imply free hosted API', () => {
+    const openSourceHostedApi: UnifiedTool = {
+      id: 'disc_os_api',
+      name: 'Cloud Hosted API for OSS LLM',
+      category: 'AI API',
+      capabilities: ['llm', 'text generation'],
+      accessType: 'Open Source',
+      costPerMonth: 0,
+      source: 'discovery',
+      openSource: true,
+      apiAvailable: true,
+      localAvailable: false,
+      pricingStatus: 'unclear'
+    };
+    const access = evaluateToolAccess(openSourceHostedApi);
+    assert.equal(access, 'unknown', 'Open-source repository does not grant free cloud API access');
+  });
+
+  // Test W: Open-source software does not imply free hosted API access in combinations
+  it('Test W: combinations requiring unverified hosted API access cannot claim ₹0 upfront cost', () => {
+    const openSourceHostedApi: UnifiedTool = {
+      id: 'disc_os_api_2',
+      name: 'Cloud Hosted API for OSS LLM',
+      category: 'AI API',
+      capabilities: ['llm', 'text generation'],
+      accessType: 'Open Source',
+      costPerMonth: 0,
+      source: 'discovery',
+      openSource: true,
+      apiAvailable: true,
+      localAvailable: false,
+      pricingStatus: 'unclear'
+    };
+    const zeroCostRes = checkCombinationZeroCost([profileToolCanva, openSourceHostedApi]);
+    assert.equal(zeroCostRes.isZeroCost, false, 'Combination with unverified hosted API cannot be ₹0');
+  });
+
+  // Test X: Paid discovered tool cannot become ₹0
+  it('Test X: paid discovered tool cannot become ₹0 or free_to_obtain', () => {
+    const paidDiscoveredTool: UnifiedTool = {
+      id: 'disc_paid_saas',
+      name: 'Commercial Vector SaaS',
+      category: 'Database',
+      capabilities: ['database storage', 'supabase'],
+      accessType: 'Paid',
+      costPerMonth: 40,
+      source: 'discovery',
+      pricingStatus: 'paid_only'
+    };
+    assert.equal(evaluateToolAccess(paidDiscoveredTool), 'requires_paid_access');
+    const costCheck = checkCombinationZeroCost([profileToolPython, paidDiscoveredTool]);
+    assert.equal(costCheck.isZeroCost, false);
+    assert.ok(costCheck.startupCost > 0);
+  });
+
+  // Test Y: Unknown-priced discovered tool cannot become ₹0
+  it('Test Y: discovered tool with unknown or unclear pricing cannot be claimed as ₹0', () => {
+    const unknownDiscoveredTool: UnifiedTool = {
+      id: 'disc_unk_tool',
+      name: 'Beta Cloud Scraper',
+      category: 'Scraper',
+      capabilities: ['data extraction', 'web scraping'],
+      accessType: 'Unknown',
+      costPerMonth: 0,
+      source: 'discovery',
+      pricingStatus: 'unclear'
+    };
+    assert.equal(evaluateToolAccess(unknownDiscoveredTool), 'unknown');
+    const unkCostCheck = checkCombinationZeroCost([profileToolPython, unknownDiscoveredTool]);
+    assert.equal(unkCostCheck.isZeroCost, false);
+  });
+
+  // Test Z: Unsupported monetization claims are not labelled as market evidence
+  it('Test Z: monetization claims are strictly framed as unvalidated hypotheses without standard market rate assertions', () => {
+    const combo = evaluateCombination([discoveryToolOllama, profileToolCanva], sampleSkills, sampleProfile);
+    assert.ok(combo !== null);
+    const basis = combo.monetization_hypothesis.basis.toLowerCase();
+    assert.ok(!basis.includes('standard freelance rate'), 'Must not claim standard freelance rate without empirical data');
+    assert.ok(!basis.includes('standard market rate'), 'Must not claim standard market rate');
+    assert.ok(!basis.includes('established rate'), 'Must not claim established rate');
+    assert.ok(basis.includes('hypothesis') || basis.includes('validation'));
+    assert.equal(combo.monetization_hypothesis.confidence, 'Low');
+  });
+
+  // Test AA: Tool with irrelevant category does not receive CODE_DEVELOPMENT by fallback
+  it('Test AA: tool with non-development category does not receive CODE_DEVELOPMENT by fallback', () => {
+    const accountingTool: UnifiedTool = {
+      id: 'tool_acc',
+      name: 'Tax Ledger',
+      category: 'Accounting',
+      capabilities: ['tax_table_entry'],
+      accessType: 'Free',
+      costPerMonth: 0,
+      source: 'profile'
+    };
+    const norm = normalizeCapabilities(accountingTool.capabilities, accountingTool.name, accountingTool.category);
+    assert.deepEqual(norm, ['UNKNOWN']);
+    assert.ok(!norm.includes('CODE_DEVELOPMENT'));
+  });
+
+  // Test AB: Every tool in a qualified combination contributes a meaningful role
+  it('Test AB: every tool in a qualified combination is mapped to a distinct pipeline stage without passenger tools', () => {
+    const combo = evaluateCombination(
+      [discoveryToolCrawl4AI, discoveryToolOllama, discoveryToolDiscord],
+      sampleSkills,
+      sampleProfile
+    );
+    assert.ok(combo !== null);
+    assert.equal(combo.capability_chain.length, combo.tool_ids.length);
+    const assignedIds = new Set(combo.capability_chain.map(s => s.toolId));
+    for (const tid of combo.tool_ids) {
+      assert.ok(assignedIds.has(tid), `Tool ${tid} must be assigned to an active stage`);
+    }
+  });
+
+  // Test AC: Discovery-derived combination must reference a relevant discovery
+  it('Test AC: discovery-derived combination preserves discovery IDs and origin', () => {
+    const combo = evaluateCombination([discoveryToolOllama, profileToolCanva], sampleSkills, sampleProfile);
+    assert.ok(combo !== null);
+    assert.equal(combo.origin, 'discovery_derived');
+    assert.ok(combo.discovery_ids && combo.discovery_ids.includes(discoveryToolOllama.id));
+  });
+
+  // Test AD: Profile hypothesis cannot receive arbitrary discovery IDs
+  it('Test AD: profile-only combination has empty discovery_ids and profile_hypothesis origin', () => {
+    const combo = evaluateCombination([profileToolPython, profileToolCanva], sampleSkills, sampleProfile);
+    if (combo) {
+      assert.equal(combo.origin, 'profile_hypothesis');
+      assert.deepEqual(combo.discovery_ids, []);
+    }
+  });
+
+  // Test AE: Same tool set + same workflow produces one canonical combination
+  it('Test AE: canonical deduplication guarantees one output for reversed tool pairs', () => {
+    const combo1 = evaluateCombination([discoveryToolOllama, profileToolCanva], sampleSkills, sampleProfile);
+    const combo2 = evaluateCombination([profileToolCanva, discoveryToolOllama], sampleSkills, sampleProfile);
+    assert.ok(combo1 !== null && combo2 !== null);
+    assert.equal(combo1.id, combo2.id);
+    assert.equal(combo1.title, combo2.title);
+  });
+
+  // Test AF: 2-tool solution is preferred over unnecessary 3-tool duplicate
+  it('Test AF: rejects appending an unnecessary 3rd tool to a 2-stage workflow pattern', () => {
+    // GENERATE_DESIGN is a 2-stage pattern. Appending Discord webhook adds no legitimate role.
+    const invalid3ToolCombo = evaluateCombination(
+      [discoveryToolOllama, profileToolCanva, discoveryToolDiscord],
+      sampleSkills,
+      sampleProfile
+    );
+    assert.equal(invalid3ToolCombo, null, 'Combination with unneeded 3rd tool must be rejected');
+  });
+
+  // Test AG: No strong candidate returns an empty list
+  it('Test AG: returns null when candidate tools do not meet quality threshold', () => {
+    const lowValueA: UnifiedTool = {
+      id: 'tool_lv_a',
+      name: 'Obsolete Widget',
+      category: 'Legacy',
+      capabilities: ['legacy_io'],
+      accessType: 'Paid',
+      costPerMonth: 250,
+      source: 'custom'
+    };
+    const lowValueB: UnifiedTool = {
+      id: 'tool_lv_b',
+      name: 'Unused Protocol',
+      category: 'Legacy',
+      capabilities: ['legacy_io'],
+      accessType: 'Paid',
+      costPerMonth: 250,
+      source: 'custom'
+    };
+    const result = evaluateCombination([lowValueA, lowValueB], [], null);
+    assert.equal(result, null, 'Sub-threshold tools must return null');
+  });
+
+  // Test AH: Changing profile constraints changes relevant rankings
+  it('Test AH: changing profile constraints (disliked work) actively penalizes relevant combination scores', () => {
+    const profileDislikesVideo: UserProfile = {
+      ...sampleProfile,
+      disliked_work: 'Video editing and trimming long reels'
+    };
+    const comboNormal = evaluateCombination([discoveryToolWhisper, profileToolCapCut], sampleSkills, sampleProfile);
+    const comboDisliked = evaluateCombination([discoveryToolWhisper, profileToolCapCut], sampleSkills, profileDislikesVideo);
+
+    assert.ok(comboNormal !== null && comboDisliked !== null);
+    assert.ok(
+      comboDisliked.score < comboNormal.score,
+      `Score with disliked work (${comboDisliked.score}) must be lower than normal score (${comboNormal.score})`
+    );
+    assert.match(
+      comboDisliked.score_breakdown.reasoning?.outcomeUsefulness || '',
+      /disliked work/i,
+      'Reasoning must explicitly state penalty for disliked work'
+    );
+  });
+
+  // Test AI: Existing Phase 4.1 opportunity behavior remains intact
+  it('Test AI: Phase 4.1 scoring and access semantics are preserved in Phase 5.1', () => {
+    // Verify Phase 4.1 access types
+    assert.equal(evaluateToolAccess(profileToolCanva), 'already_have');
+    assert.equal(evaluateToolAccess(paidToolMidjourney), 'requires_paid_access');
+  });
+
+  // Test AJ: No combination can exceed score 100
+  it('Test AJ: score is strictly clamped and can never exceed 100 points', () => {
+    const combo = evaluateCombination([discoveryToolOllama, profileToolCanva], sampleSkills, sampleProfile);
+    assert.ok(combo !== null);
+    assert.ok(combo.score <= 100, `Score (${combo.score}) must never exceed 100`);
+    assert.ok(combo.score >= 0, `Score (${combo.score}) must be >= 0`);
+  });
 });
+

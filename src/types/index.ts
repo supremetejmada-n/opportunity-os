@@ -279,6 +279,9 @@ export interface ToolCombination {
   summary: string;
   tool_ids: string[];
   tool_names: string[];
+  discovery_ids?: string[];
+  origin?: OpportunityOrigin;
+  market_evidence?: string;
   capability_chain: CapabilityChainStage[];
   workflow_pattern: WorkflowPattern;
   workflow_steps: string[];

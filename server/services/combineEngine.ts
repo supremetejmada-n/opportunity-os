@@ -10,7 +10,8 @@ import {
   UserTool,
   UserSkill,
   UserProfile,
-  Discovery
+  Discovery,
+  OpportunityOrigin
 } from '../../src/types/index.js';
 
 // ============================================================================
@@ -30,6 +31,8 @@ export interface UnifiedTool {
   openSource?: boolean;
   freeTier?: boolean;
   pricingStatus?: string;
+  apiAvailable?: boolean;
+  localAvailable?: boolean;
 }
 
 export interface CombinationOptions {
@@ -55,22 +58,68 @@ export type NormalizedCapability =
   | 'CODE_DEVELOPMENT'
   | 'DATABASE_STORAGE'
   | 'MESSAGING_NOTIFICATION'
-  | 'ANALYTICS_REPORTING';
+  | 'ANALYTICS_REPORTING'
+  | 'UNKNOWN';
 
-const CAPABILITY_KEYWORDS: Record<NormalizedCapability, string[]> = {
-  TEXT_GENERATION: ['text', 'llm', 'nlp', 'writing', 'gpt', 'summariz', 'copy', 'content generation', 'chat', 'claude', 'deepseek', 'prompt'],
-  IMAGE_GENERATION: ['image generation', 'diffusion', 'flux', 'sdxl', 'text-to-image', 'midjourney', 'stable diffusion', 'comfyui', 'dall-e'],
-  GRAPHIC_DESIGN: ['canva', 'figma', 'design', 'poster', 'banner', 'typography', 'layout', 'vector', 'illustration', 'photoshop', 'branding'],
-  VIDEO_EDITING: ['capcut', 'davinci', 'premiere', 'video edit', 'reels', 'shorts', 'tiktok', 'captions', 'subtitles', 'render', 'ffmpeg'],
-  AUDIO_PROCESSING: ['whisper', 'audio', 'transcription', 'speech', 'voice', 'tts', 'stt', 'sound', 'podcast', 'elevenlabs'],
-  DATA_EXTRACTION: ['scraper', 'scraping', 'crawl', 'extraction', 'crawl4ai', 'beautifulsoup', 'puppeteer', 'selenium', 'ocr', 'tesseract'],
-  DOCUMENT_PROCESSING: ['pdf', 'docling', 'document', 'unstructured', 'parser', 'extract text', 'docx', 'csv', 'spreadsheet'],
-  WORKFLOW_AUTOMATION: ['n8n', 'zapier', 'automation', 'webhook', 'cron', 'trigger', 'pipeline', 'workflow', 'orchestrat', 'make.com'],
-  LOCAL_INFERENCE: ['ollama', 'llama.cpp', 'vllm', 'self-host', 'local ai', 'offline', 'gguf', 'private ai', 'quantiz'],
-  CODE_DEVELOPMENT: ['python', 'typescript', 'javascript', 'vs code', 'code', 'api', 'backend', 'frontend', 'developer', 'git', 'terminal'],
-  DATABASE_STORAGE: ['sqlite', 'database', 'supabase', 'postgres', 'airtable', 'notion', 'sql', 'storage', 'dataset'],
-  MESSAGING_NOTIFICATION: ['discord', 'slack', 'telegram', 'email', 'mailer', 'sendgrid', 'smtp', 'whatsapp', 'notification', 'alert'],
-  ANALYTICS_REPORTING: ['analytics', 'dashboard', 'report', 'chart', 'metrics', 'bi', 'insights', 'tracking']
+const CAPABILITY_KEYWORDS: Record<Exclude<NormalizedCapability, 'UNKNOWN'>, string[]> = {
+  TEXT_GENERATION: [
+    'text generation', 'text-generation', 'text_generation', 'text', 'llm', 'nlp',
+    'writing', 'gpt', 'summariz', 'copywriting', 'copy', 'content generation',
+    'chat', 'claude', 'deepseek', 'prompt'
+  ],
+  IMAGE_GENERATION: [
+    'image generation', 'image-generation', 'image_generation', 'diffusion',
+    'flux model', 'flux.1', 'flux-schnell', 'flux diffusion', 'sdxl', 'text-to-image', 'midjourney', 'stable diffusion', 'comfyui', 'dall-e'
+  ],
+  GRAPHIC_DESIGN: [
+    'graphic design', 'graphic-design', 'graphic_design', 'design', 'canva', 'figma',
+    'poster', 'banner', 'typography', 'layout', 'vector', 'illustration', 'photoshop', 'branding'
+  ],
+  VIDEO_EDITING: [
+    'video editing', 'video-editing', 'video_editing', 'capcut', 'davinci', 'premiere',
+    'video edit', 'reels', 'shorts', 'tiktok', 'captions', 'subtitles', 'render', 'ffmpeg'
+  ],
+  AUDIO_PROCESSING: [
+    'audio processing', 'audio-processing', 'audio_processing', 'speech to text',
+    'speech_to_text', 'speech-to-text', 'transcription', 'whisper', 'audio',
+    'speech', 'voice', 'tts', 'stt', 'sound', 'podcast', 'elevenlabs'
+  ],
+  DATA_EXTRACTION: [
+    'data extraction', 'data-extraction', 'data_extraction', 'web scraping',
+    'web-scraping', 'web_scraping', 'scraper', 'scraping', 'crawl', 'extraction',
+    'crawl4ai', 'beautifulsoup', 'puppeteer', 'selenium', 'ocr', 'tesseract'
+  ],
+  DOCUMENT_PROCESSING: [
+    'document processing', 'document-processing', 'document_processing', 'pdf parsing',
+    'pdf-parsing', 'pdf', 'docling', 'document', 'unstructured', 'parser',
+    'extract text', 'docx', 'csv', 'spreadsheet'
+  ],
+  WORKFLOW_AUTOMATION: [
+    'workflow automation', 'workflow-automation', 'workflow_automation', 'automation',
+    'n8n', 'zapier', 'webhook', 'cron', 'trigger', 'pipeline', 'workflow', 'orchestrat', 'make.com'
+  ],
+  LOCAL_INFERENCE: [
+    'local inference', 'local-inference', 'local_inference', 'local ai', 'local-ai',
+    'ollama', 'llama.cpp', 'vllm', 'self-host', 'offline', 'gguf', 'private ai', 'quantiz'
+  ],
+  CODE_DEVELOPMENT: [
+    'code development', 'code-development', 'code_development', 'coding', 'scripting',
+    'python', 'typescript', 'javascript', 'vs code', 'code', 'api development',
+    'backend', 'frontend', 'developer', 'github', 'gitlab', 'git repo', 'terminal'
+  ],
+  DATABASE_STORAGE: [
+    'database storage', 'database-storage', 'database_storage', 'database',
+    'sqlite', 'supabase', 'postgres', 'airtable', 'notion', 'sql', 'storage', 'dataset'
+  ],
+  MESSAGING_NOTIFICATION: [
+    'messaging notification', 'messaging-notification', 'messaging_notification',
+    'notifications', 'messaging', 'discord', 'slack', 'telegram', 'email', 'mailer',
+    'sendgrid', 'smtp', 'whatsapp', 'notification', 'alert'
+  ],
+  ANALYTICS_REPORTING: [
+    'analytics reporting', 'analytics-reporting', 'analytics_reporting',
+    'analytics', 'dashboard', 'report', 'chart', 'metrics', 'power bi', 'business intelligence', 'bi dashboard', 'insights', 'tracking'
+  ]
 };
 
 export function normalizeCapabilities(capabilities: string[], toolName = '', category = ''): NormalizedCapability[] {
@@ -86,75 +135,100 @@ export function normalizeCapabilities(capabilities: string[], toolName = '', cat
     }
   }
 
-  // Sensible fallbacks based on category/name
+  // CRITICAL BUG #1 FIX: Unknown capabilities must remain UNKNOWN.
+  // Never arbitrarily fall back to CODE_DEVELOPMENT, TEXT_GENERATION, or any other capability!
   if (matched.size === 0) {
-    if (category.toLowerCase().includes('design')) matched.add('GRAPHIC_DESIGN');
-    else if (category.toLowerCase().includes('ai')) matched.add('TEXT_GENERATION');
-    else if (category.toLowerCase().includes('video')) matched.add('VIDEO_EDITING');
-    else if (category.toLowerCase().includes('auto')) matched.add('WORKFLOW_AUTOMATION');
-    else matched.add('CODE_DEVELOPMENT');
+    matched.add('UNKNOWN');
   }
 
   return Array.from(matched);
 }
 
 // ============================================================================
-// Tool Access & ₹0 Feasibility Evaluator
+// Tool Access & Cost Evaluator (CRITICAL BUG #2 FIX)
+// Open-source software != Free hosted cloud API
 // ============================================================================
 
 export function evaluateToolAccess(tool: UnifiedTool): ToolAccessStatus {
+  // If in user's profile, it is already owned
   if (tool.source === 'profile') {
     return 'already_have';
   }
 
   if (tool.source === 'discovery') {
     const pStatus = (tool.pricingStatus || '').toLowerCase();
-    if (
-      pStatus === 'genuinely_free' ||
-      pStatus === 'open_source_self_hostable' ||
-      pStatus === 'open_weight' ||
-      pStatus === 'free_tier' ||
-      tool.openSource === true ||
-      tool.freeTier === true
-    ) {
-      return 'free_to_obtain';
-    }
-    if (pStatus === 'paid_only' || tool.costPerMonth > 0) {
+    const isPaid = pStatus === 'paid_only' || tool.costPerMonth > 0;
+    if (isPaid) {
       return 'requires_paid_access';
     }
+
+    const isExplicitlyFree =
+      pStatus === 'genuinely_free' ||
+      pStatus === 'free_tier' ||
+      tool.freeTier === true;
+
+    if (isExplicitlyFree) {
+      return 'free_to_obtain';
+    }
+
+    const isOpenSource =
+      pStatus === 'open_source_self_hostable' ||
+      pStatus === 'open_weight' ||
+      tool.openSource === true;
+
+    if (isOpenSource) {
+      // IMPORTANT: Open-source software is free to obtain for local / self-hosted execution.
+      // BUT open source code does NOT imply free hosted API!
+      const isCloudHostedAPI =
+        (tool.apiAvailable === true && tool.localAvailable !== true) ||
+        (tool.name.toLowerCase().includes('api') && !tool.name.toLowerCase().includes('local'));
+
+      if (isCloudHostedAPI && !isExplicitlyFree) {
+        // Hosted API with no verified free tier must NOT be claimed as free_to_obtain
+        return 'unknown';
+      }
+      return 'free_to_obtain';
+    }
+
     return 'unknown';
   }
 
   // Custom tool
-  if (tool.costPerMonth === 0 || ['free', 'open source', 'free tier'].includes((tool.accessType || '').toLowerCase())) {
-    return 'free_to_obtain';
-  }
   if (tool.costPerMonth > 0 || (tool.accessType || '').toLowerCase() === 'paid') {
     return 'requires_paid_access';
+  }
+  if (tool.costPerMonth === 0 && ['free', 'open source', 'free tier'].includes((tool.accessType || '').toLowerCase())) {
+    return 'free_to_obtain';
   }
   return 'unknown';
 }
 
-export function checkCombinationZeroCost(tools: UnifiedTool[]): { isZeroCost: boolean; startupCost: number } {
+export function checkCombinationZeroCost(tools: UnifiedTool[]): { isZeroCost: boolean; startupCost: number; hasUnknownCost: boolean } {
   let isZeroCost = true;
   let startupCost = 0;
+  let hasUnknownCost = false;
 
   for (const t of tools) {
     const access = evaluateToolAccess(t);
     if (access === 'already_have') {
-      // User already owns it: marginal upfront cost is 0
+      // Owned in profile: marginal upfront cost is 0
       continue;
     }
     if (access === 'free_to_obtain') {
-      // Verified free / open-source tool: 0 upfront cost
+      // Verified free / open-source tool for local/free usage: 0 upfront cost
       continue;
     }
     // Any paid or unknown tool breaks true ₹0 upfront feasibility
     isZeroCost = false;
-    startupCost += t.costPerMonth > 0 ? t.costPerMonth : 20; // conservative nominal fee if paid/unknown
+    if (access === 'requires_paid_access') {
+      startupCost += t.costPerMonth > 0 ? t.costPerMonth : 20;
+    } else {
+      hasUnknownCost = true;
+      startupCost += 0;
+    }
   }
 
-  return { isZeroCost, startupCost };
+  return { isZeroCost, startupCost, hasUnknownCost };
 }
 
 // ============================================================================
@@ -166,7 +240,7 @@ interface PatternRule {
   name: string;
   stages: {
     role: string;
-    requiredCaps: NormalizedCapability[];
+    requiredCaps: Exclude<NormalizedCapability, 'UNKNOWN'>[];
     description: string;
   }[];
   synthesizeOutcome: (tools: UnifiedTool[], skills: UserSkill[], profile: UserProfile | null) => {
@@ -190,12 +264,12 @@ const WORKFLOW_PATTERNS: PatternRule[] = [
       {
         role: 'Content Generation',
         requiredCaps: ['TEXT_GENERATION', 'IMAGE_GENERATION', 'LOCAL_INFERENCE'],
-        description: 'Generates raw visual ideas, high-converting ad copy, or graphic prompts.'
+        description: 'Generates structured marketing copy variations, hooks, or visual asset prompts.'
       },
       {
         role: 'Visual Design & Layout',
         requiredCaps: ['GRAPHIC_DESIGN'],
-        description: 'Composes text and imagery into cohesive, branded social media templates or flyers.'
+        description: 'Composes copy and imagery into cohesive branded promotional templates and banners.'
       }
     ],
     synthesizeOutcome: (tools) => {
@@ -203,10 +277,10 @@ const WORKFLOW_PATTERNS: PatternRule[] = [
       const designTool = tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).includes('GRAPHIC_DESIGN')) || tools[1];
       return {
         title: `Branded Marketing Asset Suite using ${genTool.name} & ${designTool.name}`,
-        summary: `Combine generative AI content creation in ${genTool.name} with structured visual layout in ${designTool.name} to produce client-ready promotional packages at zero software cost.`,
-        concreteOutcome: 'A complete 10-piece localized social media flyer and banner package tailored to service businesses with editable source layouts.',
-        customerType: 'Local Small Businesses & Service Professionals',
-        targetCustomer: 'Gym owners, real estate agents, independent cafes, and boutique clinics needing regular promo graphics.',
+        summary: `Combine generative creation in ${genTool.name} with layout templates in ${designTool.name} to produce client-ready promotional packages.`,
+        concreteOutcome: 'A 10-piece localized social media flyer and banner package tailored to service businesses with editable layouts.',
+        customerType: 'Potential target customer: Local Service Businesses & Retailers',
+        targetCustomer: 'Potential target customer: Independent gym owners, real estate agents, and boutique cafes needing weekly promotional graphics.',
         timeToDemo: '4-6 hours',
         difficulty: 'Easy',
         workflowSteps: [
@@ -216,10 +290,10 @@ const WORKFLOW_PATTERNS: PatternRule[] = [
         ],
         monetization: {
           range: '₹4,000 - ₹12,000 / package ($50 - $150)',
-          pricingModel: 'Fixed Package & Monthly Content Retainer',
-          targetCustomer: 'Local Retailers & Service Providers',
-          basis: 'Standard freelance rate for 10-15 branded social graphics delivered weekly.',
-          confidence: 'High'
+          pricingModel: 'Hypothetical Fixed Package or Monthly Retainer',
+          targetCustomer: 'Potential target customer: Local Retailers & Service Providers',
+          basis: 'Initial service-pricing hypothesis requiring validation. Not verified market rate.',
+          confidence: 'Low'
         }
       };
     }
@@ -231,12 +305,12 @@ const WORKFLOW_PATTERNS: PatternRule[] = [
       {
         role: 'Script / Audio Extraction',
         requiredCaps: ['AUDIO_PROCESSING', 'TEXT_GENERATION', 'LOCAL_INFERENCE'],
-        description: 'Transcribes source media or generates hooks, voiceovers, and speech tokens.'
+        description: 'Transcribes recordings or extracts punchy spoken segments and transcript timestamps.'
       },
       {
         role: 'Video Assembly & Captioning',
         requiredCaps: ['VIDEO_EDITING'],
-        description: 'Splices highlights, trims silences, embeds styled dynamic captions, and formats for vertical screens.'
+        description: 'Splices highlights, trims silences, embeds styled kinetic captions, and formats for 9:16 screens.'
       }
     ],
     synthesizeOutcome: (tools) => {
@@ -244,10 +318,10 @@ const WORKFLOW_PATTERNS: PatternRule[] = [
       const videoTool = tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).includes('VIDEO_EDITING')) || tools[1];
       return {
         title: `Vertical Video Repurposing Pipeline with ${audioTool.name} & ${videoTool.name}`,
-        summary: `Ingest long-form recordings, transcribe speech and extract punchy segments with ${audioTool.name}, then edit into vertical short-form reels in ${videoTool.name}.`,
-        concreteOutcome: '5 viral-ready 45-second vertical shorts with animated subtitles, sound effects, and color grading from a single 30-minute podcast or webinar.',
-        customerType: 'Content Creators & Podcasters',
-        targetCustomer: 'Solo creators, educators, tech podcast hosts, and business coaches seeking YouTube Shorts / Reels reach.',
+        summary: `Ingest long-form media, extract punchy segments with ${audioTool.name}, then edit into vertical short-form reels in ${videoTool.name}.`,
+        concreteOutcome: '5 short-form 45-second vertical reels with animated subtitles and sound design derived from a 30-minute source recording.',
+        customerType: 'Potential target customer: Creators & Podcasters',
+        targetCustomer: 'Potential target customer: Solo educators, tech podcast hosts, and business coaches seeking YouTube Shorts / Reels reach.',
         timeToDemo: '6-8 hours',
         difficulty: 'Medium',
         workflowSteps: [
@@ -257,10 +331,10 @@ const WORKFLOW_PATTERNS: PatternRule[] = [
         ],
         monetization: {
           range: '₹8,000 - ₹25,000 / month ($100 - $300)',
-          pricingModel: 'Monthly Repurposing Retainer',
-          targetCustomer: 'Podcast Hosts & Video Creators',
-          basis: 'Standard market rate for converting 2 monthly podcast episodes into 10 shorts.',
-          confidence: 'High'
+          pricingModel: 'Hypothetical Monthly Repurposing Retainer',
+          targetCustomer: 'Potential target customer: Podcast Hosts & Video Creators',
+          basis: 'Initial service-pricing hypothesis requiring validation. Not verified market rate.',
+          confidence: 'Low'
         }
       };
     }
@@ -272,17 +346,17 @@ const WORKFLOW_PATTERNS: PatternRule[] = [
       {
         role: 'Data Scraping / Capture',
         requiredCaps: ['DATA_EXTRACTION', 'DOCUMENT_PROCESSING'],
-        description: 'Gathers raw market data, job postings, or website directory entries.'
+        description: 'Extracts raw structured or unstructured entries from target directories or documents.'
       },
       {
         role: 'AI Analysis & Extraction',
         requiredCaps: ['TEXT_GENERATION', 'LOCAL_INFERENCE'],
-        description: 'Cleans, structures, scores, and extracts key contact or buying signals.'
+        description: 'Cleans, structures, scores, and extracts key commercial signals.'
       },
       {
         role: 'Notification / Delivery',
         requiredCaps: ['MESSAGING_NOTIFICATION', 'WORKFLOW_AUTOMATION', 'DATABASE_STORAGE', 'CODE_DEVELOPMENT'],
-        description: 'Transmits categorized alerts to Slack, Discord, Email, or spreadsheet.'
+        description: 'Transmits categorized alerts to Slack, Discord, Email, or tabular storage.'
       }
     ],
     synthesizeOutcome: (tools) => {
@@ -291,10 +365,10 @@ const WORKFLOW_PATTERNS: PatternRule[] = [
       const notifyTool = tools.find(t => t.id !== capTool.id && t.id !== procTool.id) || tools[tools.length - 1];
       return {
         title: `Market Intelligence Scraper & Triage using ${capTool.name}, ${procTool.name} & ${notifyTool.name}`,
-        summary: `Scrape publicly available business data via ${capTool.name}, extract structured commercial opportunities with ${procTool.name}, and route instant qualified alerts through ${notifyTool.name}.`,
-        concreteOutcome: 'A real-time spreadsheet and notification feed of newly published regional tenders or job hiring surges scored by budget relevance.',
-        customerType: 'B2B Sales Teams & Recruitment Agencies',
-        targetCustomer: 'Headhunters, commercial contractors, and enterprise software reps looking for high-intent prospect triggers.',
+        summary: `Capture public market listings via ${capTool.name}, extract structured commercial signals with ${procTool.name}, and route alerts through ${notifyTool.name}.`,
+        concreteOutcome: 'A real-time spreadsheet and notification feed of newly published regional tenders or job listings scored by budget relevance.',
+        customerType: 'Potential target customer: B2B Sales Teams & Recruitment Agencies',
+        targetCustomer: 'Potential target customer: Commercial contractors and specialized recruitment agencies looking for verified lead triggers.',
         timeToDemo: '1-2 days',
         difficulty: 'Medium',
         workflowSteps: [
@@ -304,10 +378,10 @@ const WORKFLOW_PATTERNS: PatternRule[] = [
         ],
         monetization: {
           range: '₹15,000 - ₹35,000 / month ($200 - $450)',
-          pricingModel: 'Monthly Curated Lead Feed Subscription',
-          targetCustomer: 'Niche B2B Agencies & Consultants',
-          basis: 'Value of 25-50 vetted, high-intent outbound leads delivered weekly.',
-          confidence: 'Medium'
+          pricingModel: 'Hypothetical Monthly Curated Feed Subscription',
+          targetCustomer: 'Potential target customer: Niche B2B Agencies & Consultants',
+          basis: 'Initial service-pricing hypothesis requiring validation. Not verified market rate.',
+          confidence: 'Low'
         }
       };
     }
@@ -319,17 +393,17 @@ const WORKFLOW_PATTERNS: PatternRule[] = [
       {
         role: 'Event Trigger & Orchestration',
         requiredCaps: ['WORKFLOW_AUTOMATION', 'CODE_DEVELOPMENT'],
-        description: 'Captures incoming webhooks, form submissions, or scheduled cron triggers.'
+        description: 'Captures incoming webhooks, form submissions, or scheduled triggers.'
       },
       {
         role: 'AI Reasoning & Classification',
         requiredCaps: ['TEXT_GENERATION', 'LOCAL_INFERENCE'],
-        description: 'Analyzes intent, drafts empathetic customer replies, or categorizes urgency.'
+        description: 'Analyzes query intent, drafts contextual replies, or categorizes urgency.'
       },
       {
         role: 'Action Execution & Logging',
         requiredCaps: ['DATABASE_STORAGE', 'MESSAGING_NOTIFICATION'],
-        description: 'Updates CRM database, sends notifications, or escalates critical issues.'
+        description: 'Updates records in database or dispatches automated notification.'
       }
     ],
     synthesizeOutcome: (tools) => {
@@ -338,10 +412,10 @@ const WORKFLOW_PATTERNS: PatternRule[] = [
       const dbTool = tools.find(t => t.id !== autoTool.id && t.id !== aiTool.id) || tools[tools.length - 1];
       return {
         title: `Customer Triage Automation with ${autoTool.name}, ${aiTool.name} & ${dbTool.name}`,
-        summary: `Connect ${autoTool.name} to receive inbound queries, process semantic intent with ${aiTool.name}, and update client records in ${dbTool.name} without manual intervention.`,
-        concreteOutcome: 'A 24/7 automated support ticket classifier that assigns urgency scores, drafts response context, and writes audit trails into the database.',
-        customerType: 'E-Commerce Brands & Digital Agencies',
-        targetCustomer: 'Online merchants handling 50+ inquiries a day who want faster first-response times without hiring night staff.',
+        summary: `Connect ${autoTool.name} to receive inbound queries, process semantic intent with ${aiTool.name}, and update client records in ${dbTool.name}.`,
+        concreteOutcome: 'An automated customer support ticket classifier that assigns urgency scores, drafts response context, and writes audit trails.',
+        customerType: 'Potential target customer: E-Commerce Brands & Digital Agencies',
+        targetCustomer: 'Potential target customer: Online merchants handling 30+ daily inquiries seeking faster initial triage.',
         timeToDemo: '1 day',
         difficulty: 'Medium',
         workflowSteps: [
@@ -350,11 +424,11 @@ const WORKFLOW_PATTERNS: PatternRule[] = [
           `Persist status into ${dbTool.name} and trigger auto-responder dispatch.`
         ],
         monetization: {
-          range: '₹20,000 - ₹50,000 setup + ₹5,000/mo ($300 setup + $70/mo)',
-          pricingModel: 'One-Time Setup + Maintenance Retainer',
-          targetCustomer: 'Mid-Sized Shopify & WooCommerce Merchants',
-          basis: 'Standard agency automation implementation cost for small e-commerce stores.',
-          confidence: 'High'
+          range: '₹20,000 - ₹50,000 setup + ₹5,000/mo ($250 setup + $60/mo)',
+          pricingModel: 'Hypothetical One-Time Setup + Maintenance Retainer',
+          targetCustomer: 'Potential target customer: Mid-Sized Shopify & WooCommerce Merchants',
+          basis: 'Initial service-pricing hypothesis requiring validation. Not verified market rate.',
+          confidence: 'Low'
         }
       };
     }
@@ -364,25 +438,25 @@ const WORKFLOW_PATTERNS: PatternRule[] = [
     name: 'Private Document Intelligence & Audit',
     stages: [
       {
-        role: 'Local Offline Inference',
-        requiredCaps: ['LOCAL_INFERENCE', 'TEXT_GENERATION'],
-        description: 'Runs private on-device LLM with zero cloud data transmission.'
-      },
-      {
         role: 'Document Ingestion & Parsing',
         requiredCaps: ['DOCUMENT_PROCESSING', 'DATA_EXTRACTION', 'CODE_DEVELOPMENT'],
-        description: 'Parses complex multi-page PDF documents, tables, and clauses.'
+        description: 'Parses multi-page PDF documents, tables, and clauses.'
+      },
+      {
+        role: 'Local Offline Inference',
+        requiredCaps: ['LOCAL_INFERENCE', 'TEXT_GENERATION'],
+        description: 'Runs private on-device LLM with zero external cloud data transmission.'
       }
     ],
     synthesizeOutcome: (tools) => {
-      const localTool = tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).some(c => ['LOCAL_INFERENCE', 'TEXT_GENERATION'].includes(c))) || tools[0];
-      const docTool = tools.find(t => t.id !== localTool.id) || tools[1];
+      const docTool = tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).some(c => ['DOCUMENT_PROCESSING', 'DATA_EXTRACTION', 'CODE_DEVELOPMENT'].includes(c))) || tools[0];
+      const localTool = tools.find(t => t.id !== docTool.id) || tools[1];
       return {
-        title: `Zero-Cloud Confidential Document Auditor (${localTool.name} + ${docTool.name})`,
-        summary: `Process private agreements and financial PDFs locally using ${docTool.name} and ${localTool.name}, guaranteeing zero sensitive client data ever leaves the local machine.`,
+        title: `Zero-Cloud Confidential Document Auditor (${docTool.name} + ${localTool.name})`,
+        summary: `Process private agreements and financial PDFs locally using ${docTool.name} and ${localTool.name}, guaranteeing zero sensitive client data leaves the machine.`,
         concreteOutcome: 'An offline executive summary report comparing contract clauses against standard risk templates with highlighted liability flags.',
-        customerType: 'Legal Practices, Accountants & Clinics',
-        targetCustomer: 'Law firms, financial advisers, and medical professionals restricted by strict client confidentiality regulations.',
+        customerType: 'Potential target customer: Legal Practices, Accountants & Clinics',
+        targetCustomer: 'Potential target customer: Law firms, financial advisers, and medical professionals restricted by client confidentiality regulations.',
         timeToDemo: '1-2 days',
         difficulty: 'Medium',
         workflowSteps: [
@@ -392,10 +466,10 @@ const WORKFLOW_PATTERNS: PatternRule[] = [
         ],
         monetization: {
           range: '₹12,000 - ₹30,000 / audit project ($150 - $400)',
-          pricingModel: 'Per-Audit Fee or Monthly Compliance Package',
-          targetCustomer: 'Boutique Law & Accounting Practices',
-          basis: 'High premium charged for guaranteed confidential local processing.',
-          confidence: 'Medium'
+          pricingModel: 'Hypothetical Per-Audit Fee or Monthly Compliance Package',
+          targetCustomer: 'Potential target customer: Boutique Law & Accounting Practices',
+          basis: 'Initial service-pricing hypothesis requiring validation. Not verified market rate.',
+          confidence: 'Low'
         }
       };
     }
@@ -406,30 +480,30 @@ const WORKFLOW_PATTERNS: PatternRule[] = [
     stages: [
       {
         role: 'Information Ingestion',
-        requiredCaps: ['DATA_EXTRACTION', 'WORKFLOW_AUTOMATION'],
+        requiredCaps: ['DATA_EXTRACTION', 'DOCUMENT_PROCESSING'],
         description: 'Gathers niche industry developments, releases, and announcements.'
       },
       {
         role: 'Editorial Synthesis',
         requiredCaps: ['TEXT_GENERATION', 'LOCAL_INFERENCE'],
-        description: 'Distills complex technical updates into 3-bullet actionable takeaways.'
+        description: 'Distills complex technical updates into concise actionable takeaways.'
       },
       {
         role: 'Visual Presentation',
         requiredCaps: ['GRAPHIC_DESIGN', 'DOCUMENT_PROCESSING'],
-        description: 'Formats insights into sleek, branded PDF or newsletter graphics.'
+        description: 'Formats insights into branded PDF or newsletter graphics.'
       }
     ],
     synthesizeOutcome: (tools) => {
-      const extTool = tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).some(c => ['DATA_EXTRACTION', 'WORKFLOW_AUTOMATION'].includes(c))) || tools[0];
+      const extTool = tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).some(c => ['DATA_EXTRACTION', 'DOCUMENT_PROCESSING'].includes(c))) || tools[0];
       const synthTool = tools.find(t => normalizeCapabilities(t.capabilities, t.name, t.category).some(c => ['TEXT_GENERATION', 'LOCAL_INFERENCE'].includes(c))) || tools[1];
       const pubTool = tools.find(t => t.id !== extTool.id && t.id !== synthTool.id) || tools[tools.length - 1];
       return {
         title: `Industry Intelligence Briefing via ${extTool.name}, ${synthTool.name} & ${pubTool.name}`,
-        summary: `Monitor domain news using ${extTool.name}, summarize executive briefings with ${synthTool.name}, and publish branded intelligence decks through ${pubTool.name}.`,
+        summary: `Monitor domain updates using ${extTool.name}, summarize executive briefings with ${synthTool.name}, and publish formatted decks through ${pubTool.name}.`,
         concreteOutcome: 'A weekly 4-page branded PDF executive brief summarizing regulatory and AI shifts in a specific niche industry.',
-        customerType: 'Corporate Executives & Consulting Firms',
-        targetCustomer: 'Managing partners, startup founders, and industry analysts requiring quick trend synthesis without reading 50 articles.',
+        customerType: 'Potential target customer: Corporate Executives & Consulting Firms',
+        targetCustomer: 'Potential target customer: Managing partners, startup founders, and industry analysts requiring quick trend synthesis.',
         timeToDemo: '1-2 days',
         difficulty: 'Medium',
         workflowSteps: [
@@ -439,10 +513,10 @@ const WORKFLOW_PATTERNS: PatternRule[] = [
         ],
         monetization: {
           range: '₹15,000 - ₹40,000 / month ($200 - $500)',
-          pricingModel: 'Paid Sponsor / Corporate Subscription',
-          targetCustomer: 'Industry Executives & Venture Analysts',
-          basis: 'Established rate for specialized curated B2B intelligence newsletters.',
-          confidence: 'Medium'
+          pricingModel: 'Hypothetical Paid Sponsor or Corporate Subscription',
+          targetCustomer: 'Potential target customer: Industry Executives & Analysts',
+          basis: 'Initial service-pricing hypothesis requiring validation. Not verified market rate.',
+          confidence: 'Low'
         }
       };
     }
@@ -473,10 +547,10 @@ const WORKFLOW_PATTERNS: PatternRule[] = [
       const alertTool = tools.find(t => t.id !== monTool.id && t.id !== anaTool.id) || tools[tools.length - 1];
       return {
         title: `Real-Time Market Monitor with ${monTool.name}, ${anaTool.name} & ${alertTool.name}`,
-        summary: `Track competitive price swings or inventory signals via ${monTool.name}, filter false positives using ${anaTool.name}, and notify stakeholders instantly on ${alertTool.name}.`,
+        summary: `Track competitive price swings or inventory signals via ${monTool.name}, filter false positives using ${anaTool.name}, and notify stakeholders on ${alertTool.name}.`,
         concreteOutcome: 'A high-priority alert bot that sends actionable trading, arbitrage, or procurement notifications within 60 seconds of price drops.',
-        customerType: 'E-commerce Arbitrageurs & Procurement Teams',
-        targetCustomer: 'Resellers, supply chain buyers, and digital asset traders needing fast notification on inventory changes.',
+        customerType: 'Potential target customer: E-commerce Arbitrageurs & Procurement Teams',
+        targetCustomer: 'Potential target customer: Resellers, supply chain buyers, and digital asset traders needing fast notifications.',
         timeToDemo: '1-2 days',
         difficulty: 'Medium',
         workflowSteps: [
@@ -486,10 +560,10 @@ const WORKFLOW_PATTERNS: PatternRule[] = [
         ],
         monetization: {
           range: '₹10,000 - ₹25,000 / month ($125 - $300)',
-          pricingModel: 'Monthly SaaS Access Fee',
-          targetCustomer: 'Digital Resellers & Commercial Buyers',
-          basis: 'Subscription access to proprietary real-time buy alerts.',
-          confidence: 'Medium'
+          pricingModel: 'Hypothetical Monthly SaaS Access Fee',
+          targetCustomer: 'Potential target customer: Digital Resellers & Commercial Buyers',
+          basis: 'Initial service-pricing hypothesis requiring validation. Not verified market rate.',
+          confidence: 'Low'
         }
       };
     }
@@ -501,11 +575,14 @@ const WORKFLOW_PATTERNS: PatternRule[] = [
 // ============================================================================
 
 export function checkRedundancy(tools: UnifiedTool[]): { isRedundant: boolean; reason?: string } {
+  // Reject if combination has multiple tools with the exact same single capability
   const capMap = new Map<string, string[]>();
   for (const t of tools) {
     const caps = normalizeCapabilities(t.capabilities, t.name, t.category);
-    if (caps.length === 1) {
-      const key = caps[0];
+    // Ignore UNKNOWN for redundancy map
+    const validCaps = caps.filter(c => c !== 'UNKNOWN');
+    if (validCaps.length === 1) {
+      const key = validCaps[0];
       const existing = capMap.get(key) || [];
       existing.push(t.name);
       capMap.set(key, existing);
@@ -525,13 +602,27 @@ export function checkRedundancy(tools: UnifiedTool[]): { isRedundant: boolean; r
 }
 
 export function matchWorkflowPattern(tools: UnifiedTool[]): { patternRule: PatternRule; matchedStages: CapabilityChainStage[] } | null {
+  // Collect all valid (non-UNKNOWN) capabilities for each tool
   const toolCaps = tools.map((t, idx) => ({
     tool: t,
     index: idx,
-    caps: normalizeCapabilities(t.capabilities, t.name, t.category)
+    caps: normalizeCapabilities(t.capabilities, t.name, t.category).filter(
+      (c): c is Exclude<NormalizedCapability, 'UNKNOWN'> => c !== 'UNKNOWN'
+    )
   }));
 
+  // If any tool has NO valid recognized capability, it cannot contribute to a workflow
+  if (toolCaps.some(tc => tc.caps.length === 0)) {
+    return null;
+  }
+
   for (const rule of WORKFLOW_PATTERNS) {
+    // A pattern matches ONLY IF the number of tools equals the number of stages in the pattern
+    // This strictly prevents "passenger tools" that contribute nothing to the pipeline!
+    if (rule.stages.length !== tools.length) {
+      continue;
+    }
+
     const assignedStages: CapabilityChainStage[] = [];
     const usedTools = new Set<string>();
 
@@ -555,20 +646,8 @@ export function matchWorkflowPattern(tools: UnifiedTool[]): { patternRule: Patte
       }
     }
 
-    if (assignedStages.length >= 2 && assignedStages.length >= Math.min(rule.stages.length, tools.length)) {
-      for (const tc of toolCaps) {
-        if (!usedTools.has(tc.tool.id)) {
-          assignedStages.push({
-            stageIndex: assignedStages.length + 1,
-            toolId: tc.tool.id,
-            toolName: tc.tool.name,
-            capability: tc.caps.join(', '),
-            actionDescription: `Supports workflow orchestration and data persistence for ${tc.tool.name}.`,
-            accessStatus: evaluateToolAccess(tc.tool)
-          });
-          usedTools.add(tc.tool.id);
-        }
-      }
+    // Strictly ensure every single tool in the combination is assigned to a distinct necessary stage
+    if (assignedStages.length === tools.length && usedTools.size === tools.length) {
       return { patternRule: rule, matchedStages: assignedStages };
     }
   }
@@ -587,7 +666,8 @@ export function calculateCombinerScore(
   userSkills: UserSkill[],
   profile: UserProfile | null,
   isZeroCost: boolean,
-  startupCost: number
+  startupCost: number,
+  hasUnknownCost: boolean
 ): { score: number; breakdown: CombinerScoreBreakdown } {
   const reasoning: Record<string, string> = {};
 
@@ -595,6 +675,7 @@ export function calculateCombinerScore(
   const alreadyHaveCount = tools.filter(t => evaluateToolAccess(t) === 'already_have').length;
   const freeToObtainCount = tools.filter(t => evaluateToolAccess(t) === 'free_to_obtain').length;
   const paidCount = tools.filter(t => evaluateToolAccess(t) === 'requires_paid_access').length;
+  const unknownCount = tools.filter(t => evaluateToolAccess(t) === 'unknown').length;
 
   let userToolAvailability = 0;
   if (alreadyHaveCount === tools.length) {
@@ -607,15 +688,14 @@ export function calculateCombinerScore(
     userToolAvailability = 12;
     reasoning.userToolAvailability = `All ${tools.length} tools are verified free-to-obtain open-source or free tiers.`;
   } else {
-    userToolAvailability = Math.max(3, 10 - paidCount * 4);
-    reasoning.userToolAvailability = `Contains ${paidCount} paid or unknown access tool(s).`;
+    userToolAvailability = Math.max(2, 8 - paidCount * 3 - unknownCount * 2);
+    reasoning.userToolAvailability = `Contains ${paidCount} paid and ${unknownCount} unverified access tool(s).`;
   }
 
   // 2. Capability Synergy: 20% (0-20)
   const stageCount = matchedStages.length;
-  const uniqueCaps = new Set(matchedStages.map(s => s.capability)).size;
   let capabilitySynergy = 14;
-  if (stageCount >= 2 && uniqueCaps >= 2) {
+  if (stageCount >= 2) {
     capabilitySynergy = Math.min(20, 16 + (stageCount >= 3 ? 3 : 1) + (tools.length <= 3 ? 1 : 0));
     reasoning.capabilitySynergy = `Strong complementary handoff across ${stageCount} distinct pipeline stages.`;
   } else {
@@ -627,7 +707,7 @@ export function calculateCombinerScore(
   const skillNames = userSkills.map(s => s.name.toLowerCase());
   let skillMatchCount = 0;
   for (const t of tools) {
-    const caps = normalizeCapabilities(t.capabilities, t.name, t.category);
+    const caps = normalizeCapabilities(t.capabilities, t.name, t.category).filter(c => c !== 'UNKNOWN');
     for (const cap of caps) {
       if (
         (cap === 'GRAPHIC_DESIGN' && skillNames.some(s => s.includes('design') || s.includes('canva') || s.includes('figma'))) ||
@@ -644,7 +724,7 @@ export function calculateCombinerScore(
     }
   }
 
-  let personalSkillFit = 6;
+  let personalSkillFit = 5;
   if (skillMatchCount >= tools.length) {
     personalSkillFit = 15;
     reasoning.personalSkillFit = `Your profile skills directly cover all ${tools.length} tool capabilities.`;
@@ -652,7 +732,7 @@ export function calculateCombinerScore(
     personalSkillFit = Math.min(14, 10 + Math.round((skillMatchCount / tools.length) * 4));
     reasoning.personalSkillFit = `Your skills cover ${skillMatchCount} of ${tools.length} tool role(s) with minimal learning curve.`;
   } else {
-    personalSkillFit = 6;
+    personalSkillFit = 5;
     reasoning.personalSkillFit = 'Requires moderate familiarization with one or more workflow steps.';
   }
 
@@ -660,7 +740,7 @@ export function calculateCombinerScore(
   let outcomeUsefulness = 12;
   if (['GENERATE_DESIGN', 'GENERATE_EDIT', 'CAPTURE_PROCESS_RESPOND'].includes(patternRule.pattern)) {
     outcomeUsefulness = 14;
-    reasoning.outcomeUsefulness = 'High immediate demand from local businesses, creators, and agencies.';
+    reasoning.outcomeUsefulness = 'Immediate demand from local businesses, creators, and agencies.';
   } else if (['TRIGGER_AI_ACTION', 'LOCAL_AI_DOCUMENT_OUTPUT'].includes(patternRule.pattern)) {
     outcomeUsefulness = 13;
     reasoning.outcomeUsefulness = 'High-value automation and privacy-preserving deliverable.';
@@ -669,17 +749,52 @@ export function calculateCombinerScore(
     reasoning.outcomeUsefulness = 'Solid niche utility with targeted commercial applications.';
   }
 
+  // Profile Personalization: Disliked work penalty on outcome usefulness
+  const dislikedWork = (profile?.disliked_work || '').toLowerCase();
+  if (dislikedWork) {
+    if (
+      (dislikedWork.includes('cold call') || dislikedWork.includes('sales') || dislikedWork.includes('outreach')) &&
+      patternRule.pattern === 'CAPTURE_PROCESS_RESPOND'
+    ) {
+      outcomeUsefulness = Math.max(5, outcomeUsefulness - 3);
+      reasoning.outcomeUsefulness += ` (Adjusted -3 pts due to disliked work: "${profile?.disliked_work}")`;
+    } else if (
+      dislikedWork.includes('video') &&
+      patternRule.pattern === 'GENERATE_EDIT'
+    ) {
+      outcomeUsefulness = Math.max(5, outcomeUsefulness - 3);
+      reasoning.outcomeUsefulness += ` (Adjusted -3 pts due to disliked work: "${profile?.disliked_work}")`;
+    }
+  }
+
+  // Profile Personalization: Preferred work type boost
+  const preferredWorkType = (profile?.preferred_work_type || '').toLowerCase();
+  if (preferredWorkType && preferredWorkType !== 'any') {
+    if (preferredWorkType.includes('freelance') && ['GENERATE_DESIGN', 'GENERATE_EDIT'].includes(patternRule.pattern)) {
+      outcomeUsefulness = Math.min(15, outcomeUsefulness + 1);
+    }
+  }
+
   // 5. ₹0 Feasibility: 10% (0-10)
   let zeroCostFeasibility = 0;
   if (isZeroCost) {
     zeroCostFeasibility = 10;
     reasoning.zeroCostFeasibility = 'Strict ₹0 upfront software cost. All tools are already owned or free.';
+  } else if (hasUnknownCost) {
+    zeroCostFeasibility = 3;
+    reasoning.zeroCostFeasibility = 'Contains dependencies with unverified or unclear pricing tiers.';
   } else if (startupCost <= 30) {
-    zeroCostFeasibility = 6;
+    zeroCostFeasibility = 5;
     reasoning.zeroCostFeasibility = `Requires nominal upfront cost of ~₹${startupCost * 80} ($${startupCost}).`;
   } else {
     zeroCostFeasibility = 2;
     reasoning.zeroCostFeasibility = `Requires paid tool subscriptions (~$${startupCost}).`;
+  }
+
+  // Profile Personalization: preferred budget check
+  if (profile?.preferred_budget === 0 && !isZeroCost) {
+    zeroCostFeasibility = Math.max(0, zeroCostFeasibility - 2);
+    reasoning.zeroCostFeasibility += ' (Strict ₹0 budget preference enforced)';
   }
 
   // 6. Execution Simplicity: 10% (0-10)
@@ -693,6 +808,12 @@ export function calculateCombinerScore(
   } else {
     executionSimplicity = 6;
     reasoning.executionSimplicity = 'Multi-step pipeline with multiple handoffs.';
+  }
+
+  // Profile Personalization: learning tolerance
+  if (profile?.learning_tolerance === 'Low' && tools.some(t => evaluateToolAccess(t) !== 'already_have')) {
+    executionSimplicity = Math.max(4, executionSimplicity - 2);
+    reasoning.executionSimplicity += ' (Adjusted for Low learning tolerance)';
   }
 
   // 7. Time to Demo: 5% (0-5)
@@ -709,11 +830,21 @@ export function calculateCombinerScore(
   let customerMonetizationPotential = 4;
   if (['GENERATE_DESIGN', 'GENERATE_EDIT', 'CAPTURE_PROCESS_RESPOND'].includes(patternRule.pattern)) {
     customerMonetizationPotential = 5;
-    reasoning.customerMonetizationPotential = 'Proven service delivery model with recurring retainer potential.';
+    reasoning.customerMonetizationPotential = 'Service delivery model with potential retainer hypothesis.';
   } else {
     customerMonetizationPotential = 4;
-    reasoning.customerMonetizationPotential = 'High project-based fee potential for specialized clients.';
+    reasoning.customerMonetizationPotential = 'Project-based fee hypothesis for specialized clients.';
   }
+
+  // Clamp each factor strictly within its allowed bounds
+  userToolAvailability = Math.min(20, Math.max(0, userToolAvailability));
+  capabilitySynergy = Math.min(20, Math.max(0, capabilitySynergy));
+  personalSkillFit = Math.min(15, Math.max(0, personalSkillFit));
+  outcomeUsefulness = Math.min(15, Math.max(0, outcomeUsefulness));
+  zeroCostFeasibility = Math.min(10, Math.max(0, zeroCostFeasibility));
+  executionSimplicity = Math.min(10, Math.max(0, executionSimplicity));
+  timeToDemo = Math.min(5, Math.max(0, timeToDemo));
+  customerMonetizationPotential = Math.min(5, Math.max(0, customerMonetizationPotential));
 
   const rawTotal =
     userToolAvailability +
@@ -725,6 +856,7 @@ export function calculateCombinerScore(
     timeToDemo +
     customerMonetizationPotential;
 
+  // Test AJ: Score must never exceed 100
   const score = Math.min(100, Math.max(0, Math.round(rawTotal * 10) / 10));
 
   return {
@@ -792,7 +924,7 @@ export function evaluateCombination(
   const { patternRule, matchedStages } = matched;
 
   // Evaluate ₹0 cost
-  const { isZeroCost, startupCost } = checkCombinationZeroCost(tools);
+  const { isZeroCost, startupCost, hasUnknownCost } = checkCombinationZeroCost(tools);
 
   // Calculate 8-Factor Score
   const { score, breakdown } = calculateCombinerScore(
@@ -802,7 +934,8 @@ export function evaluateCombination(
     userSkills,
     profile,
     isZeroCost,
-    startupCost
+    startupCost,
+    hasUnknownCost
   );
 
   // QUALITY THRESHOLD: Minimum 65
@@ -813,11 +946,20 @@ export function evaluateCombination(
   // Synthesize concrete outcome & deliverable
   const outcome = patternRule.synthesizeOutcome(tools, userSkills, profile);
 
-  // Dynamic Confidence: High if score >= 80 and isZeroCost, Low if paid/unknown, else Medium
+  // Discovery linking & Origin validation (Section 14)
+  const discoveryTools = tools.filter(t => t.source === 'discovery');
+  const discoveryIds = discoveryTools.map(t => t.id);
+  const origin: OpportunityOrigin = discoveryIds.length > 0 ? 'discovery_derived' : 'profile_hypothesis';
+
+  // Dynamic Confidence: High only if high score (>= 85), zero cost, verified skills, and no unknown access
   let confidence: ConfidenceLevel = 'Medium';
-  if (score >= 80 && isZeroCost) {
+  const hasUnknownAccess = tools.some(t => evaluateToolAccess(t) === 'unknown');
+  const hasPaidAccess = tools.some(t => evaluateToolAccess(t) === 'requires_paid_access');
+  const hasSkillCoverage = breakdown.personalSkillFit >= 10;
+
+  if (score >= 85 && isZeroCost && !hasUnknownAccess && hasSkillCoverage) {
     confidence = 'High';
-  } else if (!isZeroCost || tools.some(t => evaluateToolAccess(t) === 'unknown')) {
+  } else if (!isZeroCost || hasUnknownAccess || hasPaidAccess || score < 75) {
     confidence = 'Low';
   }
 
@@ -831,6 +973,9 @@ export function evaluateCombination(
     summary: outcome.summary,
     tool_ids: tools.map(t => t.id),
     tool_names: tools.map(t => t.name),
+    discovery_ids: discoveryIds,
+    origin,
+    market_evidence: 'limited / hypothesis',
     capability_chain: matchedStages,
     workflow_pattern: patternRule.pattern,
     workflow_steps: outcome.workflowSteps,
@@ -838,7 +983,7 @@ export function evaluateCombination(
     customer_type: outcome.customerType,
     target_customer: outcome.targetCustomer,
     monetization_hypothesis: outcome.monetization,
-    startup_cost: startupCost,
+    startup_cost: hasUnknownCost ? -1 : startupCost,
     is_zero_cost: isZeroCost,
     time_to_demo: outcome.timeToDemo,
     difficulty: outcome.difficulty,
@@ -885,14 +1030,16 @@ export async function loadUnifiedTools(selectedToolIds?: string[]): Promise<{
     name: d.title,
     category: d.category || 'AI Model',
     capabilities: typeof d.capabilities === 'string' ? JSON.parse(d.capabilities || '[]') : (d.capabilities || []),
-    accessType: d.open_source_status ? 'Open Source' : 'Free Tier',
+    accessType: d.open_source_status ? 'Open Source' : (d.freeTier || (d as any).free_tier ? 'Free Tier' : 'Unknown'),
     costPerMonth: 0,
     source: 'discovery',
     evidence: d.evidence,
     license: d.license,
     openSource: Boolean(d.open_source_status || d.openSource || (d as any).open_source),
     freeTier: Boolean(d.freeTier || (d as any).free_tier),
-    pricingStatus: d.pricingStatus || d.free_status
+    pricingStatus: d.pricingStatus || d.free_status,
+    apiAvailable: Boolean(d.api_availability),
+    localAvailable: Boolean(d.local_availability)
   }));
 
   let allTools = [...profileTools, ...discoveryTools];
@@ -968,15 +1115,19 @@ export async function generateAndStoreCombinations(options: CombinationOptions =
     const isSaved = savedSet.has(combo.id) ? 1 : 0;
     await dbRun(
       `INSERT INTO tool_combinations (
-        id, title, summary, tool_ids, tool_names, capability_chain, workflow_pattern, workflow_steps,
-        concrete_outcome, customer_type, target_customer, monetization_hypothesis, startup_cost,
-        is_zero_cost, time_to_demo, difficulty, score, score_breakdown, confidence, saved, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        id, title, summary, tool_ids, tool_names, discovery_ids, origin, market_evidence,
+        capability_chain, workflow_pattern, workflow_steps, concrete_outcome, customer_type,
+        target_customer, monetization_hypothesis, startup_cost, is_zero_cost, time_to_demo,
+        difficulty, score, score_breakdown, confidence, saved, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         title = excluded.title,
         summary = excluded.summary,
         tool_ids = excluded.tool_ids,
         tool_names = excluded.tool_names,
+        discovery_ids = excluded.discovery_ids,
+        origin = excluded.origin,
+        market_evidence = excluded.market_evidence,
         capability_chain = excluded.capability_chain,
         workflow_pattern = excluded.workflow_pattern,
         workflow_steps = excluded.workflow_steps,
@@ -997,6 +1148,9 @@ export async function generateAndStoreCombinations(options: CombinationOptions =
         combo.summary,
         JSON.stringify(combo.tool_ids),
         JSON.stringify(combo.tool_names),
+        JSON.stringify(combo.discovery_ids || []),
+        combo.origin || 'profile_hypothesis',
+        combo.market_evidence || 'limited / hypothesis',
         JSON.stringify(combo.capability_chain),
         combo.workflow_pattern,
         JSON.stringify(combo.workflow_steps),
@@ -1047,6 +1201,9 @@ export async function getStoredCombinations(filters: { savedOnly?: boolean; minS
     summary: r.summary,
     tool_ids: JSON.parse(r.tool_ids || '[]'),
     tool_names: JSON.parse(r.tool_names || '[]'),
+    discovery_ids: JSON.parse(r.discovery_ids || '[]'),
+    origin: r.origin || 'profile_hypothesis',
+    market_evidence: r.market_evidence || 'limited / hypothesis',
     capability_chain: JSON.parse(r.capability_chain || '[]'),
     workflow_pattern: r.workflow_pattern,
     workflow_steps: JSON.parse(r.workflow_steps || '[]'),
@@ -1076,6 +1233,9 @@ export async function getStoredCombinationById(id: string): Promise<ToolCombinat
     summary: r.summary,
     tool_ids: JSON.parse(r.tool_ids || '[]'),
     tool_names: JSON.parse(r.tool_names || '[]'),
+    discovery_ids: JSON.parse(r.discovery_ids || '[]'),
+    origin: r.origin || 'profile_hypothesis',
+    market_evidence: r.market_evidence || 'limited / hypothesis',
     capability_chain: JSON.parse(r.capability_chain || '[]'),
     workflow_pattern: r.workflow_pattern,
     workflow_steps: JSON.parse(r.workflow_steps || '[]'),

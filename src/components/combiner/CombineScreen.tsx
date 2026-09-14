@@ -388,9 +388,22 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools }) => {
                       <span className="badge-tag bg-indigo-950/60 text-indigo-300 border border-indigo-500/30 font-mono text-[10px]">
                         {combo.workflow_pattern.replace(/_/g, ' ➔ ')}
                       </span>
+                      {combo.origin === 'discovery_derived' ? (
+                        <span className="badge-tag bg-blue-950/60 text-blue-300 border border-blue-500/30 text-[10px]">
+                          Discovery-Derived
+                        </span>
+                      ) : (
+                        <span className="badge-tag bg-purple-950/60 text-purple-300 border border-purple-500/30 text-[10px]">
+                          Profile Recipe
+                        </span>
+                      )}
                       {combo.is_zero_cost ? (
                         <span className="badge-tag badge-emerald flex items-center gap-1 text-[10px]">
                           <DollarSign className="h-3 w-3" /> ₹0 Upfront Cost
+                        </span>
+                      ) : combo.startup_cost === -1 ? (
+                        <span className="badge-tag bg-slate-800 text-amber-300 border border-amber-500/30 text-[10px]">
+                          Cost: Unverified
                         </span>
                       ) : (
                         <span className="badge-tag bg-slate-800 text-slate-300 border border-slate-700 text-[10px]">

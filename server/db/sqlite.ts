@@ -91,6 +91,9 @@ export async function initDatabase(): Promise<void> {
       summary TEXT,
       tool_ids TEXT NOT NULL DEFAULT '[]',
       tool_names TEXT NOT NULL DEFAULT '[]',
+      discovery_ids TEXT NOT NULL DEFAULT '[]',
+      origin TEXT NOT NULL DEFAULT 'profile_hypothesis',
+      market_evidence TEXT NOT NULL DEFAULT 'limited',
       capability_chain TEXT NOT NULL DEFAULT '[]',
       workflow_pattern TEXT NOT NULL,
       workflow_steps TEXT NOT NULL DEFAULT '[]',
@@ -110,6 +113,25 @@ export async function initDatabase(): Promise<void> {
       is_demo_data INTEGER DEFAULT 0
     );
   `);
+
+  // Ensure new columns exist on tool_combinations if table was created previously
+  const comboCols = await dbAll<{ name: string }>("PRAGMA table_info(tool_combinations);");
+  const comboColNames = new Set(comboCols.map(c => c.name));
+  const missingComboCols = [
+    { name: 'discovery_ids', type: "TEXT DEFAULT '[]'" },
+    { name: 'origin', type: "TEXT DEFAULT 'profile_hypothesis'" },
+    { name: 'market_evidence', type: "TEXT DEFAULT 'limited'" }
+  ];
+  for (const col of missingComboCols) {
+    if (!comboColNames.has(col.name)) {
+      try {
+        await dbRun(`ALTER TABLE tool_combinations ADD COLUMN ${col.name} ${col.type};`);
+        console.log(`[SQLite Migration] Added column '${col.name}' to tool_combinations table.`);
+      } catch (err: any) {
+        console.warn(`[SQLite Migration] Note adding column ${col.name}:`, err?.message);
+      }
+    }
+  }
 
   console.log('[SQLite] All database tables initialized successfully.');
 }
