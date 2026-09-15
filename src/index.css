@@ -3,6 +3,12 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
   body {
     background-color: #07090e;
     color: #f8fafc;
@@ -10,6 +16,7 @@
     margin: 0;
     padding: 0;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
@@ -29,19 +36,35 @@
   background: #334155;
 }
 
-/* Clean Component Utilities */
+/* Emil Kowalski Design Engineering Utility System */
+
+/* Cards & Surfaces */
 .panel-card {
   background-color: #0f1420;
   border: 1px solid #1e293b;
+  border-radius: 0.875rem;
+  transition: transform 180ms var(--ease-out), border-color 180ms var(--ease-out), box-shadow 180ms var(--ease-out), background-color 180ms ease;
+}
+
+.panel-card-flat {
+  background-color: #0a0d16;
+  border: 1px solid #182030;
   border-radius: 0.75rem;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.panel-card-hover:hover {
-  border-color: rgba(99, 102, 241, 0.35);
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+@media (hover: hover) and (pointer: fine) {
+  .interactive-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(99, 102, 241, 0.4);
+    box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.5);
+  }
 }
 
+.interactive-card:active {
+  transform: scale(0.985);
+}
+
+/* Buttons with Tactile Press Feedback */
 .btn-primary {
   background-color: #4f46e5;
   color: #ffffff;
@@ -49,16 +72,26 @@
   font-size: 0.875rem;
   padding: 0.5rem 1.25rem;
   border-radius: 0.5rem;
-  transition: all 0.15s ease;
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  transition: transform 160ms var(--ease-out), background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
 }
 
-.btn-primary:hover {
-  background-color: #4338ca;
-  transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary:hover {
+    background-color: #4338ca;
+    border-color: rgba(129, 140, 248, 0.6);
+    box-shadow: 0 4px 14px -2px rgba(79, 70, 229, 0.4);
+  }
+}
+
+.btn-primary:active {
+  transform: scale(0.97);
 }
 
 .btn-secondary {
@@ -69,22 +102,59 @@
   padding: 0.5rem 1.25rem;
   border-radius: 0.5rem;
   border: 1px solid #334155;
-  transition: all 0.15s ease;
+  transition: transform 160ms var(--ease-out), background-color 160ms ease, color 160ms ease, border-color 160ms ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
 }
 
-.btn-secondary:hover {
-  background-color: #334155;
-  color: #ffffff;
+@media (hover: hover) and (pointer: fine) {
+  .btn-secondary:hover {
+    background-color: #334155;
+    color: #ffffff;
+    border-color: #475569;
+  }
 }
 
+.btn-secondary:active {
+  transform: scale(0.97);
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: #94a3b8;
+  font-weight: 500;
+  font-size: 0.875rem;
+  padding: 0.4rem 0.875rem;
+  border-radius: 0.5rem;
+  border: 1px solid transparent;
+  transition: transform 160ms var(--ease-out), color 160ms ease, background-color 160ms ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn-ghost:hover {
+    color: #f1f5f9;
+    background-color: rgba(30, 41, 59, 0.6);
+  }
+}
+
+.btn-ghost:active {
+  transform: scale(0.97);
+}
+
+/* Badges & Tags */
 .badge-tag {
   display: inline-flex;
   align-items: center;
-  padding: 0.2rem 0.5rem;
+  padding: 0.25rem 0.625rem;
   border-radius: 0.375rem;
   font-size: 0.75rem;
   font-weight: 600;
@@ -94,38 +164,39 @@
 .badge-indigo {
   background-color: rgba(99, 102, 241, 0.12);
   color: #818cf8;
-  border: 1px solid rgba(99, 102, 241, 0.25);
+  border: 1px solid rgba(99, 102, 241, 0.3);
 }
 
 .badge-emerald {
   background-color: rgba(16, 185, 129, 0.12);
   color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.25);
+  border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
 .badge-amber {
   background-color: rgba(245, 158, 11, 0.12);
   color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.25);
+  border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
 .badge-slate {
   background-color: rgba(148, 163, 184, 0.08);
   color: #94a3b8;
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
-/* Modal Overlay */
+/* Modals with Hardware-Accelerated Entrance */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(3, 7, 18, 0.85);
-  backdrop-filter: blur(4px);
+  background-color: rgba(3, 7, 18, 0.82);
+  backdrop-filter: blur(6px);
   z-index: 50;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1rem;
+  animation: fadeIn 180ms var(--ease-out) forwards;
 }
 
 .modal-content {
@@ -133,8 +204,49 @@
   border: 1px solid #1e293b;
   border-radius: 0.875rem;
   width: 100%;
-  max-width: 32rem;
+  max-width: 42rem;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.85);
+  animation: modalScaleIn 200ms var(--ease-out) forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Stagger Animations */
+.stagger-1 { animation-delay: 0ms; }
+.stagger-2 { animation-delay: 40ms; }
+.stagger-3 { animation-delay: 80ms; }
+.stagger-4 { animation-delay: 120ms; }
+
+.animate-fade-in {
+  animation: fadeIn 220ms var(--ease-out) forwards;
+}
+
+/* Reduced Motion Override */
+@media (prefers-reduced-motion: reduce) {
+  .panel-card,
+  .btn-primary,
+  .btn-secondary,
+  .btn-ghost,
+  .modal-content,
+  .modal-overlay {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    transform: none !important;
+  }
 }
