@@ -20,6 +20,16 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
   const [filterSavedOnly, setFilterSavedOnly] = useState<boolean>(false);
   const [filterDifficulty, setFilterDifficulty] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [feedbackStatus, setFeedbackStatus] = useState<Record<string, string>>({});
+
+  const handleFeedback = async (oppId: string, rating: 'useful' | 'not_useful' | 'not_relevant') => {
+    try {
+      await api.submitFeedback({ sourceType: 'opportunity', sourceId: oppId, rating });
+      setFeedbackStatus(prev => ({ ...prev, [oppId]: rating }));
+    } catch (err) {
+      console.error('Failed to submit feedback:', err);
+    }
+  };
 
   const loadOpportunities = async () => {
     try {
@@ -293,6 +303,15 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
                       }`}>
                         {opp.score}/100 Match
                       </span>
+                      {(opp.learningAdjustment || opp.learning_adjustment) ? (
+                        <span className={`badge-tag text-[10px] ${
+                          (opp.learningAdjustment || opp.learning_adjustment || 0) > 0 
+                            ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' 
+                            : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+                        }`}>
+                          {(opp.learningAdjustment || opp.learning_adjustment || 0) > 0 ? `+${opp.learningAdjustment || opp.learning_adjustment}` : (opp.learningAdjustment || opp.learning_adjustment)} pts Learning
+                        </span>
+                      ) : null}
                       <span className={`badge-tag text-[10px] ${
                         origin === 'discovery_derived' ? 'badge-emerald' : 'badge-slate'
                       }`}>
@@ -424,6 +443,54 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
               <p className="text-xs text-slate-300 leading-relaxed">
                 {selectedOpp.whyMatch || selectedOpp.why_match || 'Matches your profile skills, zero-budget constraint, and available free tools.'}
               </p>
+            </div>
+
+            {/* Adaptive Personalization Explanation */}
+            {(selectedOpp.learningExplanation || selectedOpp.learning_explanation) && (
+              <div className="bg-purple-950/20 border border-purple-800/30 rounded-lg p-3 text-xs space-y-1">
+                <div className="font-bold text-purple-300 flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-purple-400" />
+                  Adaptive Personalization Signal ({((selectedOpp.learningAdjustment || selectedOpp.learning_adjustment || 0) > 0) ? `+${selectedOpp.learningAdjustment || selectedOpp.learning_adjustment}` : (selectedOpp.learningAdjustment || selectedOpp.learning_adjustment)} pts)
+                </div>
+                <p className="text-slate-300">{selectedOpp.learningExplanation || selectedOpp.learning_explanation}</p>
+              </div>
+            )}
+
+            {/* User Feedback Widget */}
+            <div className="bg-slate-950 border border-slate-800 rounded-lg p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <span className="text-slate-400 font-medium">Was this recommendation accurate?</span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => handleFeedback(selectedOpp.id, 'useful')}
+                  className={`px-2.5 py-1 rounded text-xs border transition-colors ${
+                    feedbackStatus[selectedOpp.id] === 'useful'
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  👍 Useful
+                </button>
+                <button
+                  onClick={() => handleFeedback(selectedOpp.id, 'not_useful')}
+                  className={`px-2.5 py-1 rounded text-xs border transition-colors ${
+                    feedbackStatus[selectedOpp.id] === 'not_useful'
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  👎 Not Useful
+                </button>
+                <button
+                  onClick={() => handleFeedback(selectedOpp.id, 'not_relevant')}
+                  className={`px-2.5 py-1 rounded text-xs border transition-colors ${
+                    feedbackStatus[selectedOpp.id] === 'not_relevant'
+                      ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  🚫 Not Relevant
+                </button>
+              </div>
             </div>
 
             {/* Earning Potential Hypothesis */}

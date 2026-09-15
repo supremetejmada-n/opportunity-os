@@ -1,4 +1,5 @@
 import { dbAll, dbGet, dbRun } from '../db/sqlite.js';
+import { learningEngine } from './learningEngine.js';
 
 export interface ScoreBreakdown {
   skillMatch: number;      // 25% (0-25)
@@ -53,6 +54,8 @@ export interface OpportunityRecord {
   confidence: 'High' | 'Medium' | 'Low';
   saved: boolean;
   status: 'new' | 'saved' | 'in_progress' | 'completed' | 'ignored';
+  learningAdjustment?: number;
+  learningExplanation?: string;
   createdAt: string;
   isDemoData: boolean;
 }
@@ -733,8 +736,17 @@ export class OpportunityEngine {
     // 3. QUALITY THRESHOLD FILTERING: Prefer 3 highly relevant opportunities over 20 generic ones.
     // Candidates scoring below MIN_RECOMMENDED_SCORE are excluded.
     const qualifiedOpportunities = candidates
-      .filter(c => c.score >= OpportunityEngine.MIN_RECOMMENDED_SCORE)
-      .sort((a, b) => b.score - a.score);
+      .filter(c => c.score >= OpportunityEngine.MIN_RECOMMENDED_SCORE);
+
+    // 4. LEARNING ENGINE PERSONALIZATION: Apply bounded personalization adjustments (clamped ±10 points)
+    for (const opp of qualifiedOpportunities) {
+      const { adjustment, explanation } = await learningEngine.calculateOpportunityAdjustment(opp);
+      opp.learningAdjustment = adjustment;
+      opp.learningExplanation = explanation;
+      opp.score = Math.max(0, Math.min(100, Math.round(opp.score + adjustment)));
+    }
+
+    qualifiedOpportunities.sort((a, b) => b.score - a.score);
 
     // Persist qualified opportunities into SQLite
     for (const rec of qualifiedOpportunities) {
@@ -776,7 +788,9 @@ export class OpportunityEngine {
           confidence = ?,
           discovery_ids = ?,
           tool_ids = ?,
-          saved = ?
+          saved = ?,
+          learning_adjustment = ?,
+          learning_explanation = ?
         WHERE id = ?
       `, [
         rec.title,
@@ -802,6 +816,8 @@ export class OpportunityEngine {
         JSON.stringify(rec.discoveryIds),
         JSON.stringify(rec.toolIds),
         isSaved,
+        rec.learningAdjustment || 0,
+        rec.learningExplanation || null,
         rec.id
       ]);
     } else {
@@ -811,8 +827,8 @@ export class OpportunityEngine {
           earning_potential, earning_basis, earning_confidence, origin, customer_type,
           target_customer, workflow, required_tools, action_plan, startup_cost,
           difficulty, time_to_demo, risks, evidence, score, score_breakdown,
-          confidence, saved, status, is_demo_data
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          confidence, saved, status, learning_adjustment, learning_explanation, is_demo_data
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         rec.id,
         rec.discoveryId || null,
@@ -840,6 +856,8 @@ export class OpportunityEngine {
         rec.confidence,
         rec.saved ? 1 : 0,
         rec.status,
+        rec.learningAdjustment || 0,
+        rec.learningExplanation || null,
         rec.isDemoData ? 1 : 0
       ]);
     }
@@ -950,6 +968,8 @@ export class OpportunityEngine {
       confidence: (row.confidence as any) || 'Medium',
       saved: Boolean(row.saved),
       status: row.status || 'new',
+      learningAdjustment: row.learning_adjustment !== undefined ? Number(row.learning_adjustment) : 0,
+      learningExplanation: row.learning_explanation || undefined,
       createdAt: row.created_at,
       isDemoData: Boolean(row.is_demo_data)
     };

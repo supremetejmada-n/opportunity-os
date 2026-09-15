@@ -60,6 +60,35 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
   const [submittingLog, setSubmittingLog] = useState<boolean>(false);
   const [logError, setLogError] = useState<string | null>(null);
 
+  // Phase 7 Learning Engine Profile state
+  const [learningProfile, setLearningProfile] = useState<any>(null);
+  const [rebuildingLearning, setRebuildingLearning] = useState<boolean>(false);
+
+  const loadLearningProfile = async () => {
+    try {
+      const res = await api.getLearningProfile();
+      if (res && res.profile) {
+        setLearningProfile(res.profile);
+      }
+    } catch (err) {
+      console.error('Error loading learning profile:', err);
+    }
+  };
+
+  const handleRebuildLearning = async () => {
+    try {
+      setRebuildingLearning(true);
+      const res = await api.rebuildLearningProfile();
+      if (res && res.profile) {
+        setLearningProfile(res.profile);
+      }
+    } catch (err) {
+      console.error('Error rebuilding learning profile:', err);
+    } finally {
+      setRebuildingLearning(false);
+    }
+  };
+
   // Active step notes editing
   const [activeStepNoteId, setActiveStepNoteId] = useState<string | null>(null);
   const [stepNoteText, setStepNoteText] = useState<string>('');
@@ -102,6 +131,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
   useEffect(() => {
     loadPlans();
     loadLogs();
+    loadLearningProfile();
   }, []);
 
   const selectedPlan = plans.find(p => p.id === selectedPlanId) || null;
@@ -344,6 +374,52 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
             </div>
           );
         })}
+      </div>
+
+      {/* Phase 7 Learning Engine & Adaptive Signals Panel */}
+      <div className="panel-card p-4 border border-purple-800/40 bg-purple-950/15 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-purple-800/30 pb-2.5">
+          <div className="flex items-center gap-2">
+            <span className="badge-tag bg-purple-950 text-purple-300 border-purple-500/30 font-mono text-[10px]">Phase 7 Engine</span>
+            <h3 className="text-xs font-bold text-purple-200 uppercase tracking-wider">
+              Learning Profile & Adaptive Preference Signals
+            </h3>
+          </div>
+          <button
+            onClick={handleRebuildLearning}
+            disabled={rebuildingLearning}
+            className="px-2.5 py-1 rounded bg-purple-900/40 hover:bg-purple-800/60 border border-purple-500/40 text-purple-300 text-xs font-medium transition-colors flex items-center gap-1.5"
+          >
+            <RotateCcw className={`h-3 w-3 ${rebuildingLearning ? 'animate-spin' : ''}`} />
+            {rebuildingLearning ? 'Rebuilding...' : 'Rebuild Profile'}
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div className="bg-slate-950/60 p-3 rounded border border-slate-800/80 space-y-1">
+            <span className="text-[10px] text-slate-400 uppercase font-mono block">Behavior Signals Logged</span>
+            <div className="text-base font-bold text-slate-100 font-mono">
+              {learningProfile ? learningProfile.total_signals : 0} Signals
+            </div>
+            <p className="text-[10px] text-slate-500">From ratings, progress logs & completed plans</p>
+          </div>
+
+          <div className="bg-slate-950/60 p-3 rounded border border-slate-800/80 space-y-1">
+            <span className="text-[10px] text-slate-400 uppercase font-mono block">Profile Confidence Score</span>
+            <div className="text-base font-bold text-purple-400 font-mono">
+              {learningProfile ? (learningProfile.confidence_score * 100).toFixed(0) : 0}% Confidence
+            </div>
+            <p className="text-[10px] text-slate-500">Derived from sample count & consistency</p>
+          </div>
+
+          <div className="bg-slate-950/60 p-3 rounded border border-slate-800/80 space-y-1">
+            <span className="text-[10px] text-slate-400 uppercase font-mono block">Personalization Impact</span>
+            <div className="text-base font-bold text-emerald-400 font-mono">
+              ±10 Pts Max Bound
+            </div>
+            <p className="text-[10px] text-slate-500">Base quality threshold (65) strictly enforced</p>
+          </div>
+        </div>
       </div>
 
       {/* Real-World Result Logging Drawer / Form */}

@@ -1,4 +1,5 @@
 import { dbAll, dbGet, dbRun } from '../db/sqlite.js';
+import { learningEngine } from './learningEngine.js';
 import {
   ToolCombination,
   ToolAccessStatus,
@@ -1148,6 +1149,14 @@ export async function generateAndStoreCombinations(options: CombinationOptions =
     if (combinations.length >= 50) break; // Keep top 50 distinct combinations
   }
 
+  // Apply Learning Engine adaptive adjustments (clamped ±10 points)
+  for (const combo of combinations) {
+    const { adjustment, explanation } = await learningEngine.calculateCombinationAdjustment(combo);
+    combo.learning_adjustment = adjustment;
+    combo.learning_explanation = explanation;
+    combo.score = Math.max(0, Math.min(100, Math.round(combo.score + adjustment)));
+  }
+
   // Preserve existing saved state from DB
   const existingSaved = await dbAll<{ id: string }>('SELECT id FROM tool_combinations WHERE saved = 1;');
   const savedSet = new Set(existingSaved.map(s => s.id));
@@ -1163,8 +1172,8 @@ export async function generateAndStoreCombinations(options: CombinationOptions =
         id, title, summary, tool_ids, tool_names, discovery_ids, origin, market_evidence,
         capability_chain, workflow_pattern, workflow_steps, concrete_outcome, customer_type,
         target_customer, monetization_hypothesis, startup_cost, is_zero_cost, time_to_demo,
-        difficulty, score, score_breakdown, confidence, saved, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        difficulty, score, score_breakdown, confidence, learning_adjustment, learning_explanation, saved, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         title = excluded.title,
         summary = excluded.summary,
@@ -1186,7 +1195,9 @@ export async function generateAndStoreCombinations(options: CombinationOptions =
         difficulty = excluded.difficulty,
         score = excluded.score,
         score_breakdown = excluded.score_breakdown,
-        confidence = excluded.confidence;`,
+        confidence = excluded.confidence,
+        learning_adjustment = excluded.learning_adjustment,
+        learning_explanation = excluded.learning_explanation;`,
       [
         combo.id,
         combo.title,
@@ -1210,6 +1221,8 @@ export async function generateAndStoreCombinations(options: CombinationOptions =
         combo.score,
         JSON.stringify(combo.score_breakdown),
         combo.confidence,
+        combo.learning_adjustment || 0,
+        combo.learning_explanation || null,
         isSaved,
         combo.created_at
       ]
@@ -1263,6 +1276,8 @@ export async function getStoredCombinations(filters: { savedOnly?: boolean; minS
     score: Number(r.score) || 0,
     score_breakdown: JSON.parse(r.score_breakdown || '{}'),
     confidence: r.confidence,
+    learning_adjustment: r.learning_adjustment !== undefined ? Number(r.learning_adjustment) : 0,
+    learning_explanation: r.learning_explanation || undefined,
     saved: Boolean(r.saved),
     created_at: r.created_at
   }));
@@ -1295,6 +1310,8 @@ export async function getStoredCombinationById(id: string): Promise<ToolCombinat
     score: Number(r.score) || 0,
     score_breakdown: JSON.parse(r.score_breakdown || '{}'),
     confidence: r.confidence,
+    learning_adjustment: r.learning_adjustment !== undefined ? Number(r.learning_adjustment) : 0,
+    learning_explanation: r.learning_explanation || undefined,
     saved: Boolean(r.saved),
     created_at: r.created_at
   };

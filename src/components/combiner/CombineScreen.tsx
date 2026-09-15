@@ -45,9 +45,18 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
   const [filterPattern, setFilterPattern] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'score' | 'time' | 'synergy'>('score');
 
-  // UI expand toggles
   const [showToolSelector, setShowToolSelector] = useState(true);
   const [expandedBreakdowns, setExpandedBreakdowns] = useState<Record<string, boolean>>({});
+  const [feedbackStatus, setFeedbackStatus] = useState<Record<string, string>>({});
+
+  const handleFeedback = async (comboId: string, rating: 'useful' | 'not_useful' | 'not_relevant') => {
+    try {
+      await api.submitFeedback({ sourceType: 'combination', sourceId: comboId, rating });
+      setFeedbackStatus(prev => ({ ...prev, [comboId]: rating }));
+    } catch (err) {
+      console.error('Failed to submit feedback:', err);
+    }
+  };
 
   // Load existing combinations on mount
   const loadCombinations = async () => {
@@ -409,6 +418,15 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                       <span className="badge-tag bg-indigo-950/60 text-indigo-300 border border-indigo-500/30 font-mono text-[10px]">
                         {combo.workflow_pattern.replace(/_/g, ' ➔ ')}
                       </span>
+                      {(combo.learning_adjustment || combo.learningAdjustment) ? (
+                        <span className={`badge-tag text-[10px] ${
+                          (combo.learning_adjustment || combo.learningAdjustment || 0) > 0 
+                            ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' 
+                            : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+                        }`}>
+                          {(combo.learning_adjustment || combo.learningAdjustment || 0) > 0 ? `+${combo.learning_adjustment || combo.learningAdjustment}` : (combo.learning_adjustment || combo.learningAdjustment)} pts Learning
+                        </span>
+                      ) : null}
                       {combo.origin === 'discovery_derived' ? (
                         <span className="badge-tag bg-blue-950/60 text-blue-300 border border-blue-500/30 text-[10px]">
                           Discovery-Derived
@@ -560,6 +578,54 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                     </ol>
                   </div>
                 )}
+
+                {/* Adaptive Personalization Explanation */}
+                {(combo.learning_explanation || combo.learningExplanation) && (
+                  <div className="bg-purple-950/20 border border-purple-800/30 rounded-lg p-3 text-xs space-y-1">
+                    <div className="font-bold text-purple-300 flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5 text-purple-400" />
+                      Adaptive Personalization Signal ({((combo.learning_adjustment || combo.learningAdjustment || 0) > 0) ? `+${combo.learning_adjustment || combo.learningAdjustment}` : (combo.learning_adjustment || combo.learningAdjustment)} pts)
+                    </div>
+                    <p className="text-slate-300">{combo.learning_explanation || combo.learningExplanation}</p>
+                  </div>
+                )}
+
+                {/* User Feedback Widget */}
+                <div className="bg-slate-950 border border-slate-800 rounded-lg p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <span className="text-slate-400 font-medium">Was this combination idea useful?</span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => handleFeedback(combo.id, 'useful')}
+                      className={`px-2.5 py-1 rounded text-xs border transition-colors ${
+                        feedbackStatus[combo.id] === 'useful'
+                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      👍 Useful
+                    </button>
+                    <button
+                      onClick={() => handleFeedback(combo.id, 'not_useful')}
+                      className={`px-2.5 py-1 rounded text-xs border transition-colors ${
+                        feedbackStatus[combo.id] === 'not_useful'
+                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      👎 Not Useful
+                    </button>
+                    <button
+                      onClick={() => handleFeedback(combo.id, 'not_relevant')}
+                      className={`px-2.5 py-1 rounded text-xs border transition-colors ${
+                        feedbackStatus[combo.id] === 'not_relevant'
+                          ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      🚫 Not Relevant
+                    </button>
+                  </div>
+                </div>
 
                 {/* 8-Factor Score Breakdown Accordion */}
                 <div className="pt-2 border-t border-slate-800/60">

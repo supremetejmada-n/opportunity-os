@@ -182,6 +182,10 @@ export interface Opportunity {
   confidence?: ConfidenceLevel;
   saved: boolean;
   status: 'new' | 'saved' | 'in_progress' | 'completed' | 'ignored';
+  learning_adjustment?: number;
+  learningAdjustment?: number;
+  learning_explanation?: string;
+  learningExplanation?: string;
   created_at?: string;
   createdAt?: string;
   is_demo_data?: boolean;
@@ -347,7 +351,94 @@ export interface ToolCombination {
   score_breakdown: CombinerScoreBreakdown;
   confidence: ConfidenceLevel;
   saved: boolean;
+  learning_adjustment?: number;
+  learningAdjustment?: number;
+  learning_explanation?: string;
+  learningExplanation?: string;
   created_at?: string;
   is_demo_data?: boolean;
+}
+
+// ==========================================
+// Phase 7: Learning & Adaptive Engine Types
+// ==========================================
+
+export type LearningSourceType = 'opportunity' | 'combination' | 'action_plan' | 'action_step' | 'progress_log' | 'feedback';
+
+export type LearningSignalType =
+  | 'useful'
+  | 'not_useful'
+  | 'relevant'
+  | 'not_relevant'
+  | 'saved'
+  | 'ignored'
+  | 'tried'
+  | 'started_plan'
+  | 'completed_step'
+  | 'completed_plan'
+  | 'abandoned_plan'
+  | 'demo_created'
+  | 'portfolio_published'
+  | 'prospect_contacted'
+  | 'response_received'
+  | 'rejected'
+  | 'client_acquired'
+  | 'revenue_earned';
+
+export interface LearningSignal {
+  id: string;
+  source_type: LearningSourceType;
+  source_id: string;
+  signal_type: LearningSignalType;
+  signal_value: number;
+  weight: number;
+  category?: string;
+  tool_name?: string;
+  created_at: string;
+}
+
+export type FeedbackRating = 'useful' | 'not_useful' | 'tried' | 'ignore' | 'save' | 'not_relevant' | 'already_know';
+
+export interface FeedbackRecord {
+  id: string;
+  source_type: 'opportunity' | 'combination';
+  source_id: string;
+  opportunity_id?: string | null;
+  combination_id?: string | null;
+  rating: FeedbackRating;
+  reason?: string | null;
+  comments?: string | null;
+  created_at: string;
+}
+
+export interface PreferenceDimension {
+  key: string;
+  positive: number;
+  negative: number;
+  net_weight: number;
+  confidence: number; // 0.0 to 1.0
+  sample_count: number;
+}
+
+export interface UserLearningProfile {
+  id: string;
+  preferred_categories: Record<string, PreferenceDimension>;
+  preferred_capabilities: Record<string, PreferenceDimension>;
+  preferred_tools: Record<string, PreferenceDimension>;
+  preferred_work_types: Record<string, PreferenceDimension>;
+  observed_difficulty_preference?: Record<string, PreferenceDimension>;
+  observed_time_preference?: Record<string, PreferenceDimension>;
+  total_signals: number;
+  confidence_score: number;
+  updated_at: string;
+}
+
+export interface LearningExplanation {
+  opportunityId?: string;
+  combinationId?: string;
+  learningAdjustment: number;
+  explanationText: string;
+  contributingSignals: string[];
+  confidence: 'High' | 'Medium' | 'Low' | 'Neutral';
 }
 

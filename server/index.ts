@@ -9,6 +9,8 @@ import { opportunitiesRouter } from './routes/opportunities.js';
 import { combinerRouter } from './routes/combiner.js';
 import { actionPlansRouter } from './routes/actionPlans.js';
 import { progressRouter } from './routes/progress.js';
+import { feedbackRouter } from './routes/feedback.js';
+import { learningRouter } from './routes/learning.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -36,12 +38,14 @@ app.use('/api/combinations', combinerRouter);
 app.use('/api/combiner', combinerRouter);
 app.use('/api/action-plans', actionPlansRouter);
 app.use('/api/progress', progressRouter);
+app.use('/api/feedback', feedbackRouter);
+app.use('/api/learning', learningRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    system: 'Personal AI Opportunity Engine V1 (Phase 6 Active)',
+    system: 'Personal AI Opportunity Engine V1 (Phase 7 Active)',
     timestamp: new Date().toISOString()
   });
 });

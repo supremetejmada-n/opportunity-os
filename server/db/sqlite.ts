@@ -69,7 +69,9 @@ export async function initDatabase(): Promise<void> {
     { name: 'earning_basis', type: "TEXT" },
     { name: 'earning_confidence', type: "TEXT DEFAULT 'Low'" },
     { name: 'origin', type: "TEXT DEFAULT 'template'" },
-    { name: 'action_plan', type: "TEXT DEFAULT '[]'" }
+    { name: 'action_plan', type: "TEXT DEFAULT '[]'" },
+    { name: 'learning_adjustment', type: "REAL DEFAULT 0" },
+    { name: 'learning_explanation', type: "TEXT" }
   ];
 
   for (const col of missingCols) {
@@ -108,6 +110,8 @@ export async function initDatabase(): Promise<void> {
       score REAL DEFAULT 0,
       score_breakdown TEXT NOT NULL DEFAULT '{}',
       confidence TEXT DEFAULT 'Medium',
+      learning_adjustment REAL DEFAULT 0,
+      learning_explanation TEXT,
       saved INTEGER DEFAULT 0,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       is_demo_data INTEGER DEFAULT 0
@@ -120,7 +124,9 @@ export async function initDatabase(): Promise<void> {
   const missingComboCols = [
     { name: 'discovery_ids', type: "TEXT DEFAULT '[]'" },
     { name: 'origin', type: "TEXT DEFAULT 'profile_hypothesis'" },
-    { name: 'market_evidence', type: "TEXT DEFAULT 'limited'" }
+    { name: 'market_evidence', type: "TEXT DEFAULT 'limited'" },
+    { name: 'learning_adjustment', type: "REAL DEFAULT 0" },
+    { name: 'learning_explanation', type: "TEXT" }
   ];
   for (const col of missingComboCols) {
     if (!comboColNames.has(col.name)) {
@@ -196,6 +202,69 @@ export async function initDatabase(): Promise<void> {
       }
     }
   }
+
+  // Ensure Phase 7 Learning & Adaptive Engine tables exist
+  await dbRun(`
+    CREATE TABLE IF NOT EXISTS feedback (
+      id TEXT PRIMARY KEY,
+      source_type TEXT NOT NULL DEFAULT 'opportunity',
+      source_id TEXT NOT NULL,
+      opportunity_id TEXT,
+      combination_id TEXT,
+      rating TEXT NOT NULL,
+      reason TEXT,
+      comments TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (opportunity_id) REFERENCES opportunities(id) ON DELETE CASCADE,
+      FOREIGN KEY (combination_id) REFERENCES tool_combinations(id) ON DELETE CASCADE
+    );
+  `);
+
+  const fbCols = await dbAll<{ name: string }>("PRAGMA table_info(feedback);");
+  const fbColNames = new Set(fbCols.map(c => c.name));
+  const missingFbCols = [
+    { name: 'source_type', type: "TEXT NOT NULL DEFAULT 'opportunity'" },
+    { name: 'source_id', type: "TEXT DEFAULT ''" },
+    { name: 'combination_id', type: "TEXT" }
+  ];
+  for (const col of missingFbCols) {
+    if (!fbColNames.has(col.name)) {
+      try {
+        await dbRun(`ALTER TABLE feedback ADD COLUMN ${col.name} ${col.type};`);
+        console.log(`[SQLite Migration] Added column '${col.name}' to feedback table.`);
+      } catch (err: any) {
+        console.warn(`[SQLite Migration] Note adding column ${col.name}:`, err?.message);
+      }
+    }
+  }
+
+  await dbRun(`
+    CREATE TABLE IF NOT EXISTS learning_signals (
+      id TEXT PRIMARY KEY,
+      source_type TEXT NOT NULL,
+      source_id TEXT NOT NULL,
+      signal_type TEXT NOT NULL,
+      signal_value REAL DEFAULT 1.0,
+      weight REAL NOT NULL,
+      category TEXT,
+      tool_name TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(source_type, source_id, signal_type)
+    );
+  `);
+
+  await dbRun(`
+    CREATE TABLE IF NOT EXISTS learning_profile (
+      id TEXT PRIMARY KEY DEFAULT 'user_learning_profile',
+      preferred_categories TEXT DEFAULT '{}',
+      preferred_capabilities TEXT DEFAULT '{}',
+      preferred_tools TEXT DEFAULT '{}',
+      preferred_work_types TEXT DEFAULT '{}',
+      total_signals INTEGER DEFAULT 0,
+      confidence_score REAL DEFAULT 0,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
 
   console.log('[SQLite] All database tables initialized successfully.');
 }

@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { dbAll, dbGet, dbRun } from '../db/sqlite.js';
+import { learningEngine } from './learningEngine.js';
 import {
   ActionPlan,
   ActionStep,
@@ -450,6 +451,41 @@ export class ActionPlanEngine {
   }
 
   /**
+   * Helper wrapper method to generate plan for opportunity or combination
+   */
+  async generateActionPlan(params: { opportunityId?: string; combinationId?: string }): Promise<ActionPlan> {
+    if (params.opportunityId) {
+      return this.generatePlanForOpportunity(params.opportunityId);
+    } else if (params.combinationId) {
+      return this.generatePlanForCombination(params.combinationId);
+    } else {
+      throw new Error('Either opportunityId or combinationId is required');
+    }
+  }
+
+  /**
+   * Alias methods for route compatibility
+   */
+  async startActionPlan(planId: string): Promise<ActionPlan> {
+    return this.startPlan(planId);
+  }
+
+  async completeActionPlan(planId: string): Promise<ActionPlan> {
+    return this.completePlan(planId);
+  }
+
+  async deleteActionPlan(planId: string): Promise<boolean> {
+    return this.deletePlan(planId);
+  }
+
+  async updateActionStep(
+    stepId: string,
+    updates: { status?: ActionStepStatus; notes?: string }
+  ): Promise<ActionStep> {
+    return this.updateStep(stepId, updates);
+  }
+
+  /**
    * Starts an Action Plan: sets status to in_progress, step 1 to in_progress
    */
   async startPlan(planId: string): Promise<ActionPlan> {
@@ -461,6 +497,13 @@ export class ActionPlanEngine {
       'UPDATE action_plans SET status = "in_progress", updated_at = ? WHERE id = ?',
       [now, planId]
     );
+
+    // Record Learning Signal
+    await learningEngine.recordSignal({
+      sourceType: 'action_plan',
+      sourceId: planId,
+      signalType: 'started_plan'
+    });
 
     // If step 1 is not_started, transition it to in_progress
     if (plan.steps.length > 0 && plan.steps[0].status === 'not_started') {
@@ -516,6 +559,14 @@ export class ActionPlanEngine {
       'UPDATE action_plans SET status = "completed", updated_at = ? WHERE id = ?',
       [now, planId]
     );
+
+    // Record Learning Signal
+    await learningEngine.recordSignal({
+      sourceType: 'action_plan',
+      sourceId: planId,
+      signalType: 'completed_plan'
+    });
+
     return (await this.getActionPlanById(planId))!;
   }
 
@@ -523,6 +574,13 @@ export class ActionPlanEngine {
    * Deletes an Action Plan and cascades deletion of its steps and logs
    */
   async deletePlan(planId: string): Promise<boolean> {
+    // Record Learning Signal before deletion
+    await learningEngine.recordSignal({
+      sourceType: 'action_plan',
+      sourceId: planId,
+      signalType: 'abandoned_plan'
+    });
+
     await dbRun('DELETE FROM action_steps WHERE action_plan_id = ?', [planId]);
     await dbRun('DELETE FROM progress_logs WHERE action_plan_id = ?', [planId]);
     const res = await dbRun('DELETE FROM action_plans WHERE id = ?', [planId]);
@@ -547,6 +605,14 @@ export class ActionPlanEngine {
       'UPDATE action_steps SET status = ?, notes = ?, completed_at = ? WHERE id = ?',
       [newStatus, newNotes, completedAt, stepId]
     );
+
+    if (newStatus === 'completed') {
+      await learningEngine.recordSignal({
+        sourceType: 'action_step',
+        sourceId: stepId,
+        signalType: 'completed_step'
+      });
+    }
 
     // If step was completed or skipped, activate next step if it's currently not_started
     if (newStatus === 'completed' || newStatus === 'skipped') {
@@ -656,6 +722,15 @@ export class ActionPlanEngine {
         clientsAcquired, revenueEarned, hoursSpent, now
       ]
     );
+
+    // Record Learning Signal automatically
+    await learningEngine.recordSignal({
+      sourceType: 'progress_log',
+      sourceId: id,
+      signalType: resultType as any,
+      signalValue: numericValue || 1.0,
+      createdAt: now
+    });
 
     return {
       id,

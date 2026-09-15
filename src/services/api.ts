@@ -355,5 +355,57 @@ export const api = {
     const res = await fetch(`${API_BASE}/progress/logs/${id}`, { method: 'DELETE' });
     if (!res.ok) throw new Error('Failed to delete progress log');
     return res.json();
+  },
+
+  // FEEDBACK & LEARNING (Phase 7 Engine)
+  async submitFeedback(data: {
+    sourceType: 'opportunity' | 'combination';
+    sourceId: string;
+    rating: 'useful' | 'not_useful' | 'not_relevant' | 'tried' | 'rejected' | 'ignored';
+    reason?: string;
+    comments?: string;
+  }): Promise<{ success: boolean; feedback: any; signalRecorded: boolean }> {
+    const res = await fetch(`${API_BASE}/feedback`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to submit feedback');
+    }
+    return res.json();
+  },
+
+  async getFeedback(params: Record<string, string> = {}): Promise<{ success: boolean; feedback: any[]; count: number }> {
+    const queryString = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE}/feedback?${queryString}`);
+    if (!res.ok) throw new Error('Failed to fetch feedback records');
+    return res.json();
+  },
+
+  async getLearningProfile(): Promise<{ success: boolean; profile: any }> {
+    const res = await fetch(`${API_BASE}/learning/profile`);
+    if (!res.ok) throw new Error('Failed to fetch learning profile');
+    return res.json();
+  },
+
+  async rebuildLearningProfile(): Promise<{ success: boolean; profile: any; totalSignals: number }> {
+    const res = await fetch(`${API_BASE}/learning/rebuild`, { method: 'POST' });
+    if (!res.ok) throw new Error('Failed to rebuild learning profile');
+    return res.json();
+  },
+
+  async getLearningSignals(params: Record<string, string> = {}): Promise<{ success: boolean; signals: any[]; count: number }> {
+    const queryString = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_BASE}/learning/signals?${queryString}`);
+    if (!res.ok) throw new Error('Failed to fetch learning signals');
+    return res.json();
+  },
+
+  async getLearningExplanation(id: string): Promise<{ success: boolean; explanation: any }> {
+    const res = await fetch(`${API_BASE}/learning/explanations/${id}`);
+    if (!res.ok) throw new Error('Failed to fetch learning explanation');
+    return res.json();
   }
 };

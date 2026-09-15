@@ -154,20 +154,52 @@ CREATE TABLE IF NOT EXISTS opportunities (
   confidence TEXT DEFAULT 'High',
   saved INTEGER DEFAULT 0,
   status TEXT DEFAULT 'new',
+  learning_adjustment REAL DEFAULT 0,
+  learning_explanation TEXT,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
   is_demo_data INTEGER DEFAULT 0,
   FOREIGN KEY (discovery_id) REFERENCES discoveries(id) ON DELETE SET NULL
 );
 
--- Feedback table (ready for Phase 6 & 7)
+-- Feedback table (Phase 7 Learning Engine)
 CREATE TABLE IF NOT EXISTS feedback (
   id TEXT PRIMARY KEY,
-  opportunity_id TEXT NOT NULL,
+  source_type TEXT NOT NULL DEFAULT 'opportunity',
+  source_id TEXT NOT NULL,
+  opportunity_id TEXT,
+  combination_id TEXT,
   rating TEXT NOT NULL,
   reason TEXT,
   comments TEXT,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (opportunity_id) REFERENCES opportunities(id) ON DELETE CASCADE
+  FOREIGN KEY (opportunity_id) REFERENCES opportunities(id) ON DELETE CASCADE,
+  FOREIGN KEY (combination_id) REFERENCES tool_combinations(id) ON DELETE CASCADE
+);
+
+-- Learning Signals table (Phase 7 Learning Engine)
+CREATE TABLE IF NOT EXISTS learning_signals (
+  id TEXT PRIMARY KEY,
+  source_type TEXT NOT NULL,
+  source_id TEXT NOT NULL,
+  signal_type TEXT NOT NULL,
+  signal_value REAL DEFAULT 1.0,
+  weight REAL NOT NULL,
+  category TEXT,
+  tool_name TEXT,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(source_type, source_id, signal_type)
+);
+
+-- User Learning Profile summary table (Phase 7 Learning Engine)
+CREATE TABLE IF NOT EXISTS learning_profile (
+  id TEXT PRIMARY KEY DEFAULT 'user_learning_profile',
+  preferred_categories TEXT DEFAULT '{}',
+  preferred_capabilities TEXT DEFAULT '{}',
+  preferred_tools TEXT DEFAULT '{}',
+  preferred_work_types TEXT DEFAULT '{}',
+  total_signals INTEGER DEFAULT 0,
+  confidence_score REAL DEFAULT 0,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Action Plans table (Phase 6 Engine)
@@ -253,6 +285,8 @@ CREATE TABLE IF NOT EXISTS tool_combinations (
   score REAL DEFAULT 0,
   score_breakdown TEXT NOT NULL DEFAULT '{}',
   confidence TEXT DEFAULT 'Medium',
+  learning_adjustment REAL DEFAULT 0,
+  learning_explanation TEXT,
   saved INTEGER DEFAULT 0,
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
   is_demo_data INTEGER DEFAULT 0
