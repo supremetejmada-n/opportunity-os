@@ -291,4 +291,23 @@ CREATE TABLE IF NOT EXISTS tool_combinations (
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
   is_demo_data INTEGER DEFAULT 0
 );
+
+-- Scan Records table (Phase 8 Opportunity Intelligence & On-Demand Scanning Engine)
+CREATE TABLE IF NOT EXISTS scan_records (
+  id TEXT PRIMARY KEY,
+  started_at TEXT NOT NULL,
+  completed_at TEXT,
+  status TEXT NOT NULL DEFAULT 'running',
+  sources_attempted INTEGER DEFAULT 0,
+  items_collected INTEGER DEFAULT 0,
+  items_normalized INTEGER DEFAULT 0,
+  duplicates_removed INTEGER DEFAULT 0,
+  verified_count INTEGER DEFAULT 0,
+  rejected_count INTEGER DEFAULT 0,
+  changed_count INTEGER DEFAULT 0,
+  opportunities_generated INTEGER DEFAULT 0,
+  errors TEXT DEFAULT '[]',
+  duration_ms INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
 `;

@@ -179,10 +179,25 @@ export const api = {
     return res.json();
   },
 
-  // SCAN TRIGGER
-  async triggerScan(): Promise<{ status: string; message: string; summary?: any }> {
+  // SCAN ENGINE (Phase 8 On-Demand Intelligence)
+  async triggerScan(): Promise<{ success: boolean; status: string; scanRecord: any; recommendations: Opportunity[]; count: number; message: string }> {
     const res = await fetch(`${API_BASE}/scan/trigger`, { method: 'POST' });
-    if (!res.ok) throw new Error('Failed to trigger scan');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || err.message || 'Failed to execute scan');
+    }
+    return res.json();
+  },
+
+  async getScanHistory(limit: number = 20): Promise<{ success: boolean; scanRecords: any[]; count: number }> {
+    const res = await fetch(`${API_BASE}/scan/history?limit=${limit}`);
+    if (!res.ok) throw new Error('Failed to fetch scan history');
+    return res.json();
+  },
+
+  async getLatestScan(): Promise<{ success: boolean; scanRecord: any }> {
+    const res = await fetch(`${API_BASE}/scan/latest`);
+    if (!res.ok) throw new Error('Failed to fetch latest scan');
     return res.json();
   },
 

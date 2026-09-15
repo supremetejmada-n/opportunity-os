@@ -443,3 +443,55 @@ export interface LearningExplanation {
   confidence: 'High' | 'Medium' | 'Low' | 'Neutral';
 }
 
+// ==========================================
+// Phase 8: Opportunity Intelligence & On-Demand Scanning Types
+// ==========================================
+
+export type ScanStatus = 'running' | 'completed' | 'partial' | 'failed';
+
+export type DiscoveryChangeType = 'new' | 'updated' | 'unchanged' | 'previously_seen' | 'verification_changed';
+
+export interface ScanRecord {
+  id: string;
+  started_at: string;
+  completed_at: string | null;
+  status: ScanStatus;
+  sources_attempted: number;
+  items_collected: number;
+  items_normalized: number;
+  duplicates_removed: number;
+  verified_count: number;
+  rejected_count: number;
+  changed_count: number;
+  opportunities_generated: number;
+  errors: string[];
+  duration_ms: number;
+  created_at: string;
+}
+
+export interface IntelligenceExplanation {
+  whatIsIt: string;
+  whyItMatters: string;
+  whyItMattersToUser: string;
+  canExecute: boolean;
+  canStartZeroCost: boolean;
+  whoCouldPay: string;
+  opportunitySummary: string;
+  confidence: ConfidenceLevel;
+  evidence: Record<string, any>;
+  recommendedNextAction: string;
+  changeType?: DiscoveryChangeType;
+}
+
+export interface IntelligenceResult {
+  opportunity: Opportunity;
+  explanation: IntelligenceExplanation;
+  changeType: DiscoveryChangeType;
+}
+
+export interface ScanResult {
+  scanRecord: ScanRecord;
+  recommendations: Opportunity[];
+  totalRecommended: number;
+}
+
