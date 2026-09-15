@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Sparkles, Sliders, ShieldAlert, Award, Bookmark, BookmarkCheck, 
-  ArrowRight, RefreshCw, Layers, Clock, TrendingUp, CheckCircle, AlertTriangle, 
-  X, ExternalLink, Zap, Play
+  ArrowRight, RefreshCw, Layers, Clock, TrendingUp, CheckCircle, 
+  X, ExternalLink, Zap, Play, Search, Filter
 } from 'lucide-react';
 import { api, OpportunitiesResponse } from '../../services/api.js';
 import { Opportunity } from '../../types/index.js';
@@ -54,7 +54,7 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
   const handleEvaluate = async () => {
     try {
       setEvaluating(true);
-      const res = await api.evaluateOpportunities();
+      await api.evaluateOpportunities();
       await loadOpportunities();
     } catch (err) {
       console.error('Failed to evaluate opportunities:', err);
@@ -128,7 +128,7 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
   });
 
   return (
-    <div className="space-y-6 py-2 max-w-6xl mx-auto">
+    <div className="space-y-6 py-4 max-w-6xl mx-auto">
       {/* Header Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
         <div>
@@ -142,22 +142,20 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleEvaluate}
-            disabled={evaluating}
-            className="btn-primary flex items-center gap-2 text-xs py-2 px-3.5"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${evaluating ? 'animate-spin' : ''}`} />
-            {evaluating ? 'Scanning...' : 'Run Opportunity Scan'}
-          </button>
-        </div>
+        <button
+          onClick={handleEvaluate}
+          disabled={evaluating}
+          className="btn-primary text-xs"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${evaluating ? 'animate-spin' : ''}`} />
+          <span>{evaluating ? 'Scanning...' : 'Run Opportunity Scan'}</span>
+        </button>
       </div>
 
       {/* Stats Summary Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="panel-card p-3.5 flex items-center gap-3">
-          <div className="p-2 rounded-md bg-indigo-500/10 text-indigo-400">
+          <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
             <Award className="h-5 w-5" />
           </div>
           <div>
@@ -167,7 +165,7 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
         </div>
 
         <div className="panel-card p-3.5 flex items-center gap-3">
-          <div className="p-2 rounded-md bg-emerald-500/10 text-emerald-400">
+          <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
             <TrendingUp className="h-5 w-5" />
           </div>
           <div>
@@ -179,7 +177,7 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
         </div>
 
         <div className="panel-card p-3.5 flex items-center gap-3">
-          <div className="p-2 rounded-md bg-amber-500/10 text-amber-400">
+          <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400">
             <Bookmark className="h-5 w-5" />
           </div>
           <div>
@@ -189,7 +187,7 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
         </div>
 
         <div className="panel-card p-3.5 flex items-center gap-3">
-          <div className="p-2 rounded-md bg-sky-500/10 text-sky-400">
+          <div className="p-2 rounded-lg bg-sky-500/10 text-sky-400">
             <Zap className="h-5 w-5" />
           </div>
           <div>
@@ -199,11 +197,11 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
         </div>
       </div>
 
-      {/* Progressive Disclosure: How Recommendations are Scored */}
+      {/* Transparent Scoring Formula Accordion */}
       <div className="panel-card p-3.5 space-y-2">
         <button
           onClick={() => setShowFormula(!showFormula)}
-          className="w-full flex items-center justify-between text-xs text-slate-300 font-semibold"
+          className="w-full flex items-center justify-between text-xs text-slate-300 font-semibold btn-ghost py-1"
         >
           <span className="flex items-center gap-2">
             <Sliders className="h-3.5 w-3.5 text-indigo-400" />
@@ -215,9 +213,9 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
         </button>
 
         {showFormula && (
-          <div className="pt-2 border-t border-slate-800 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+          <div className="pt-2 border-t border-slate-800 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 animate-fade-in">
             {factors.map((f, i) => (
-              <div key={i} className="bg-slate-950 p-2.5 rounded border border-slate-800/80 space-y-1">
+              <div key={i} className="bg-slate-950 p-2.5 rounded-lg border border-slate-800/80 space-y-1">
                 <div className="flex items-center justify-between text-[11px]">
                   <span className="font-semibold text-slate-300 truncate">{f.name}</span>
                   <span className="font-mono text-indigo-400 font-bold">{f.weight}</span>
@@ -230,14 +228,15 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
       </div>
 
       {/* Filter & Search Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900/60 p-3 rounded-lg border border-slate-800">
-        <div className="flex items-center gap-3 flex-1 min-w-[240px]">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+        <div className="flex items-center gap-2 flex-1 min-w-[240px] bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 focus-within:border-indigo-500">
+          <Search className="h-3.5 w-3.5 text-slate-500 shrink-0" />
           <input
             type="text"
-            placeholder="Search opportunities..."
+            placeholder="Search opportunities by title, customer, or tools..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+            className="w-full bg-transparent text-xs text-slate-200 focus:outline-none"
           />
         </div>
 
@@ -245,7 +244,7 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
           <select
             value={filterDifficulty}
             onChange={e => setFilterDifficulty(e.target.value)}
-            className="bg-slate-950 border border-slate-800 rounded px-2.5 py-1.5 text-slate-300 focus:outline-none focus:border-indigo-500"
+            className="bg-slate-950 border border-slate-800 text-slate-300 rounded-lg px-2.5 py-1.5 focus:border-indigo-500 focus:outline-none"
           >
             <option value="all">All Difficulties</option>
             <option value="Easy">Easy</option>
@@ -255,21 +254,21 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
 
           <button
             onClick={() => setFilterSavedOnly(!filterSavedOnly)}
-            className={`px-3 py-1.5 rounded border flex items-center gap-1.5 font-medium transition-colors ${
+            className={`btn-secondary text-xs py-1.5 px-3 ${
               filterSavedOnly 
-                ? 'bg-amber-500/20 border-amber-500/40 text-amber-300' 
-                : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                ? 'bg-amber-950/40 border-amber-500 text-amber-300 font-semibold' 
+                : ''
             }`}
           >
             <Bookmark className="h-3.5 w-3.5" />
-            {filterSavedOnly ? 'Saved Only' : 'All Opportunities'}
+            <span>{filterSavedOnly ? 'Saved Only' : 'All Items'}</span>
           </button>
         </div>
       </div>
 
-      {/* Opportunity Cards Grid (5-Second Clarity) */}
+      {/* Opportunity Cards Grid (Tactile .interactive-card) */}
       {loading ? (
-        <div className="py-16 text-center text-slate-400 text-xs flex items-center justify-center gap-2">
+        <div className="py-16 text-center text-slate-400 text-xs flex items-center justify-center gap-2 font-mono">
           <RefreshCw className="h-4 w-4 animate-spin text-indigo-400" />
           Loading personalized opportunities...
         </div>
@@ -300,13 +299,13 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
                   setSelectedOpp(opp);
                   setShowTechnicalDetails(false);
                 }}
-                className="panel-card p-5 space-y-4 hover:border-indigo-500/50 cursor-pointer transition-all flex flex-col justify-between group"
+                className="interactive-card p-5 space-y-4 cursor-pointer flex flex-col justify-between group"
               >
                 <div className="space-y-3">
-                  {/* Surface Header Line */}
+                  {/* Top Header Line */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-mono font-bold">
+                      <span className="px-2.5 py-1 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-mono font-bold">
                         {opp.score}% Fit for You
                       </span>
                       <span className="badge-tag badge-slate text-[10px]">
@@ -320,10 +319,10 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
 
                     <button
                       onClick={(e) => handleToggleSave(e, opp.id)}
-                      className={`p-1.5 rounded border transition-colors shrink-0 ${
+                      className={`p-1.5 rounded-lg border transition-colors shrink-0 ${
                         opp.saved 
-                          ? 'bg-amber-500/20 border-amber-500/40 text-amber-300' 
-                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                          ? 'bg-amber-950/40 border-amber-500 text-amber-300' 
+                          : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
                       }`}
                       title={opp.saved ? 'Unsave' : 'Save'}
                     >
@@ -343,11 +342,11 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
 
                   {/* Surface Attributes */}
                   <div className="grid grid-cols-2 gap-2 text-xs pt-1">
-                    <div className="bg-slate-950 p-2 rounded border border-slate-800">
+                    <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
                       <div className="text-[10px] font-mono uppercase text-slate-400">Possible Earnings</div>
                       <div className="font-semibold text-emerald-400 mt-0.5">{earning}</div>
                     </div>
-                    <div className="bg-slate-950 p-2 rounded border border-slate-800">
+                    <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
                       <div className="text-[10px] font-mono uppercase text-slate-400">Potential Customers</div>
                       <div className="font-semibold text-slate-300 mt-0.5 truncate">{customer}</div>
                     </div>
@@ -368,7 +367,7 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
                   )}
                 </div>
 
-                {/* Card Surface Footer CTA */}
+                {/* Card Footer CTA */}
                 <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
                   <span className="text-indigo-400 font-semibold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
                     See opportunity <ArrowRight className="h-3.5 w-3.5" />
@@ -381,11 +380,11 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
         </div>
       )}
 
-      {/* Simplified Detail Modal */}
+      {/* Redesigned Detail Modal with hardware-accelerated entrance */}
       {selectedOpp && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="panel-card max-w-3xl w-full max-h-[90vh] overflow-y-auto space-y-6 p-6 border-indigo-500/30">
-            {/* 1. WHAT CAN YOU DO? */}
+        <div className="modal-overlay">
+          <div className="modal-content p-6 space-y-6">
+            {/* Header */}
             <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-4">
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -404,14 +403,14 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
 
               <button
                 onClick={() => setSelectedOpp(null)}
-                className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200"
+                className="btn-ghost p-1.5 text-slate-400 hover:text-slate-200"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            {/* 2. WHY THIS FITS YOU (3 Concise Bullet Points) */}
-            <div className="bg-indigo-950/30 border border-indigo-800/40 rounded-lg p-4 space-y-2">
+            {/* Why This Fits You */}
+            <div className="bg-indigo-950/30 border border-indigo-800/40 rounded-xl p-4 space-y-2">
               <h4 className="text-xs font-bold text-indigo-300 uppercase tracking-wider flex items-center gap-1.5">
                 <Sparkles className="h-4 w-4 text-indigo-400" />
                 Why This Fits You
@@ -419,7 +418,7 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
               <ul className="space-y-1.5 text-xs text-slate-200">
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-emerald-400 shrink-0" />
-                  <span>Uses tools you already access (<strong>{((selectedOpp.requiredTools || selectedOpp.required_tools) || []).join(', ') || 'AI tools'}</strong>)</span>
+                  <span>Uses tools you access (<strong>{((selectedOpp.requiredTools || selectedOpp.required_tools) || []).join(', ') || 'AI tools'}</strong>)</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-emerald-400 shrink-0" />
@@ -432,7 +431,7 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
               </ul>
             </div>
 
-            {/* 3. WHAT YOU'LL MAKE (Simple Deliverable Workflow) */}
+            {/* Deliverable Pipeline */}
             <div className="space-y-3 border-b border-slate-800 pb-5">
               <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
                 <Layers className="h-4 w-4 text-indigo-400" />
@@ -442,7 +441,7 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
               <div className="flex flex-col sm:flex-row items-center gap-2">
                 {(selectedOpp.workflow || []).map((step: string, idx: number) => (
                   <React.Fragment key={idx}>
-                    <div className="flex-1 bg-slate-950 p-3 rounded border border-slate-800 text-xs space-y-1 w-full">
+                    <div className="flex-1 bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs space-y-1 w-full">
                       <div className="text-[10px] font-mono text-indigo-400 font-bold uppercase">Step {idx + 1}</div>
                       <div className="text-slate-200 font-medium">{step}</div>
                     </div>
@@ -454,9 +453,9 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
               </div>
             </div>
 
-            {/* 4. POTENTIAL CUSTOMERS & EARNINGS */}
+            {/* Customer & Earnings */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-slate-950 border border-slate-800 rounded-lg p-4 space-y-1.5">
+              <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-1.5">
                 <span className="text-[10px] font-mono uppercase text-slate-400 block">Potential Customers</span>
                 <div className="text-sm font-bold text-slate-200">
                   {selectedOpp.customerType || selectedOpp.customer_type || selectedOpp.target_customer || 'Small Businesses'}
@@ -464,7 +463,7 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
                 <p className="text-xs text-slate-400">Businesses looking to save time using automation.</p>
               </div>
 
-              <div className="bg-slate-950 border border-slate-800 rounded-lg p-4 space-y-1.5">
+              <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-1.5">
                 <span className="text-[10px] font-mono uppercase text-slate-400 block">Possible Earnings</span>
                 <div className="text-base font-bold text-emerald-400 font-mono">
                   {selectedOpp.earningPotential || selectedOpp.earning_potential || '₹5,000–₹25,000/month'}
@@ -474,35 +473,35 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
             </div>
 
             {/* User Feedback Widget */}
-            <div className="bg-slate-950 border border-slate-800 rounded-lg p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
               <span className="text-slate-400 font-medium">Was this recommendation useful?</span>
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => handleFeedback(selectedOpp.id, 'useful')}
-                  className={`px-2.5 py-1 rounded text-xs border transition-colors ${
+                  className={`btn-ghost text-xs border ${
                     feedbackStatus[selectedOpp.id] === 'useful'
                       ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                      : 'border-slate-800'
                   }`}
                 >
                   👍 Useful
                 </button>
                 <button
                   onClick={() => handleFeedback(selectedOpp.id, 'not_useful')}
-                  className={`px-2.5 py-1 rounded text-xs border transition-colors ${
+                  className={`btn-ghost text-xs border ${
                     feedbackStatus[selectedOpp.id] === 'not_useful'
                       ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                      : 'border-slate-800'
                   }`}
                 >
                   👎 Not Useful
                 </button>
                 <button
                   onClick={() => handleFeedback(selectedOpp.id, 'not_relevant')}
-                  className={`px-2.5 py-1 rounded text-xs border transition-colors ${
+                  className={`btn-ghost text-xs border ${
                     feedbackStatus[selectedOpp.id] === 'not_relevant'
                       ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                      : 'border-slate-800'
                   }`}
                 >
                   🚫 Not Relevant
@@ -510,18 +509,17 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
               </div>
             </div>
 
-            {/* Progressive Disclosure: Technical Breakdown & Verification Evidence */}
+            {/* Progressive Disclosure: Technical Breakdown & Evidence */}
             <div className="pt-2 border-t border-slate-800">
               <button
                 onClick={() => setShowTechnicalDetails(!showTechnicalDetails)}
-                className="w-full flex items-center justify-between text-xs text-slate-400 hover:text-indigo-400 font-medium py-1"
+                className="btn-ghost text-xs text-slate-400 w-full justify-between"
               >
                 <span>{showTechnicalDetails ? 'Hide technical details ▲' : 'See score details & evidence ▼'}</span>
               </button>
 
               {showTechnicalDetails && (
-                <div className="mt-3 space-y-4 bg-slate-950 p-4 rounded-lg border border-slate-800 text-xs">
-                  {/* 8-Factor Score Breakdown */}
+                <div className="mt-3 space-y-4 bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs animate-fade-in">
                   <div className="space-y-2">
                     <h5 className="font-bold text-slate-300 uppercase text-[10px] tracking-wider">
                       Transparent Score Breakdown
@@ -533,7 +531,7 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
                         const pct = Math.round((val / f.max) * 100);
 
                         return (
-                          <div key={f.key} className="bg-slate-900 p-2.5 rounded border border-slate-800 space-y-1">
+                          <div key={f.key} className="bg-slate-900 p-2.5 rounded-lg border border-slate-800 space-y-1">
                             <div className="flex items-center justify-between text-xs font-semibold">
                               <span className="text-slate-300">{f.name}</span>
                               <span className="font-mono text-indigo-400">{val} / {f.max} pts</span>
@@ -547,7 +545,6 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
                     </div>
                   </div>
 
-                  {/* Discovery Evidence */}
                   {selectedOpp.discoveryId && (
                     <div className="space-y-1.5 pt-2 border-t border-slate-900">
                       <span className="font-bold text-slate-300 block uppercase text-[10px]">Verification Evidence</span>
@@ -569,20 +566,20 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
             <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-slate-800">
               <button
                 onClick={(e) => handleToggleSave(e, selectedOpp.id)}
-                className={`btn-secondary text-xs flex items-center gap-1.5 ${selectedOpp.saved ? 'text-amber-400 border-amber-500/40' : ''}`}
+                className={`btn-secondary text-xs ${selectedOpp.saved ? 'text-amber-400 border-amber-500/40' : ''}`}
               >
                 {selectedOpp.saved ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
-                {selectedOpp.saved ? 'Saved' : 'Save'}
+                <span>{selectedOpp.saved ? 'Saved' : 'Save'}</span>
               </button>
 
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleStartActionPlan(selectedOpp.id)}
                   disabled={startingPlan}
-                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs py-2 px-5 rounded-lg flex items-center gap-1.5 transition-all shadow-md shadow-indigo-950"
+                  className="btn-primary text-xs py-2 px-5"
                 >
                   <Play className={`h-3.5 w-3.5 ${startingPlan ? 'animate-spin' : ''}`} />
-                  {startingPlan ? 'Preparing plan...' : 'Start Your Plan'}
+                  <span>{startingPlan ? 'Preparing plan...' : 'Start Your Plan'}</span>
                 </button>
 
                 <button

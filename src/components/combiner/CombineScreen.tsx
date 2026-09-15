@@ -12,14 +12,12 @@ import {
   DollarSign,
   Clock,
   Sparkles,
-  Filter,
   Check,
   AlertCircle,
-  HelpCircle,
   Info,
   Play
 } from 'lucide-react';
-import { UserTool, ToolCombination, WorkflowPattern } from '../../types/index.js';
+import { UserTool, ToolCombination } from '../../types/index.js';
 import { api } from '../../services/api.js';
 
 interface CombineScreenProps {
@@ -28,7 +26,6 @@ interface CombineScreenProps {
 }
 
 export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan }) => {
-  // State
   const [selectedToolIds, setSelectedToolIds] = useState<string[]>(
     tools.slice(0, 4).map(t => t.id)
   );
@@ -39,7 +36,6 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
-  // Filters & Sorting
   const [filterSavedOnly, setFilterSavedOnly] = useState(false);
   const [filterZeroCostOnly, setFilterZeroCostOnly] = useState(false);
   const [filterPattern, setFilterPattern] = useState<string>('all');
@@ -58,7 +54,6 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
     }
   };
 
-  // Load existing combinations on mount
   const loadCombinations = async () => {
     try {
       setLoading(true);
@@ -80,7 +75,6 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
     loadCombinations();
   }, []);
 
-  // Selection helpers
   const toggleTool = (id: string) => {
     setSelectedToolIds(prev =>
       prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
@@ -99,7 +93,6 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
     setSelectedToolIds(tools.slice(0, 3).map(t => t.id));
   };
 
-  // Generate combinations handler
   const handleGenerate = async (useSelectedOnly: boolean) => {
     try {
       setGenerating(true);
@@ -128,7 +121,6 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
     }
   };
 
-  // Save / Bookmark handler
   const handleToggleSave = async (id: string) => {
     try {
       const res = await api.saveCombination(id);
@@ -164,7 +156,6 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
     setExpandedBreakdowns(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // Filtered & Sorted list
   const filteredCombinations = combinations
     .filter(combo => {
       if (filterSavedOnly && !combo.saved) return false;
@@ -183,7 +174,7 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
   const zeroCostCount = combinations.filter(c => c.is_zero_cost).length;
 
   return (
-    <div className="space-y-6 py-2 max-w-6xl mx-auto">
+    <div className="space-y-6 py-4 max-w-6xl mx-auto">
       {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
         <div>
@@ -199,21 +190,19 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => handleGenerate(false)}
-            disabled={generating || tools.length < 2}
-            className="btn-primary text-xs flex items-center gap-2 py-2 px-3.5"
-          >
-            <Sparkles className={`h-3.5 w-3.5 ${generating ? 'animate-spin' : ''}`} />
-            {generating ? 'Evaluating...' : 'Combine My Tools'}
-          </button>
-        </div>
+        <button
+          onClick={() => handleGenerate(false)}
+          disabled={generating || tools.length < 2}
+          className="btn-primary text-xs"
+        >
+          <Sparkles className={`h-3.5 w-3.5 ${generating ? 'animate-spin' : ''}`} />
+          <span>{generating ? 'Evaluating...' : 'Combine My Tools'}</span>
+        </button>
       </div>
 
       {/* Notice Banner */}
       {notice && (
-        <div className="bg-indigo-950/40 border border-indigo-500/40 text-indigo-200 text-xs px-4 py-2.5 rounded-lg flex items-center gap-2">
+        <div className="bg-indigo-950/40 border border-indigo-500/40 text-indigo-200 text-xs px-4 py-2.5 rounded-xl flex items-center gap-2">
           <Info className="h-4 w-4 text-indigo-400 shrink-0" />
           <span>{notice}</span>
         </div>
@@ -221,13 +210,13 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
 
       {/* Error Banner */}
       {error && (
-        <div className="bg-red-950/40 border border-red-500/40 text-red-200 text-xs px-4 py-2.5 rounded-lg flex items-center gap-2">
+        <div className="bg-red-950/40 border border-red-500/40 text-red-200 text-xs px-4 py-2.5 rounded-xl flex items-center gap-2">
           <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
-      {/* Tool Selector Section */}
+      {/* Interactive Tool Selector Section */}
       <div className="panel-card p-5 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
           <div className="flex items-center gap-2">
@@ -238,35 +227,23 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
           </div>
 
           <div className="flex items-center gap-2 text-xs">
-            <button
-              onClick={handleSelectFirst3}
-              className="text-[11px] text-slate-400 hover:text-indigo-400 px-2 py-1 rounded bg-slate-900 border border-slate-800"
-            >
+            <button onClick={handleSelectFirst3} className="btn-ghost text-[11px] py-1 px-2.5">
               Preset: Top 3
             </button>
-            <button
-              onClick={handleSelectAll}
-              className="text-[11px] text-slate-400 hover:text-indigo-400 px-2 py-1 rounded bg-slate-900 border border-slate-800"
-            >
+            <button onClick={handleSelectAll} className="btn-ghost text-[11px] py-1 px-2.5">
               Select All
             </button>
-            <button
-              onClick={handleClearSelection}
-              className="text-[11px] text-slate-400 hover:text-slate-200 px-2 py-1 rounded bg-slate-900 border border-slate-800"
-            >
+            <button onClick={handleClearSelection} className="btn-ghost text-[11px] py-1 px-2.5">
               Clear
             </button>
-            <button
-              onClick={() => setShowToolSelector(!showToolSelector)}
-              className="text-slate-400 hover:text-slate-200 p-1"
-            >
+            <button onClick={() => setShowToolSelector(!showToolSelector)} className="btn-ghost p-1">
               {showToolSelector ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </button>
           </div>
         </div>
 
         {showToolSelector && (
-          <>
+          <div className="space-y-3 animate-fade-in">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {tools.map((t) => {
                 const isSelected = selectedToolIds.includes(t.id);
@@ -274,9 +251,9 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                   <button
                     key={t.id}
                     onClick={() => toggleTool(t.id)}
-                    className={`p-3 rounded-lg border text-left flex items-start justify-between transition-all ${
+                    className={`p-3 rounded-xl border text-left flex items-start justify-between transition-all active:scale-[0.97] ${
                       isSelected
-                        ? 'bg-indigo-950/30 border-indigo-500/70 text-slate-100 shadow-sm shadow-indigo-950/50'
+                        ? 'bg-indigo-950/40 border-indigo-500/70 text-slate-100 shadow-md shadow-indigo-950/50'
                         : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
                     }`}
                   >
@@ -305,17 +282,17 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
               <button
                 onClick={() => handleGenerate(true)}
                 disabled={generating || selectedToolIds.length < 2 || selectedToolIds.length > 4}
-                className="bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/50 font-medium py-1.5 px-3 rounded-md transition-colors disabled:opacity-40"
+                className="btn-secondary text-xs py-1.5 px-4 disabled:opacity-40"
               >
                 Combine Selected ({selectedToolIds.length}) Tools
               </button>
             </div>
-          </>
+          </div>
         )}
       </div>
 
-      {/* Toolbar: Stats, Filters, Sorting */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900/60 p-3 rounded-lg border border-slate-800 text-xs">
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900/80 p-3 rounded-xl border border-slate-800 text-xs">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-slate-400 font-mono text-[11px] mr-2">
             Found: <strong className="text-slate-200">{filteredCombinations.length}</strong>
@@ -323,10 +300,8 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
 
           <button
             onClick={() => setFilterSavedOnly(!filterSavedOnly)}
-            className={`px-2.5 py-1 rounded-md border transition-all ${
-              filterSavedOnly
-                ? 'bg-amber-950/40 border-amber-500 text-amber-300 font-semibold'
-                : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+            className={`btn-secondary text-xs py-1 px-2.5 ${
+              filterSavedOnly ? 'bg-amber-950/40 border-amber-500 text-amber-300 font-semibold' : ''
             }`}
           >
             ⭐ Saved ({savedCount})
@@ -334,19 +309,17 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
 
           <button
             onClick={() => setFilterZeroCostOnly(!filterZeroCostOnly)}
-            className={`px-2.5 py-1 rounded-md border transition-all ${
-              filterZeroCostOnly
-                ? 'bg-emerald-950/40 border-emerald-500 text-emerald-300 font-semibold'
-                : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+            className={`btn-secondary text-xs py-1 px-2.5 ${
+              filterZeroCostOnly ? 'bg-emerald-950/40 border-emerald-500 text-emerald-300 font-semibold' : ''
             }`}
           >
-            ₹0 Upfront Cost ({zeroCostCount})
+            ₹0 Cost ({zeroCostCount})
           </button>
 
           <select
             value={filterPattern}
             onChange={e => setFilterPattern(e.target.value)}
-            className="bg-slate-950 border border-slate-800 text-slate-300 rounded px-2.5 py-1 text-xs focus:border-indigo-500 focus:outline-none"
+            className="bg-slate-950 border border-slate-800 text-slate-300 rounded-lg px-2.5 py-1 text-xs focus:border-indigo-500 focus:outline-none"
           >
             <option value="all">All Workflow Patterns</option>
             <option value="GENERATE_DESIGN">Generate ➔ Design</option>
@@ -364,7 +337,7 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
           <select
             value={sortBy}
             onChange={e => setSortBy(e.target.value as any)}
-            className="bg-slate-950 border border-slate-800 text-slate-300 rounded px-2.5 py-1 text-xs focus:border-indigo-500 focus:outline-none"
+            className="bg-slate-950 border border-slate-800 text-slate-300 rounded-lg px-2.5 py-1 text-xs focus:border-indigo-500 focus:outline-none"
           >
             <option value="score">Highest Score</option>
             <option value="synergy">Highest Synergy</option>
@@ -373,34 +346,32 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
         </div>
       </div>
 
-      {/* Combinations List */}
+      {/* Combinations List using .interactive-card */}
       {loading ? (
         <div className="panel-card p-12 text-center space-y-3">
           <div className="h-7 w-7 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin mx-auto"></div>
-          <p className="text-xs text-slate-400">Evaluating multi-tool synergy and feasibility...</p>
+          <p className="text-xs text-slate-400 font-mono">Evaluating multi-tool synergy and feasibility...</p>
         </div>
       ) : filteredCombinations.length === 0 ? (
-        <div className="panel-card p-8 border border-slate-800/80 text-center max-w-xl mx-auto space-y-4 my-6">
+        <div className="panel-card p-8 border border-slate-800 text-center max-w-xl mx-auto space-y-4 my-6">
           <Zap className="h-8 w-8 text-slate-600 mx-auto" />
           <div className="space-y-1.5">
             <h3 className="text-sm font-bold text-slate-200">No Matching Tool Combinations</h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Combinations must score at least <strong>65/100</strong> and exhibit non-redundant capability synergy across distinct pipeline stages (e.g. Generation ➔ Design or Scraping ➔ AI analysis).
+              Combinations must score at least <strong>65/100</strong> and exhibit non-redundant capability synergy across distinct pipeline stages.
             </p>
           </div>
-          <div className="pt-2 flex justify-center gap-2">
-            <button
-              onClick={() => {
-                setFilterSavedOnly(false);
-                setFilterZeroCostOnly(false);
-                setFilterPattern('all');
-                handleGenerate(false);
-              }}
-              className="btn-primary text-xs"
-            >
-              Reset Filters & Evaluate All Tools
-            </button>
-          </div>
+          <button
+            onClick={() => {
+              setFilterSavedOnly(false);
+              setFilterZeroCostOnly(false);
+              setFilterPattern('all');
+              handleGenerate(false);
+            }}
+            className="btn-primary text-xs mx-auto"
+          >
+            Reset Filters & Evaluate All Tools
+          </button>
         </div>
       ) : (
         <div className="space-y-5">
@@ -409,51 +380,25 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
             return (
               <div
                 key={combo.id}
-                className="panel-card p-6 border border-slate-800/90 hover:border-slate-700/80 transition-all space-y-5"
+                className="interactive-card p-6 border-slate-800 space-y-5"
               >
                 {/* Header */}
-                <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-800/60 pb-3.5">
-                  <div className="space-y-1 max-w-2xl">
+                <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-800/80 pb-4">
+                  <div className="space-y-1.5 max-w-2xl">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="badge-tag bg-indigo-950/60 text-indigo-300 border border-indigo-500/30 font-mono text-[10px]">
                         {combo.workflow_pattern.replace(/_/g, ' ➔ ')}
                       </span>
-                      {(combo.learning_adjustment || combo.learningAdjustment) ? (
-                        <span className={`badge-tag text-[10px] ${
-                          (combo.learning_adjustment || combo.learningAdjustment || 0) > 0 
-                            ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' 
-                            : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
-                        }`}>
-                          {(combo.learning_adjustment || combo.learningAdjustment || 0) > 0 ? `+${combo.learning_adjustment || combo.learningAdjustment}` : (combo.learning_adjustment || combo.learningAdjustment)} pts Learning
-                        </span>
-                      ) : null}
-                      {combo.origin === 'discovery_derived' ? (
-                        <span className="badge-tag bg-blue-950/60 text-blue-300 border border-blue-500/30 text-[10px]">
-                          Discovery-Derived
-                        </span>
-                      ) : (
-                        <span className="badge-tag bg-purple-950/60 text-purple-300 border border-purple-500/30 text-[10px]">
-                          Profile Recipe
-                        </span>
-                      )}
-                      {combo.is_zero_cost ? (
+                      {combo.is_zero_cost && (
                         <span className="badge-tag badge-emerald flex items-center gap-1 text-[10px]">
                           <DollarSign className="h-3 w-3" /> ₹0 Upfront Cost
-                        </span>
-                      ) : combo.startup_cost === -1 ? (
-                        <span className="badge-tag bg-slate-800 text-amber-300 border border-amber-500/30 text-[10px]">
-                          Cost: Unverified
-                        </span>
-                      ) : (
-                        <span className="badge-tag bg-slate-800 text-slate-300 border border-slate-700 text-[10px]">
-                          ~${combo.startup_cost} Upfront Cost
                         </span>
                       )}
                       <span className="badge-tag bg-slate-900 text-slate-400 border border-slate-800 text-[10px] flex items-center gap-1">
                         <Clock className="h-3 w-3" /> {combo.time_to_demo}
                       </span>
                     </div>
-                    <h3 className="text-base font-bold text-slate-100">{combo.title}</h3>
+                    <h3 className="text-base sm:text-lg font-bold text-slate-100">{combo.title}</h3>
                     <p className="text-xs text-slate-400 leading-relaxed">{combo.summary}</p>
                   </div>
 
@@ -471,8 +416,8 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                     <button
                       onClick={() => handleStartActionPlan(combo.id)}
                       disabled={startingPlanId === combo.id}
-                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs py-1.5 px-3 rounded-lg flex items-center gap-1.5 transition-all shadow-sm shadow-emerald-900/40"
-                      title="Start 6-Phase Action Plan"
+                      className="btn-primary text-xs py-1.5 px-3 bg-emerald-600 border-emerald-500/50"
+                      title="Start Action Plan"
                     >
                       <Play className={`h-3.5 w-3.5 ${startingPlanId === combo.id ? 'animate-spin' : ''}`} />
                       <span className="hidden sm:inline">{startingPlanId === combo.id ? 'Starting...' : 'Start Action Plan'}</span>
@@ -480,10 +425,8 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
 
                     <button
                       onClick={() => handleToggleSave(combo.id)}
-                      className={`p-2 rounded-lg border transition-colors ${
-                        combo.saved
-                          ? 'bg-amber-950/40 border-amber-500 text-amber-300'
-                          : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                      className={`btn-secondary p-2 ${
+                        combo.saved ? 'bg-amber-950/40 border-amber-500 text-amber-300' : ''
                       }`}
                       title={combo.saved ? 'Remove from Saved' : 'Save Combination'}
                     >
@@ -492,17 +435,17 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                   </div>
                 </div>
 
-                {/* Capability Chain Visualization */}
+                {/* Capability Chain Pipeline */}
                 <div className="space-y-2">
                   <h4 className="text-[11px] font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                     <Layers className="h-3.5 w-3.5 text-indigo-400" />
                     Capability Chain & Tool Handoff
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     {combo.capability_chain.map((stage, sIdx) => (
                       <div
                         key={sIdx}
-                        className="bg-slate-950/70 border border-slate-800/80 rounded-lg p-3 space-y-1 relative"
+                        className="bg-slate-950 border border-slate-800 rounded-xl p-3 space-y-1"
                       >
                         <div className="flex items-center justify-between text-[11px]">
                           <span className="font-bold text-slate-200 flex items-center gap-1.5">
@@ -510,15 +453,6 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                               {stage.stageIndex}
                             </span>
                             {stage.toolName}
-                          </span>
-                          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">
-                            {stage.accessStatus === 'already_have'
-                              ? 'Owned'
-                              : stage.accessStatus === 'free_to_obtain'
-                              ? 'Free Tool'
-                              : stage.accessStatus === 'requires_paid_access'
-                              ? 'Paid Tool'
-                              : 'Unverified Access'}
                           </span>
                         </div>
                         <p className="text-[11px] text-slate-400 leading-snug">
@@ -529,9 +463,9 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                   </div>
                 </div>
 
-                {/* Deliverable & Monetization Grid */}
+                {/* Outcome & Monetization */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-                  <div className="bg-slate-900/40 border border-slate-800 rounded-lg p-3.5 space-y-1.5">
+                  <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-1.5">
                     <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block">
                       Concrete Deliverable & Target Customer
                     </span>
@@ -544,7 +478,7 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                     </div>
                   </div>
 
-                  <div className="bg-slate-900/40 border border-slate-800 rounded-lg p-3.5 space-y-1.5">
+                  <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-1.5">
                     <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block">
                       Monetization Hypothesis
                     </span>
@@ -562,64 +496,36 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                   </div>
                 </div>
 
-                {/* Execution Steps */}
-                {combo.workflow_steps && combo.workflow_steps.length > 0 && (
-                  <div className="space-y-1.5 pt-1">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block">
-                      Execution Blueprint
-                    </span>
-                    <ol className="space-y-1 text-xs text-slate-300">
-                      {combo.workflow_steps.map((step, stepIdx) => (
-                        <li key={stepIdx} className="flex items-start gap-2">
-                          <span className="text-indigo-400 font-mono text-[11px] shrink-0">{stepIdx + 1}.</span>
-                          <span className="leading-relaxed">{step}</span>
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-                )}
-
-                {/* Adaptive Personalization Explanation */}
-                {(combo.learning_explanation || combo.learningExplanation) && (
-                  <div className="bg-purple-950/20 border border-purple-800/30 rounded-lg p-3 text-xs space-y-1">
-                    <div className="font-bold text-purple-300 flex items-center gap-1.5">
-                      <Sparkles className="h-3.5 w-3.5 text-purple-400" />
-                      Adaptive Personalization Signal ({((combo.learning_adjustment || combo.learningAdjustment || 0) > 0) ? `+${combo.learning_adjustment || combo.learningAdjustment}` : (combo.learning_adjustment || combo.learningAdjustment)} pts)
-                    </div>
-                    <p className="text-slate-300">{combo.learning_explanation || combo.learningExplanation}</p>
-                  </div>
-                )}
-
                 {/* User Feedback Widget */}
-                <div className="bg-slate-950 border border-slate-800 rounded-lg p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
                   <span className="text-slate-400 font-medium">Was this combination idea useful?</span>
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => handleFeedback(combo.id, 'useful')}
-                      className={`px-2.5 py-1 rounded text-xs border transition-colors ${
+                      className={`btn-ghost text-xs border ${
                         feedbackStatus[combo.id] === 'useful'
                           ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                          : 'border-slate-800'
                       }`}
                     >
                       👍 Useful
                     </button>
                     <button
                       onClick={() => handleFeedback(combo.id, 'not_useful')}
-                      className={`px-2.5 py-1 rounded text-xs border transition-colors ${
+                      className={`btn-ghost text-xs border ${
                         feedbackStatus[combo.id] === 'not_useful'
                           ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                          : 'border-slate-800'
                       }`}
                     >
                       👎 Not Useful
                     </button>
                     <button
                       onClick={() => handleFeedback(combo.id, 'not_relevant')}
-                      className={`px-2.5 py-1 rounded text-xs border transition-colors ${
+                      className={`btn-ghost text-xs border ${
                         feedbackStatus[combo.id] === 'not_relevant'
                           ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                          : 'border-slate-800'
                       }`}
                     >
                       🚫 Not Relevant
@@ -627,20 +533,20 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                   </div>
                 </div>
 
-                {/* 8-Factor Score Breakdown Accordion */}
+                {/* Score Breakdown Accordion */}
                 <div className="pt-2 border-t border-slate-800/60">
                   <button
                     onClick={() => toggleBreakdown(combo.id)}
-                    className="text-xs text-slate-400 hover:text-indigo-400 flex items-center gap-1.5 transition-colors font-medium"
+                    className="btn-ghost text-xs text-slate-400 w-full justify-between"
                   >
-                    {isBreakdownOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                     <span>{isBreakdownOpen ? 'Hide' : 'Inspect'} 8-Factor Score Breakdown & Rationale</span>
+                    {isBreakdownOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                   </button>
 
                   {isBreakdownOpen && (
-                    <div className="mt-3 p-4 bg-slate-950 rounded-lg border border-slate-800 space-y-3">
+                    <div className="mt-3 p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-3 animate-fade-in">
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                        <div className="p-2.5 bg-slate-900/60 rounded border border-slate-800/80 space-y-1">
+                        <div className="p-2.5 bg-slate-900/60 rounded-lg border border-slate-800 space-y-1">
                           <div className="flex justify-between items-center text-xs">
                             <span className="text-slate-400">Tool Availability</span>
                             <span className="font-mono text-indigo-400 font-bold">
@@ -652,7 +558,7 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                           </p>
                         </div>
 
-                        <div className="p-2.5 bg-slate-900/60 rounded border border-slate-800/80 space-y-1">
+                        <div className="p-2.5 bg-slate-900/60 rounded-lg border border-slate-800 space-y-1">
                           <div className="flex justify-between items-center text-xs">
                             <span className="text-slate-400">Capability Synergy</span>
                             <span className="font-mono text-indigo-400 font-bold">
@@ -664,7 +570,7 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                           </p>
                         </div>
 
-                        <div className="p-2.5 bg-slate-900/60 rounded border border-slate-800/80 space-y-1">
+                        <div className="p-2.5 bg-slate-900/60 rounded-lg border border-slate-800 space-y-1">
                           <div className="flex justify-between items-center text-xs">
                             <span className="text-slate-400">Skill Fit</span>
                             <span className="font-mono text-indigo-400 font-bold">
@@ -676,19 +582,7 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                           </p>
                         </div>
 
-                        <div className="p-2.5 bg-slate-900/60 rounded border border-slate-800/80 space-y-1">
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="text-slate-400">Outcome Usefulness</span>
-                            <span className="font-mono text-indigo-400 font-bold">
-                              {combo.score_breakdown.outcomeUsefulness} / 15
-                            </span>
-                          </div>
-                          <p className="text-[10px] text-slate-500 leading-tight">
-                            {combo.score_breakdown.reasoning?.outcomeUsefulness}
-                          </p>
-                        </div>
-
-                        <div className="p-2.5 bg-slate-900/60 rounded border border-slate-800/80 space-y-1">
+                        <div className="p-2.5 bg-slate-900/60 rounded-lg border border-slate-800 space-y-1">
                           <div className="flex justify-between items-center text-xs">
                             <span className="text-slate-400">₹0 Feasibility</span>
                             <span className="font-mono text-emerald-400 font-bold">
@@ -697,42 +591,6 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                           </div>
                           <p className="text-[10px] text-slate-500 leading-tight">
                             {combo.score_breakdown.reasoning?.zeroCostFeasibility}
-                          </p>
-                        </div>
-
-                        <div className="p-2.5 bg-slate-900/60 rounded border border-slate-800/80 space-y-1">
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="text-slate-400">Simplicity</span>
-                            <span className="font-mono text-indigo-400 font-bold">
-                              {combo.score_breakdown.executionSimplicity} / 10
-                            </span>
-                          </div>
-                          <p className="text-[10px] text-slate-500 leading-tight">
-                            {combo.score_breakdown.reasoning?.executionSimplicity}
-                          </p>
-                        </div>
-
-                        <div className="p-2.5 bg-slate-900/60 rounded border border-slate-800/80 space-y-1">
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="text-slate-400">Time to Demo</span>
-                            <span className="font-mono text-indigo-400 font-bold">
-                              {combo.score_breakdown.timeToDemo} / 5
-                            </span>
-                          </div>
-                          <p className="text-[10px] text-slate-500 leading-tight">
-                            {combo.score_breakdown.reasoning?.timeToDemo}
-                          </p>
-                        </div>
-
-                        <div className="p-2.5 bg-slate-900/60 rounded border border-slate-800/80 space-y-1">
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="text-slate-400">Monetization Potential</span>
-                            <span className="font-mono text-indigo-400 font-bold">
-                              {combo.score_breakdown.customerMonetizationPotential} / 5
-                            </span>
-                          </div>
-                          <p className="text-[10px] text-slate-500 leading-tight">
-                            {combo.score_breakdown.reasoning?.customerMonetizationPotential}
                           </p>
                         </div>
                       </div>

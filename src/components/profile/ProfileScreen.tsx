@@ -74,11 +74,9 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   const [activeTab, setActiveTab] = useState<ProfileTab>('overview');
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Profile Edit State
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState<Partial<UserProfile>>({});
 
-  // Skill Modals
   const [isSkillModalOpen, setIsSkillModalOpen] = useState(false);
   const [editingSkill, setEditingSkill] = useState<UserSkill | null>(null);
   const [skillForm, setSkillForm] = useState<{ name: string; proficiency: SkillProficiency; confidence: number; experience_years: number; last_used: string }>({
@@ -89,7 +87,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     last_used: 'Recently'
   });
 
-  // Tool Modals
   const [isToolModalOpen, setIsToolModalOpen] = useState(false);
   const [editingTool, setEditingTool] = useState<UserTool | null>(null);
   const [toolForm, setToolForm] = useState<{ name: string; category: string; access_type: ToolAccessType; cost_per_month: number; capabilitiesStr: string; familiarity: number }>({
@@ -101,7 +98,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     familiarity: 85
   });
 
-  // Goal Modal
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [goalForm, setGoalForm] = useState<{ goal: string; priority: GoalPriority; description: string; target_timeframe: string }>({
     goal: '',
@@ -110,11 +106,9 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     target_timeframe: '1 month'
   });
 
-  // Interest Modal
   const [isInterestModalOpen, setIsInterestModalOpen] = useState(false);
   const [interestForm, setInterestForm] = useState({ category: 'AI Tools', topic: '', industry: 'Tech' });
 
-  // Project Modal
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [projectForm, setProjectForm] = useState({ name: '', description: '', techStr: 'React, Gemini', status: 'In Progress' as const, relevance: 'High' });
 
@@ -150,7 +144,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     }
   };
 
-  // Skill Handlers
   const handleOpenSkillModal = (skill?: UserSkill) => {
     if (skill) {
       setEditingSkill(skill);
@@ -184,7 +177,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     }
   };
 
-  // Tool Handlers
   const handleOpenToolModal = (tool?: UserTool) => {
     if (tool) {
       setEditingTool(tool);
@@ -229,7 +221,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     }
   };
 
-  // Goal Handler
   const handleSaveGoal = async () => {
     if (!goalForm.goal.trim()) return;
     try {
@@ -241,7 +232,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     }
   };
 
-  // Interest Handler
   const handleSaveInterest = async () => {
     if (!interestForm.topic.trim()) return;
     try {
@@ -253,7 +243,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
     }
   };
 
-  // Project Handler
   const handleSaveProject = async () => {
     if (!projectForm.name.trim()) return;
     try {
@@ -282,8 +271,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   ];
 
   return (
-    <div className="space-y-6 py-2 max-w-5xl mx-auto">
-      {/* Top Workspace Header */}
+    <div className="space-y-6 py-4 max-w-5xl mx-auto">
+      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
         <div>
           <h1 className="text-xl font-bold text-slate-100">What We Know About You</h1>
@@ -293,7 +282,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         </div>
 
         {statusMsg && (
-          <div className={`flex items-center gap-2 px-3 py-1 rounded-md text-xs font-semibold ${
+          <div className={`flex items-center gap-2 px-3 py-1 rounded-lg text-xs font-semibold ${
             statusMsg.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/10 text-red-400 border border-red-500/30'
           }`}>
             {statusMsg.type === 'success' ? <CheckCircle className="h-3.5 w-3.5" /> : <AlertCircle className="h-3.5 w-3.5" />}
@@ -302,8 +291,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         )}
       </div>
 
-      {/* Navigation Sub-Tabs */}
-      <div className="flex overflow-x-auto gap-2 border-b border-slate-800/80 pb-2">
+      {/* Sub-Tab Navigation */}
+      <div className="flex overflow-x-auto gap-2 border-b border-slate-800/80 pb-2 scrollbar-none">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -311,9 +300,9 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all active:scale-[0.97] ${
                 isActive
-                  ? 'bg-indigo-600 text-white shadow-sm'
+                  ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-950/60'
                   : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
               }`}
             >
@@ -408,7 +397,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs animate-fade-in">
               <div>
                 <label className="block font-semibold text-slate-300 mb-1">Name</label>
                 <input
@@ -458,40 +447,12 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 focus:border-indigo-500 focus:outline-none"
                 />
               </div>
-
-              <div>
-                <label className="block font-semibold text-slate-300 mb-1">Preferred Work Type</label>
-                <select
-                  value={profileForm.preferred_work_type || 'Freelance'}
-                  onChange={(e) => setProfileForm({ ...profileForm, preferred_work_type: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 focus:border-indigo-500 focus:outline-none"
-                >
-                  <option value="Freelance">Freelance Service</option>
-                  <option value="Micro-SaaS">Micro-SaaS</option>
-                  <option value="Agency Service">Agency Service</option>
-                  <option value="Consulting">Consulting</option>
-                  <option value="Digital Product">Digital Asset / Product</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-semibold text-slate-300 mb-1">Remote Preference</label>
-                <select
-                  value={profileForm.remote_preference || 'Remote Only'}
-                  onChange={(e) => setProfileForm({ ...profileForm, remote_preference: e.target.value as any })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 focus:border-indigo-500 focus:outline-none"
-                >
-                  <option value="Remote Only">Remote Only</option>
-                  <option value="Hybrid">Hybrid</option>
-                  <option value="Any">Any</option>
-                </select>
-              </div>
             </div>
           )}
         </div>
       )}
 
-      {/* TAB 2: SKILLS */}
+      {/* TAB 2: SKILLS using .interactive-card */}
       {activeTab === 'skills' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -504,7 +465,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {skills.map((skill) => (
-              <div key={skill.id} className="panel-card p-4 space-y-3 flex flex-col justify-between">
+              <div key={skill.id} className="interactive-card p-4 space-y-3 flex flex-col justify-between">
                 <div className="space-y-2">
                   <div className="flex items-start justify-between">
                     <h3 className="font-bold text-slate-100 text-xs">{skill.name}</h3>
@@ -523,10 +484,10 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 </div>
 
                 <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800/80 text-[11px]">
-                  <button onClick={() => handleOpenSkillModal(skill)} className="p-1 text-slate-400 hover:text-slate-200">
+                  <button onClick={() => handleOpenSkillModal(skill)} className="btn-ghost p-1 text-slate-400 hover:text-slate-200">
                     <Edit3 className="h-3.5 w-3.5" />
                   </button>
-                  <button onClick={() => onDeleteSkill(skill.id)} className="p-1 text-slate-400 hover:text-red-400">
+                  <button onClick={() => onDeleteSkill(skill.id)} className="btn-ghost p-1 text-slate-400 hover:text-red-400">
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -536,7 +497,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         </div>
       )}
 
-      {/* TAB 3: TOOLS */}
+      {/* TAB 3: TOOLS using .interactive-card */}
       {activeTab === 'tools' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -549,7 +510,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {tools.map((tool) => (
-              <div key={tool.id} className="panel-card p-4 space-y-3 flex flex-col justify-between">
+              <div key={tool.id} className="interactive-card p-4 space-y-3 flex flex-col justify-between">
                 <div className="space-y-2">
                   <div className="flex items-start justify-between">
                     <div>
@@ -571,10 +532,10 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 </div>
 
                 <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800/80">
-                  <button onClick={() => handleOpenToolModal(tool)} className="p-1 text-slate-400 hover:text-slate-200">
+                  <button onClick={() => handleOpenToolModal(tool)} className="btn-ghost p-1 text-slate-400 hover:text-slate-200">
                     <Edit3 className="h-3.5 w-3.5" />
                   </button>
-                  <button onClick={() => onDeleteTool(tool.id)} className="p-1 text-slate-400 hover:text-red-400">
+                  <button onClick={() => onDeleteTool(tool.id)} className="btn-ghost p-1 text-slate-400 hover:text-red-400">
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -597,7 +558,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
           <div className="space-y-2">
             {goals.map((g) => (
-              <div key={g.id} className="panel-card p-4 flex items-start justify-between gap-4">
+              <div key={g.id} className="interactive-card p-4 flex items-start justify-between gap-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className={`badge-tag ${g.priority === 'High' ? 'badge-indigo' : 'badge-slate'}`}>{g.priority}</span>
@@ -605,7 +566,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                   </div>
                   {g.description && <p className="text-xs text-slate-400">{g.description}</p>}
                 </div>
-                <button onClick={() => onDeleteGoal(g.id)} className="p-1 text-slate-400 hover:text-red-400">
+                <button onClick={() => onDeleteGoal(g.id)} className="btn-ghost p-1 text-slate-400 hover:text-red-400">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -627,12 +588,12 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {interests.map((inst) => (
-              <div key={inst.id} className="panel-card p-4 flex items-center justify-between">
+              <div key={inst.id} className="interactive-card p-4 flex items-center justify-between">
                 <div>
                   <span className="text-[10px] text-indigo-400 uppercase font-mono font-semibold">{inst.category}</span>
                   <h3 className="font-bold text-slate-200 text-xs">{inst.topic}</h3>
                 </div>
-                <button onClick={() => onDeleteInterest(inst.id)} className="p-1 text-slate-400 hover:text-red-400">
+                <button onClick={() => onDeleteInterest(inst.id)} className="btn-ghost p-1 text-slate-400 hover:text-red-400">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -654,7 +615,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
           <div className="space-y-2">
             {projects.map((proj) => (
-              <div key={proj.id} className="panel-card p-4 flex items-start justify-between">
+              <div key={proj.id} className="interactive-card p-4 flex items-start justify-between">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="badge-tag badge-emerald text-[10px]">{proj.status}</span>
@@ -662,7 +623,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                   </div>
                   {proj.description && <p className="text-xs text-slate-400">{proj.description}</p>}
                 </div>
-                <button onClick={() => onDeleteProject(proj.id)} className="p-1 text-slate-400 hover:text-red-400">
+                <button onClick={() => onDeleteProject(proj.id)} className="btn-ghost p-1 text-slate-400 hover:text-red-400">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -677,7 +638,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           <div className="modal-content p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="font-bold text-slate-100 text-sm">{editingSkill ? 'Edit Skill' : 'Add Skill'}</h3>
-              <button onClick={() => setIsSkillModalOpen(false)} className="text-slate-400 hover:text-slate-200"><X className="h-4 w-4" /></button>
+              <button onClick={() => setIsSkillModalOpen(false)} className="btn-ghost p-1 text-slate-400 hover:text-slate-200"><X className="h-4 w-4" /></button>
             </div>
             <div className="space-y-3 text-xs">
               <div>
@@ -731,7 +692,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           <div className="modal-content p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="font-bold text-slate-100 text-sm">{editingTool ? 'Edit Tool' : 'Add Tool'}</h3>
-              <button onClick={() => setIsToolModalOpen(false)} className="text-slate-400 hover:text-slate-200"><X className="h-4 w-4" /></button>
+              <button onClick={() => setIsToolModalOpen(false)} className="btn-ghost p-1 text-slate-400 hover:text-slate-200"><X className="h-4 w-4" /></button>
             </div>
             <div className="space-y-3 text-xs">
               <div>
@@ -769,15 +730,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                   </select>
                 </div>
               </div>
-              <div>
-                <label className="block font-semibold text-slate-300 mb-1">Capabilities (Comma separated)</label>
-                <input
-                  type="text"
-                  value={toolForm.capabilitiesStr}
-                  onChange={(e) => setToolForm({ ...toolForm, capabilitiesStr: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100"
-                />
-              </div>
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
               <button onClick={() => setIsToolModalOpen(false)} className="btn-secondary text-xs">Cancel</button>
@@ -793,7 +745,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           <div className="modal-content p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="font-bold text-slate-100 text-sm">Add Strategic Goal</h3>
-              <button onClick={() => setIsGoalModalOpen(false)} className="text-slate-400 hover:text-slate-200"><X className="h-4 w-4" /></button>
+              <button onClick={() => setIsGoalModalOpen(false)} className="btn-ghost p-1 text-slate-400 hover:text-slate-200"><X className="h-4 w-4" /></button>
             </div>
             <div className="space-y-3 text-xs">
               <div>
@@ -805,30 +757,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                   placeholder="e.g. Launch ₹0-Cost AI Service"
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100"
                 />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-300 mb-1">Priority</label>
-                  <select
-                    value={goalForm.priority}
-                    onChange={(e) => setGoalForm({ ...goalForm, priority: e.target.value as GoalPriority })}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100"
-                  >
-                    <option value="High">High</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Low">Low</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-300 mb-1">Target Timeframe</label>
-                  <input
-                    type="text"
-                    value={goalForm.target_timeframe}
-                    onChange={(e) => setGoalForm({ ...goalForm, target_timeframe: e.target.value })}
-                    placeholder="e.g. 1 month"
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100"
-                  />
-                </div>
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
@@ -845,7 +773,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           <div className="modal-content p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="font-bold text-slate-100 text-sm">Add Interest Topic</h3>
-              <button onClick={() => setIsInterestModalOpen(false)} className="text-slate-400 hover:text-slate-200"><X className="h-4 w-4" /></button>
+              <button onClick={() => setIsInterestModalOpen(false)} className="btn-ghost p-1 text-slate-400 hover:text-slate-200"><X className="h-4 w-4" /></button>
             </div>
             <div className="space-y-3 text-xs">
               <div>
@@ -883,7 +811,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           <div className="modal-content p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="font-bold text-slate-100 text-sm">Add Project</h3>
-              <button onClick={() => setIsProjectModalOpen(false)} className="text-slate-400 hover:text-slate-200"><X className="h-4 w-4" /></button>
+              <button onClick={() => setIsProjectModalOpen(false)} className="btn-ghost p-1 text-slate-400 hover:text-slate-200"><X className="h-4 w-4" /></button>
             </div>
             <div className="space-y-3 text-xs">
               <div>

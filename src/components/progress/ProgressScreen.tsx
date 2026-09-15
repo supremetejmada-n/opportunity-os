@@ -11,23 +11,19 @@ import {
   CheckCircle2,
   Clock,
   Layers,
-  Send,
   FileText,
   AlertCircle,
   Pause,
   Trash2,
   ExternalLink,
-  ChevronRight,
   PlusCircle,
   RotateCcw,
   Check,
-  XCircle,
   MessageSquare
 } from 'lucide-react';
 import {
   ProgressMetrics,
   ActionPlan,
-  ActionStep,
   ActionStepStatus,
   ProgressLog,
   ProgressResultType,
@@ -41,16 +37,13 @@ interface ProgressScreenProps {
 }
 
 export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefreshMetrics }) => {
-  // Plans State
   const [plans, setPlans] = useState<ActionPlan[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [loadingPlans, setLoadingPlans] = useState<boolean>(true);
 
-  // Logs State
   const [logs, setLogs] = useState<ProgressLog[]>([]);
   const [loadingLogs, setLoadingLogs] = useState<boolean>(true);
 
-  // Form State for Logging New Result
   const [logFormOpen, setLogFormOpen] = useState<boolean>(false);
   const [formResultType, setFormResultType] = useState<ProgressResultType>('demo_created');
   const [formOutcome, setFormOutcome] = useState<ProgressOutcome>('positive');
@@ -60,9 +53,11 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
   const [submittingLog, setSubmittingLog] = useState<boolean>(false);
   const [logError, setLogError] = useState<string | null>(null);
 
-  // Phase 7 Learning Engine Profile state
   const [learningProfile, setLearningProfile] = useState<any>(null);
   const [rebuildingLearning, setRebuildingLearning] = useState<boolean>(false);
+
+  const [activeStepNoteId, setActiveStepNoteId] = useState<string | null>(null);
+  const [stepNoteText, setStepNoteText] = useState<string>('');
 
   const loadLearningProfile = async () => {
     try {
@@ -89,11 +84,6 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
     }
   };
 
-  // Active step notes editing
-  const [activeStepNoteId, setActiveStepNoteId] = useState<string | null>(null);
-  const [stepNoteText, setStepNoteText] = useState<string>('');
-
-  // Fetch Action Plans
   const loadPlans = async () => {
     try {
       setLoadingPlans(true);
@@ -101,7 +91,6 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
       if (res.success && res.plans) {
         setPlans(res.plans);
         if (!selectedPlanId && res.plans.length > 0) {
-          // Default to most recently active or created plan
           const active = res.plans.find(p => p.status === 'in_progress') || res.plans[0];
           setSelectedPlanId(active.id);
         }
@@ -113,7 +102,6 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
     }
   };
 
-  // Fetch Progress Logs
   const loadLogs = async () => {
     try {
       setLoadingLogs(true);
@@ -136,7 +124,6 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
 
   const selectedPlan = plans.find(p => p.id === selectedPlanId) || null;
 
-  // Plan actions
   const handleStartPlan = async (id: string) => {
     try {
       const res = await api.startActionPlan(id);
@@ -186,9 +173,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
   };
 
   const handleDeletePlan = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this action plan and its associated steps?')) {
-      return;
-    }
+    if (!window.confirm('Are you sure you want to delete this action plan?')) return;
     try {
       const res = await api.deleteActionPlan(id);
       if (res.success) {
@@ -205,12 +190,10 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
     }
   };
 
-  // Step Actions
   const handleUpdateStepStatus = async (stepId: string, status: ActionStepStatus, notes?: string) => {
     try {
       const res = await api.updateActionStep(stepId, { status, notes });
       if (res.success && res.step && selectedPlanId) {
-        // Reload full active plan to get updated progress percentage and next-step states
         const updated = await api.getActionPlanById(selectedPlanId);
         if (updated.success && updated.plan) {
           setPlans(prev => prev.map(p => p.id === selectedPlanId ? updated.plan : p));
@@ -232,7 +215,6 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
     setStepNoteText('');
   };
 
-  // Submit Result Log
   const handleSubmitLog = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formNotes.trim()) {
@@ -293,51 +275,36 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
 
   const getPhaseBadge = (phase: string) => {
     switch (phase) {
-      case 'LEARN':
-        return 'bg-blue-950/60 text-blue-400 border-blue-500/40';
-      case 'BUILD':
-        return 'bg-emerald-950/60 text-emerald-400 border-emerald-500/40';
-      case 'PORTFOLIO':
-        return 'bg-purple-950/60 text-purple-400 border-purple-500/40';
-      case 'PROSPECT':
-        return 'bg-amber-950/60 text-amber-400 border-amber-500/40';
-      case 'OUTREACH':
-        return 'bg-rose-950/60 text-rose-400 border-rose-500/40';
-      case 'RESULT':
-        return 'bg-indigo-950/60 text-indigo-400 border-indigo-500/40';
-      default:
-        return 'bg-slate-900 text-slate-400 border-slate-700';
+      case 'LEARN': return 'bg-blue-950/60 text-blue-400 border-blue-500/40';
+      case 'BUILD': return 'bg-emerald-950/60 text-emerald-400 border-emerald-500/40';
+      case 'PORTFOLIO': return 'bg-purple-950/60 text-purple-400 border-purple-500/40';
+      case 'PROSPECT': return 'bg-amber-950/60 text-amber-400 border-amber-500/40';
+      case 'OUTREACH': return 'bg-rose-950/60 text-rose-400 border-rose-500/40';
+      case 'RESULT': return 'bg-indigo-950/60 text-indigo-400 border-indigo-500/40';
+      default: return 'bg-slate-900 text-slate-400 border-slate-700';
     }
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'completed':
-        return 'bg-emerald-950/80 text-emerald-300 border-emerald-500/50';
-      case 'in_progress':
-        return 'bg-indigo-950/80 text-indigo-300 border-indigo-500/50 animate-pulse';
-      case 'paused':
-        return 'bg-amber-950/80 text-amber-300 border-amber-500/50';
-      case 'skipped':
-        return 'bg-slate-900 text-slate-500 border-slate-800';
-      default:
-        return 'bg-slate-950 text-slate-400 border-slate-800';
+      case 'completed': return 'bg-emerald-950/80 text-emerald-300 border-emerald-500/50';
+      case 'in_progress': return 'bg-indigo-950/80 text-indigo-300 border-indigo-500/50';
+      case 'paused': return 'bg-amber-950/80 text-amber-300 border-amber-500/50';
+      case 'skipped': return 'bg-slate-900 text-slate-500 border-slate-800';
+      default: return 'bg-slate-950 text-slate-400 border-slate-800';
     }
   };
 
   const getOutcomeBadge = (outcome?: string) => {
     switch (outcome) {
-      case 'positive':
-        return 'bg-emerald-950/50 text-emerald-400 border-emerald-500/30';
-      case 'negative':
-        return 'bg-red-950/50 text-red-400 border-red-500/30';
-      default:
-        return 'bg-slate-900 text-slate-400 border-slate-700';
+      case 'positive': return 'bg-emerald-950/50 text-emerald-400 border-emerald-500/30';
+      case 'negative': return 'bg-red-950/50 text-red-400 border-red-500/30';
+      default: return 'bg-slate-900 text-slate-400 border-slate-700';
     }
   };
 
   return (
-    <div className="space-y-6 py-2 max-w-6xl mx-auto">
+    <div className="space-y-6 py-4 max-w-6xl mx-auto">
       {/* Header Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
         <div>
@@ -353,14 +320,14 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
 
         <button
           onClick={() => setLogFormOpen(!logFormOpen)}
-          className="btn-primary text-xs flex items-center gap-1.5 py-2 px-3.5 shadow-sm shadow-indigo-950"
+          className="btn-primary text-xs"
         >
           <PlusCircle className="h-4 w-4" />
-          {logFormOpen ? 'Close Logger' : 'Log Result'}
+          <span>{logFormOpen ? 'Close Logger' : 'Log Result'}</span>
         </button>
       </div>
 
-      {/* Metric Counters */}
+      {/* Metric Counters Strip */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
         {metricCards.map((m, i) => {
           const Icon = m.icon;
@@ -376,7 +343,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
         })}
       </div>
 
-      {/* WHAT WE'VE LEARNED ABOUT YOU */}
+      {/* Humanized Preferences Summary */}
       <div className="panel-card p-4 border border-purple-800/40 bg-purple-950/15 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-purple-800/30 pb-2.5">
           <div className="flex items-center gap-2">
@@ -388,15 +355,15 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
           <button
             onClick={handleRebuildLearning}
             disabled={rebuildingLearning}
-            className="px-2.5 py-1 rounded bg-purple-900/40 hover:bg-purple-800/60 border border-purple-500/40 text-purple-300 text-xs font-medium transition-colors flex items-center gap-1.5"
+            className="btn-ghost text-xs py-1 px-2.5 text-purple-300 hover:text-purple-100"
           >
             <RotateCcw className={`h-3 w-3 ${rebuildingLearning ? 'animate-spin' : ''}`} />
-            {rebuildingLearning ? 'Updating...' : 'Update Recommendations'}
+            <span>{rebuildingLearning ? 'Updating...' : 'Update Recommendations'}</span>
           </button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-          <div className="bg-slate-950/60 p-3 rounded border border-slate-800/80 space-y-1">
+          <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 space-y-1">
             <span className="text-[10px] text-slate-400 uppercase font-mono block">Your Activity</span>
             <div className="text-base font-bold text-slate-100 font-mono">
               {learningProfile ? learningProfile.total_signals : 0} Activity Signals
@@ -404,39 +371,39 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
             <p className="text-[10px] text-slate-500">Learned from ratings, completed steps, and logged outcomes.</p>
           </div>
 
-          <div className="bg-slate-950/60 p-3 rounded border border-slate-800/80 space-y-1">
-            <span className="text-[10px] text-slate-400 uppercase font-mono block">Preference Strength</span>
+          <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 space-y-1">
+            <span className="text-[10px] text-slate-400 uppercase font-mono block">Preference Certainty</span>
             <div className="text-base font-bold text-purple-400 font-mono">
               {learningProfile ? (learningProfile.confidence_score * 100).toFixed(0) : 0}% Certainty
             </div>
             <p className="text-[10px] text-slate-500">Based on your activity patterns.</p>
           </div>
 
-          <div className="bg-slate-950/60 p-3 rounded border border-slate-800/80 space-y-1">
+          <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 space-y-1">
             <span className="text-[10px] text-slate-400 uppercase font-mono block">Learned Conclusion</span>
             <div className="text-xs font-semibold text-slate-200">
               {learningProfile && learningProfile.total_signals > 0 
                 ? 'Prefers ₹0 cost & quick 1–2 day demo workflows' 
                 : 'Neutral cold-start state (Profile defaults active)'}
             </div>
-            <p className="text-[10px] text-slate-500">Adjusts match scores up to ±10 pts.</p>
+            <p className="text-[10px] text-slate-500">Adjusts match scores automatically.</p>
           </div>
         </div>
       </div>
 
-      {/* Real-World Result Logging Drawer / Form */}
+      {/* Result Logging Form */}
       {logFormOpen && (
-        <form onSubmit={handleSubmitLog} className="panel-card p-5 border border-indigo-500/50 space-y-4 bg-indigo-950/20">
+        <form onSubmit={handleSubmitLog} className="panel-card p-5 border border-indigo-500/50 space-y-4 bg-indigo-950/20 animate-fade-in">
           <div className="flex items-center justify-between border-b border-slate-800 pb-2">
             <div className="flex items-center gap-2 text-indigo-300 text-xs font-bold uppercase tracking-wider">
               <PlusCircle className="h-4 w-4 text-indigo-400" />
               Log Verified Real-World Outcome
             </div>
-            <span className="text-[11px] text-slate-500">Zero fake data • Truthful execution record</span>
+            <span className="text-[11px] text-slate-500">Truthful execution record</span>
           </div>
 
           {logError && (
-            <div className="p-2.5 rounded bg-red-950/40 border border-red-500/40 text-red-200 text-xs flex items-center gap-2">
+            <div className="p-2.5 rounded-lg bg-red-950/40 border border-red-500/40 text-red-200 text-xs flex items-center gap-2">
               <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
               <span>{logError}</span>
             </div>
@@ -448,7 +415,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
               <select
                 value={formResultType}
                 onChange={e => setFormResultType(e.target.value as ProgressResultType)}
-                className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded px-2.5 py-1.5 text-xs focus:border-indigo-500 focus:outline-none"
+                className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-indigo-500 focus:outline-none"
               >
                 <option value="demo_created">Demo / Prototype Built</option>
                 <option value="prospect_contacted">Prospect Contacted</option>
@@ -467,7 +434,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
               <select
                 value={formOutcome}
                 onChange={e => setFormOutcome(e.target.value as ProgressOutcome)}
-                className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded px-2.5 py-1.5 text-xs focus:border-indigo-500 focus:outline-none"
+                className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-indigo-500 focus:outline-none"
               >
                 <option value="positive">Positive / Success</option>
                 <option value="neutral">Neutral / Learning</option>
@@ -483,7 +450,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
                 placeholder="e.g. 5000 or 1"
                 value={formValue}
                 onChange={e => setFormValue(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded px-2.5 py-1.5 text-xs focus:border-indigo-500 focus:outline-none"
+                className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-indigo-500 focus:outline-none"
               />
             </div>
           </div>
@@ -493,22 +460,22 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
             <textarea
               required
               rows={2}
-              placeholder="e.g. Contacted 5 dental clinics on LinkedIn; received 1 positive reply asking for a 15-min walkthrough demo."
+              placeholder="e.g. Contacted 5 dental clinics on LinkedIn; received 1 positive reply asking for a demo."
               value={formNotes}
               onChange={e => setFormNotes(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded px-3 py-2 text-xs focus:border-indigo-500 focus:outline-none"
+              className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg px-3 py-2 text-xs focus:border-indigo-500 focus:outline-none"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] text-slate-400 mb-1">Evidence Link (GitHub, Loom, Portfolio, Drive)</label>
+              <label className="block text-[11px] text-slate-400 mb-1">Evidence Link (GitHub, Loom, Drive)</label>
               <input
                 type="url"
                 placeholder="https://..."
                 value={formEvidence}
                 onChange={e => setFormEvidence(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded px-2.5 py-1.5 text-xs focus:border-indigo-500 focus:outline-none"
+                className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-indigo-500 focus:outline-none"
               />
             </div>
 
@@ -532,15 +499,14 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
         </form>
       )}
 
-      {/* Main Section: Action Plans & Steps */}
+      {/* Main Section: Action Plans */}
       {loadingPlans ? (
         <div className="panel-card p-12 text-center space-y-3">
           <div className="h-7 w-7 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin mx-auto"></div>
-          <p className="text-xs text-slate-400">Loading action plans...</p>
+          <p className="text-xs text-slate-400 font-mono">Loading action plans...</p>
         </div>
       ) : plans.length === 0 ? (
-        /* Empty State */
-        <div className="panel-card p-10 border border-slate-800/80 text-center max-w-xl mx-auto space-y-4 my-6">
+        <div className="panel-card p-10 border border-slate-800 text-center max-w-xl mx-auto space-y-4 my-6">
           <div className="h-12 w-12 rounded-full bg-indigo-950/60 border border-indigo-500/40 flex items-center justify-center mx-auto text-indigo-400">
             <CheckCircle2 className="h-6 w-6" />
           </div>
@@ -550,24 +516,24 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
               Opportunity OS action plans provide a concrete 6-phase roadmap (Learn ➔ Build ➔ Portfolio ➔ Prospect ➔ Outreach ➔ Result).
             </p>
           </div>
-          <div className="p-3 bg-slate-900/60 rounded border border-slate-800 text-xs text-slate-400 max-w-md mx-auto text-left space-y-1.5">
+          <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800 text-xs text-slate-400 max-w-md mx-auto text-left space-y-1.5">
             <span className="text-[10px] font-mono text-indigo-400 font-bold uppercase block">How to start:</span>
-            <p>1. Open the <strong>Opportunities</strong> tab or <strong>Combine My Tools</strong> tab.</p>
-            <p>2. Review any recommended opportunity or capability combination.</p>
+            <p>1. Open the <strong>Opportunities</strong> tab or <strong>Combine Tools</strong> tab.</p>
+            <p>2. Review any recommended opportunity or tool combination.</p>
             <p>3. Click <span className="text-emerald-400 font-medium">"Start Action Plan"</span> to generate a personalized step-by-step roadmap.</p>
           </div>
         </div>
       ) : (
         <div className="space-y-5">
-          {/* Plan Selector Bar (if multiple plans) */}
+          {/* Plan Selector Bar */}
           {plans.length > 1 && (
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
               <span className="text-xs text-slate-500 font-mono uppercase whitespace-nowrap">Your Plans:</span>
               {plans.map(p => (
                 <button
                   key={p.id}
                   onClick={() => setSelectedPlanId(p.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap border transition-all flex items-center gap-2 ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap border transition-all active:scale-[0.97] flex items-center gap-2 ${
                     p.id === selectedPlanId
                       ? 'bg-indigo-950 border-indigo-500 text-indigo-200'
                       : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
@@ -582,9 +548,9 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
             </div>
           )}
 
-          {/* Active Action Plan Card */}
+          {/* Active Plan Card */}
           {selectedPlan && (
-            <div className="panel-card p-6 border border-slate-800/90 space-y-6">
+            <div className="interactive-card p-6 border-slate-800 space-y-6">
               {/* Plan Header */}
               <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-800/80 pb-4">
                 <div className="space-y-1.5 max-w-2xl">
@@ -597,7 +563,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
                     </span>
                     <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-900 text-slate-400 border border-slate-800 flex items-center gap-1">
                       <Clock className="h-3 w-3 text-slate-500" />
-                      Est. Total Time: {selectedPlan.estimated_total_time}
+                      Est. Time: {selectedPlan.estimated_total_time}
                     </span>
                   </div>
 
@@ -611,45 +577,45 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
                   {selectedPlan.status === 'not_started' && (
                     <button
                       onClick={() => handleStartPlan(selectedPlan.id)}
-                      className="btn-primary text-xs flex items-center gap-1.5 py-1.5 px-3 bg-emerald-600 hover:bg-emerald-500"
+                      className="btn-primary text-xs bg-emerald-600 border-emerald-500/50"
                     >
                       <Play className="h-3.5 w-3.5" />
-                      Start Plan
+                      <span>Start Plan</span>
                     </button>
                   )}
                   {selectedPlan.status === 'in_progress' && (
                     <>
                       <button
                         onClick={() => handlePausePlan(selectedPlan.id)}
-                        className="btn-secondary text-xs flex items-center gap-1.5 py-1.5 px-2.5"
+                        className="btn-secondary text-xs py-1.5 px-2.5"
                         title="Pause Plan"
                       >
                         <Pause className="h-3.5 w-3.5" />
-                        Pause
+                        <span>Pause</span>
                       </button>
                       <button
                         onClick={() => handleCompletePlan(selectedPlan.id)}
-                        className="btn-primary text-xs flex items-center gap-1.5 py-1.5 px-3 bg-emerald-600 hover:bg-emerald-500"
+                        className="btn-primary text-xs bg-emerald-600 border-emerald-500/50 py-1.5 px-3"
                         title="Complete Plan"
                       >
                         <Check className="h-3.5 w-3.5" />
-                        Complete
+                        <span>Complete</span>
                       </button>
                     </>
                   )}
                   {selectedPlan.status === 'paused' && (
                     <button
                       onClick={() => handleResumePlan(selectedPlan.id)}
-                      className="btn-primary text-xs flex items-center gap-1.5 py-1.5 px-3"
+                      className="btn-primary text-xs py-1.5 px-3"
                     >
                       <Play className="h-3.5 w-3.5" />
-                      Resume
+                      <span>Resume</span>
                     </button>
                   )}
 
                   <button
                     onClick={() => handleDeletePlan(selectedPlan.id)}
-                    className="p-1.5 text-slate-500 hover:text-red-400 rounded hover:bg-slate-900 border border-transparent hover:border-slate-800 transition-colors"
+                    className="btn-ghost p-1.5 text-slate-500 hover:text-red-400"
                     title="Delete Action Plan"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -657,8 +623,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
                 </div>
               </div>
 
-              {/* Deterministic Progress Bar */}
-              <div className="space-y-2 bg-slate-950 p-4 rounded-lg border border-slate-800/80">
+              {/* Progress Bar */}
+              <div className="space-y-2 bg-slate-950 p-4 rounded-xl border border-slate-800">
                 <div className="flex items-center justify-between text-xs font-mono">
                   <div className="flex items-center gap-2">
                     <span className="text-slate-400 uppercase font-bold text-[11px]">Execution Progress</span>
@@ -679,7 +645,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
                 </div>
               </div>
 
-              {/* 6-Phase Step List */}
+              {/* 6-Phase Step Roadmap */}
               <div className="space-y-3">
                 <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
                   <Layers className="h-4 w-4 text-indigo-400" />
@@ -696,14 +662,14 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
                     return (
                       <div
                         key={step.id}
-                        className={`p-4 rounded-lg border transition-all space-y-3 ${
+                        className={`p-4 rounded-xl border transition-all space-y-3 ${
                           isCompleted
                             ? 'bg-emerald-950/10 border-emerald-500/30'
                             : isInProgress
-                            ? 'bg-slate-950 border-indigo-500/60 shadow-sm shadow-indigo-950/40'
+                            ? 'bg-slate-950 border-indigo-500/60 shadow-md shadow-indigo-950/40'
                             : isSkipped
                             ? 'bg-slate-950/40 border-slate-900 opacity-60'
-                            : 'bg-slate-950 border-slate-800/80'
+                            : 'bg-slate-950 border-slate-800'
                         }`}
                       >
                         <div className="flex flex-wrap items-start justify-between gap-2">
@@ -725,12 +691,10 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
                           </div>
                         </div>
 
-                        {/* Description */}
                         <p className="text-xs text-slate-300 leading-relaxed font-sans">{step.description}</p>
 
-                        {/* Notes if any */}
                         {step.notes && !isNoteEditing && (
-                          <div className="p-2.5 rounded bg-slate-900 border border-slate-800 text-xs text-slate-300 flex items-start gap-2">
+                          <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300 flex items-start gap-2">
                             <MessageSquare className="h-3.5 w-3.5 text-indigo-400 shrink-0 mt-0.5" />
                             <div className="space-y-0.5">
                               <span className="text-[10px] font-mono text-slate-500 uppercase block">Step Note:</span>
@@ -739,15 +703,14 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
                           </div>
                         )}
 
-                        {/* Note Editing Area */}
                         {isNoteEditing && (
-                          <div className="space-y-2 pt-1">
+                          <div className="space-y-2 pt-1 animate-fade-in">
                             <textarea
                               rows={2}
                               value={stepNoteText}
                               onChange={e => setStepNoteText(e.target.value)}
                               placeholder="Add notes, links, or blocker feedback for this step..."
-                              className="w-full bg-slate-900 border border-slate-800 text-slate-200 rounded p-2 text-xs focus:border-indigo-500 focus:outline-none"
+                              className="w-full bg-slate-900 border border-slate-800 text-slate-200 rounded-lg p-2 text-xs focus:border-indigo-500 focus:outline-none"
                             />
                             <div className="flex justify-end gap-2">
                               <button
@@ -766,31 +729,30 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
                           </div>
                         )}
 
-                        {/* Action Buttons for Step */}
                         <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-800/40 text-xs">
                           <div className="flex items-center gap-1.5">
                             {!isCompleted ? (
                               <button
                                 onClick={() => handleUpdateStepStatus(step.id, 'completed')}
-                                className="bg-emerald-600/90 hover:bg-emerald-600 text-white font-medium text-[11px] py-1 px-2.5 rounded flex items-center gap-1 transition-colors"
+                                className="btn-primary text-[11px] py-1 px-2.5 bg-emerald-600 border-emerald-500/40"
                               >
                                 <Check className="h-3 w-3" />
-                                Mark Completed
+                                <span>Mark Completed</span>
                               </button>
                             ) : (
                               <button
                                 onClick={() => handleUpdateStepStatus(step.id, 'not_started')}
-                                className="text-slate-400 hover:text-slate-200 text-[11px] flex items-center gap-1 py-1 px-2 rounded hover:bg-slate-900"
+                                className="btn-ghost text-[11px] py-1 px-2"
                               >
                                 <RotateCcw className="h-3 w-3" />
-                                Reopen Step
+                                <span>Reopen Step</span>
                               </button>
                             )}
 
                             {!isCompleted && !isSkipped && (
                               <button
                                 onClick={() => handleUpdateStepStatus(step.id, 'skipped')}
-                                className="text-slate-400 hover:text-slate-200 text-[11px] py-1 px-2 rounded hover:bg-slate-900"
+                                className="btn-ghost text-[11px] py-1 px-2"
                               >
                                 Skip Step
                               </button>
@@ -802,10 +764,10 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
                                   setActiveStepNoteId(step.id);
                                   setStepNoteText(step.notes || '');
                                 }}
-                                className="text-slate-400 hover:text-indigo-400 text-[11px] flex items-center gap-1 py-1 px-2 rounded hover:bg-slate-900"
+                                className="btn-ghost text-[11px] py-1 px-2 text-indigo-400"
                               >
                                 <MessageSquare className="h-3 w-3" />
-                                {step.notes ? 'Edit Note' : 'Add Note'}
+                                <span>{step.notes ? 'Edit Note' : 'Add Note'}</span>
                               </button>
                             )}
                           </div>
@@ -827,25 +789,25 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
       )}
 
       {/* Execution Logs Feed */}
-      <div className="panel-card p-6 border border-slate-800/90 space-y-4">
+      <div className="panel-card p-6 space-y-4">
         <div className="flex items-center justify-between border-b border-slate-800 pb-3">
           <div className="flex items-center gap-2">
             <FileText className="h-4 w-4 text-indigo-400" />
             <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
-              Real-World Execution Log & Evidence Feed ({logs.length})
+              Real-World Execution Log Feed ({logs.length})
             </h3>
           </div>
-          <span className="text-[11px] text-slate-500">Tracks verified outcomes across all attempts</span>
+          <span className="text-[11px] text-slate-500">Verified outcomes across all attempts</span>
         </div>
 
         {loadingLogs ? (
-          <div className="py-6 text-center text-xs text-slate-500">Loading execution logs...</div>
+          <div className="py-6 text-center text-xs text-slate-500 font-mono">Loading execution logs...</div>
         ) : logs.length === 0 ? (
-          <div className="p-8 text-center space-y-2 bg-slate-900/40 rounded-lg border border-slate-800/60">
+          <div className="p-8 text-center space-y-2 bg-slate-900/40 rounded-xl border border-slate-800/60">
             <Award className="h-7 w-7 text-slate-600 mx-auto" />
             <p className="text-xs text-slate-400 font-medium">No execution events logged yet.</p>
             <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
-              Whenever you complete a demo, send an outreach message, or hear back from a prospect, click "Log Real-World Result" above.
+              Whenever you complete a demo, send an outreach message, or hear back from a prospect, click "Log Result" above.
             </p>
           </div>
         ) : (
@@ -853,7 +815,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
             {logs.map((log) => (
               <div
                 key={log.id}
-                className="p-3.5 rounded-lg bg-slate-950 border border-slate-800/80 flex flex-wrap items-start justify-between gap-3 text-xs"
+                className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex flex-wrap items-start justify-between gap-3 text-xs"
               >
                 <div className="space-y-1 max-w-2xl">
                   <div className="flex flex-wrap items-center gap-2">
@@ -890,7 +852,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
 
                 <button
                   onClick={() => handleDeleteLog(log.id)}
-                  className="text-slate-600 hover:text-red-400 p-1"
+                  className="btn-ghost p-1 text-slate-500 hover:text-red-400"
                   title="Delete Log"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
