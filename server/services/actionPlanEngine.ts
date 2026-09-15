@@ -574,13 +574,6 @@ export class ActionPlanEngine {
    * Deletes an Action Plan and cascades deletion of its steps and logs
    */
   async deletePlan(planId: string): Promise<boolean> {
-    // Record Learning Signal before deletion
-    await learningEngine.recordSignal({
-      sourceType: 'action_plan',
-      sourceId: planId,
-      signalType: 'abandoned_plan'
-    });
-
     await dbRun('DELETE FROM action_steps WHERE action_plan_id = ?', [planId]);
     await dbRun('DELETE FROM progress_logs WHERE action_plan_id = ?', [planId]);
     const res = await dbRun('DELETE FROM action_plans WHERE id = ?', [planId]);

@@ -373,6 +373,7 @@ export type LearningSignalType =
   | 'saved'
   | 'ignored'
   | 'tried'
+  | 'already_know'
   | 'started_plan'
   | 'completed_step'
   | 'completed_plan'

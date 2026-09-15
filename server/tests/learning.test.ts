@@ -276,14 +276,13 @@ describe('Phase 7: Learning & Adaptive Recommendation Engine Test Suite', () => 
     assert.equal(signal.weight, 4);
   });
 
-  // Test R: Action plan abandonment signal
-  it('Test R: deleting action plan records abandoned_plan (-5) signal', async () => {
+  // Test R: Action plan deletion (UPDATED: Deletion MUST NOT mean abandonment)
+  it('Test R: deleting action plan does NOT record abandoned_plan (-5) signal', async () => {
     const plan = await actionPlanEngine.generateActionPlan({ opportunityId: testOppId });
     await actionPlanEngine.deleteActionPlan(plan.id);
 
     const signal = await dbGet<any>('SELECT * FROM learning_signals WHERE source_id = ? AND signal_type = "abandoned_plan"', [plan.id]);
-    assert.ok(signal, 'abandoned_plan signal should be recorded');
-    assert.equal(signal.weight, -5);
+    assert.equal(signal, undefined, 'Deleting an action plan must NOT create an abandoned_plan signal');
   });
 
   // Test S: Step completion signal
@@ -486,5 +485,125 @@ describe('Phase 7: Learning & Adaptive Recommendation Engine Test Suite', () => 
   // Test AI: Zero fake data & no background daemons
   it('Test AI: verifies Phase 7 learning engine operates 100% deterministically with zero background daemons or fake data', () => {
     assert.ok(true, 'Phase 7 Learning Engine is 100% deterministic and evidence-grounded.');
+  });
+
+  // ============================================================================
+  // PHASE 7 SURGICAL CORRECTNESS REGRESSION TESTS (Issues 1 – 4)
+  // ============================================================================
+
+  // Issue 1: "already_know" MUST NOT become "useful"
+  it('Issue 1: already_know preserves raw feedback record, maps to weight 0, and does NOT increase positive preference', async () => {
+    const oppIdUseful = 'ak_opp_useful_' + Date.now();
+    const oppIdAlreadyKnow = 'ak_opp_ak_' + Date.now();
+
+    await dbRun(`INSERT INTO opportunities (id, title, status) VALUES (?, 'Useful Opp', 'new')`, [oppIdUseful]);
+    await dbRun(`INSERT INTO opportunities (id, title, status) VALUES (?, 'AK Opp', 'new')`, [oppIdAlreadyKnow]);
+
+    // 1. Record useful feedback
+    const fbUseful = await learningEngine.recordFeedback({
+      sourceType: 'opportunity',
+      sourceId: oppIdUseful,
+      rating: 'useful'
+    });
+    assert.equal(fbUseful.rating, 'useful');
+
+    // 2. Record already_know feedback
+    const fbAK = await learningEngine.recordFeedback({
+      sourceType: 'opportunity',
+      sourceId: oppIdAlreadyKnow,
+      rating: 'already_know'
+    });
+    assert.equal(fbAK.rating, 'already_know');
+
+    // Verify raw DB records
+    const rawAK = await dbGet<any>('SELECT * FROM feedback WHERE id = ?', [fbAK.id]);
+    assert.ok(rawAK, 'Raw feedback record for already_know must exist');
+    assert.equal(rawAK.rating, 'already_know');
+
+    // Verify learning signals created
+    const sigUseful = await dbGet<any>('SELECT * FROM learning_signals WHERE source_id = ?', [fbUseful.id]);
+    assert.equal(sigUseful.signal_type, 'useful');
+    assert.equal(sigUseful.weight, 3, 'useful rating must have positive weight +3');
+
+    const sigAK = await dbGet<any>('SELECT * FROM learning_signals WHERE source_id = ?', [fbAK.id]);
+    assert.equal(sigAK.signal_type, 'already_know');
+    assert.equal(sigAK.weight, 0, 'already_know rating must have neutral weight 0');
+
+    // Verify rebuild profile does not increase positive preference for already_know category/tool
+    await dbRun(`INSERT INTO opportunities (id, title, customer_type, status) VALUES (?, 'AK Opp 2', 'Unique AK Category', 'new')`, [oppIdAlreadyKnow + '_2']);
+    await learningEngine.recordFeedback({
+      sourceType: 'opportunity',
+      sourceId: oppIdAlreadyKnow + '_2',
+      rating: 'already_know'
+    });
+
+    const profile = await learningEngine.rebuildLearningProfile();
+    const akDim = profile.preferred_categories['unique ak category'];
+    assert.ok(akDim, 'already_know dimension for unique category exists in profile sample count');
+    assert.equal(akDim.positive, 0, 'already_know must NOT increment positive category count');
+    assert.equal(akDim.negative, 0, 'already_know must NOT increment negative category count');
+    assert.equal(akDim.net_weight, 0, 'already_know must NOT increase net category preference');
+  });
+
+  // Issue 2: Action plan deletion MUST NOT mean abandonment
+  it('Issue 2: deleting an action plan does not create abandoned_plan signal or negative preference', async () => {
+    // Create plan
+    const plan = await actionPlanEngine.generateActionPlan({ opportunityId: testOppId });
+    assert.ok(plan.id);
+
+    // Delete plan
+    const deleted = await actionPlanEngine.deleteActionPlan(plan.id);
+    assert.ok(deleted);
+
+    // Verify no abandoned_plan signal exists for this plan ID
+    const abSignal = await dbGet<any>('SELECT * FROM learning_signals WHERE source_id = ? AND signal_type = "abandoned_plan"', [plan.id]);
+    assert.equal(abSignal, undefined, 'Plan deletion must NOT produce an abandoned_plan signal');
+
+    // Rebuild profile & verify zero orphan signals for deleted plan
+    const profile = await learningEngine.rebuildLearningProfile();
+    const orphanSignal = await dbGet<any>('SELECT * FROM learning_signals WHERE source_id = ?', [plan.id]);
+    assert.equal(orphanSignal, undefined, 'Rebuilt profile after deletion must have zero signals for deleted plan');
+  });
+
+  // Issue 3: Learning explanation endpoint must handle both types
+  it('Issue 3A: opportunity explanation calls calculateOpportunityAdjustment', async () => {
+    const res = await learningEngine.calculateOpportunityAdjustment({
+      id: testOppId,
+      title: 'Opportunity Test',
+      customerType: 'Dental Practice Managers'
+    });
+    assert.ok(typeof res.adjustment === 'number');
+    assert.ok(res.explanation.includes('personalization') || res.explanation.includes('Personalization') || res.explanation.includes('neutral'));
+  });
+
+  it('Issue 3B: combination explanation calls calculateCombinationAdjustment', async () => {
+    const res = await learningEngine.calculateCombinationAdjustment({
+      id: testComboId,
+      title: 'Combo Test',
+      workflowPattern: 'GENERATE_DESIGN',
+      toolNames: ['Canva', 'Whisper']
+    });
+    assert.ok(typeof res.adjustment === 'number');
+    assert.ok(res.explanation.includes('synergy') || res.explanation.includes('Personalization') || res.explanation.includes('neutral'));
+  });
+
+  // Issue 4: Work-type / capability dimensions must not contain fabricated values
+  it('Issue 4: preferred_work_types and preferred_capabilities remain empty objects without text-matching fabrication', async () => {
+    const profile = await learningEngine.rebuildLearningProfile();
+    assert.deepEqual(profile.preferred_work_types, {}, 'preferred_work_types must remain empty {}');
+    assert.deepEqual(profile.preferred_capabilities, {}, 'preferred_capabilities must remain empty {}');
+  });
+
+  // Special Audit & Invariants
+  it('Invariant Audit: recommendation display alone creates ZERO learning signals and zero feedback loop', async () => {
+    const initialSignalCount = (await dbAll('SELECT * FROM learning_signals')).length;
+
+    // Evaluate opportunities & combinations multiple times
+    await opportunityEngine.evaluateOpportunities();
+    await generateAndStoreCombinations();
+    await getStoredCombinations();
+
+    const postSignalCount = (await dbAll('SELECT * FROM learning_signals')).length;
+    assert.equal(initialSignalCount, postSignalCount, 'Evaluating or displaying recommendations must NOT create learning signals');
   });
 });

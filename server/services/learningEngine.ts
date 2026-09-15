@@ -29,6 +29,7 @@ export const INITIAL_SIGNAL_WEIGHTS: Record<LearningSignalType, number> = {
   saved: 3,
   useful: 3,
   relevant: 3,
+  already_know: 0,
   started_plan: 2,
   completed_step: 1,
   abandoned_plan: -5,
@@ -158,11 +159,12 @@ export class LearningEngine {
     );
 
     // Map rating to learning signal type
-    let signalType: LearningSignalType = 'useful';
+    let signalType: LearningSignalType = 'already_know';
     if (params.rating === 'useful' || params.rating === 'save') signalType = 'useful';
     else if (params.rating === 'not_useful' || params.rating === 'ignore') signalType = 'not_useful';
     else if (params.rating === 'not_relevant') signalType = 'not_relevant';
     else if (params.rating === 'tried') signalType = 'tried';
+    else if (params.rating === 'already_know') signalType = 'already_know';
 
     // Extract item category or tool details for domain-specific learning
     let itemCategory: string | undefined;
@@ -392,8 +394,8 @@ export class LearningEngine {
         if (!item.map[item.key]) {
           item.map[item.key] = { pos: 0, neg: 0, net: 0, count: 0 };
         }
-        if (isPositive) item.map[item.key].pos += 1;
-        else item.map[item.key].neg += 1;
+        if (s.weight > 0) item.map[item.key].pos += 1;
+        else if (s.weight < 0) item.map[item.key].neg += 1;
         item.map[item.key].net += effectiveWeight;
         item.map[item.key].count += 1;
       }
@@ -585,7 +587,18 @@ export class LearningEngine {
     }
 
     // Tool matches
-    const toolNames = combo.tool_names || combo.toolNames || [];
+    let toolNames: string[] = [];
+    const rawTools = combo.tool_names || combo.toolNames || [];
+    if (typeof rawTools === 'string') {
+      try {
+        toolNames = JSON.parse(rawTools);
+      } catch {
+        toolNames = [];
+      }
+    } else if (Array.isArray(rawTools)) {
+      toolNames = rawTools;
+    }
+
     for (const tool of toolNames) {
       const tKey = tool.toLowerCase().trim();
       if (profile.preferred_tools[tKey]) {
