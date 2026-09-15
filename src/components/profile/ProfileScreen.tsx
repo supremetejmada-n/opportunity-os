@@ -286,9 +286,9 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
       {/* Top Workspace Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
         <div>
-          <h1 className="text-xl font-bold text-slate-100">Personal Profile Vector</h1>
+          <h1 className="text-xl font-bold text-slate-100">What We Know About You</h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            This is what the engine knows about your skills, tools, and execution preferences.
+            Manage your active skills, accessible tools, goals, interests, and execution constraints.
           </p>
         </div>
 

@@ -33,10 +33,10 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const navItems: { id: NavTab; label: string; icon: React.FC<{ className?: string }> }[] = [
     { id: 'home', label: 'Home', icon: Home },
-    { id: 'discover', label: 'Discover', icon: Compass },
+    { id: 'discover', label: "What's New", icon: Compass },
     { id: 'opportunities', label: 'Opportunities', icon: Sparkles },
-    { id: 'combine', label: 'Combine', icon: Layers },
-    { id: 'progress', label: 'Progress', icon: TrendingUp },
+    { id: 'combine', label: 'Combine Tools', icon: Layers },
+    { id: 'progress', label: 'Your Plan', icon: TrendingUp },
     { id: 'profile', label: 'Profile', icon: User },
   ];
 

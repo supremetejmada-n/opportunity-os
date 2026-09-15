@@ -188,14 +188,14 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
         <div>
           <span className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wider">
-            Multi-Tool Capability Studio
+            Tool Combination Engine
           </span>
           <h1 className="text-xl font-bold text-slate-100 flex items-center gap-2">
             <Layers className="h-5 w-5 text-indigo-400" />
-            Combine My Tools
+            What Can You Make With Your Tools?
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            Given the tools you can actually access, what useful things can you create by combining 2–4 of them?
+            Select 2 to 4 tools you access to discover high-value digital services you can build for free today.
           </p>
         </div>
 
@@ -206,7 +206,7 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
             className="btn-primary text-xs flex items-center gap-2 py-2 px-3.5"
           >
             <Sparkles className={`h-3.5 w-3.5 ${generating ? 'animate-spin' : ''}`} />
-            {generating ? 'Evaluating Synergies...' : 'Evaluate All Combinations'}
+            {generating ? 'Evaluating...' : 'Combine My Tools'}
           </button>
         </div>
       </div>

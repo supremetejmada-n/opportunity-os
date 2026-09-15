@@ -84,19 +84,19 @@ export const DiscoverScreen: React.FC<DiscoverScreenProps> = ({ onScanClick, isS
       {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
         <div>
-          <span className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wider">Phase 3 Active Engine</span>
+          <span className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wider">Discovery Feed</span>
           <h1 className="text-xl font-bold text-slate-100 flex items-center gap-2">
             <Compass className="h-5 w-5 text-indigo-400" />
-            Real-World Discovery Engine
+            What's New
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            Collected, normalized, deduplicated, and fact-verified open resources from public sources.
+            Verified open-source tools, free models, and market signals collected from public sources.
           </p>
         </div>
 
         <button onClick={handleTriggerScan} disabled={isScanning} className="btn-primary text-xs py-1.5 px-3">
           <RefreshCw className={`h-3.5 w-3.5 ${isScanning ? 'animate-spin' : ''}`} />
-          <span>{isScanning ? 'Scanning Pipeline...' : 'Run Discovery Scan'}</span>
+          <span>{isScanning ? 'Scanning...' : 'Check for New Finds'}</span>
         </button>
       </div>
 

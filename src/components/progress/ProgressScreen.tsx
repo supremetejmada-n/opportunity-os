@@ -341,13 +341,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
       {/* Header Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
         <div>
-          <span className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wider">Phase 6 Engine</span>
+          <span className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wider">Execution Tracker</span>
           <h1 className="text-xl font-bold text-slate-100 flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-indigo-400" />
-            Execution Action Plans & Progress Tracker
+            Your Plan & Progress
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            Turn recommendations into structured 6-phase execution roadmaps and record verified real-world outcomes.
+            Follow your 6-phase plan step by step and track your real-world results.
           </p>
         </div>
 
@@ -356,11 +356,11 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
           className="btn-primary text-xs flex items-center gap-1.5 py-2 px-3.5 shadow-sm shadow-indigo-950"
         >
           <PlusCircle className="h-4 w-4" />
-          {logFormOpen ? 'Close Logger' : 'Log Real-World Result'}
+          {logFormOpen ? 'Close Logger' : 'Log Result'}
         </button>
       </div>
 
-      {/* Metric Counters (Actual Database Values, Zero Fake Data) */}
+      {/* Metric Counters */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
         {metricCards.map((m, i) => {
           const Icon = m.icon;
@@ -376,13 +376,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
         })}
       </div>
 
-      {/* Phase 7 Learning Engine & Adaptive Signals Panel */}
+      {/* WHAT WE'VE LEARNED ABOUT YOU */}
       <div className="panel-card p-4 border border-purple-800/40 bg-purple-950/15 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-purple-800/30 pb-2.5">
           <div className="flex items-center gap-2">
-            <span className="badge-tag bg-purple-950 text-purple-300 border-purple-500/30 font-mono text-[10px]">Phase 7 Engine</span>
+            <span className="badge-tag bg-purple-950 text-purple-300 border-purple-500/30 font-mono text-[10px]">Preferences</span>
             <h3 className="text-xs font-bold text-purple-200 uppercase tracking-wider">
-              Learning Profile & Adaptive Preference Signals
+              What We've Learned About You
             </h3>
           </div>
           <button
@@ -391,33 +391,35 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
             className="px-2.5 py-1 rounded bg-purple-900/40 hover:bg-purple-800/60 border border-purple-500/40 text-purple-300 text-xs font-medium transition-colors flex items-center gap-1.5"
           >
             <RotateCcw className={`h-3 w-3 ${rebuildingLearning ? 'animate-spin' : ''}`} />
-            {rebuildingLearning ? 'Rebuilding...' : 'Rebuild Profile'}
+            {rebuildingLearning ? 'Updating...' : 'Update Recommendations'}
           </button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
           <div className="bg-slate-950/60 p-3 rounded border border-slate-800/80 space-y-1">
-            <span className="text-[10px] text-slate-400 uppercase font-mono block">Behavior Signals Logged</span>
+            <span className="text-[10px] text-slate-400 uppercase font-mono block">Your Activity</span>
             <div className="text-base font-bold text-slate-100 font-mono">
-              {learningProfile ? learningProfile.total_signals : 0} Signals
+              {learningProfile ? learningProfile.total_signals : 0} Activity Signals
             </div>
-            <p className="text-[10px] text-slate-500">From ratings, progress logs & completed plans</p>
+            <p className="text-[10px] text-slate-500">Learned from ratings, completed steps, and logged outcomes.</p>
           </div>
 
           <div className="bg-slate-950/60 p-3 rounded border border-slate-800/80 space-y-1">
-            <span className="text-[10px] text-slate-400 uppercase font-mono block">Profile Confidence Score</span>
+            <span className="text-[10px] text-slate-400 uppercase font-mono block">Preference Strength</span>
             <div className="text-base font-bold text-purple-400 font-mono">
-              {learningProfile ? (learningProfile.confidence_score * 100).toFixed(0) : 0}% Confidence
+              {learningProfile ? (learningProfile.confidence_score * 100).toFixed(0) : 0}% Certainty
             </div>
-            <p className="text-[10px] text-slate-500">Derived from sample count & consistency</p>
+            <p className="text-[10px] text-slate-500">Based on your activity patterns.</p>
           </div>
 
           <div className="bg-slate-950/60 p-3 rounded border border-slate-800/80 space-y-1">
-            <span className="text-[10px] text-slate-400 uppercase font-mono block">Personalization Impact</span>
-            <div className="text-base font-bold text-emerald-400 font-mono">
-              ±10 Pts Max Bound
+            <span className="text-[10px] text-slate-400 uppercase font-mono block">Learned Conclusion</span>
+            <div className="text-xs font-semibold text-slate-200">
+              {learningProfile && learningProfile.total_signals > 0 
+                ? 'Prefers ₹0 cost & quick 1–2 day demo workflows' 
+                : 'Neutral cold-start state (Profile defaults active)'}
             </div>
-            <p className="text-[10px] text-slate-500">Base quality threshold (65) strictly enforced</p>
+            <p className="text-[10px] text-slate-500">Adjusts match scores up to ±10 pts.</p>
           </div>
         </div>
       </div>
