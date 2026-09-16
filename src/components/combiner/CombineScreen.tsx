@@ -2,13 +2,11 @@ import React, { useState, useEffect } from 'react';
 import {
   Layers,
   Wrench,
-  CheckCircle2,
   Zap,
   Bookmark,
   BookmarkCheck,
   ChevronDown,
   ChevronUp,
-  ArrowRight,
   DollarSign,
   Clock,
   Sparkles,
@@ -19,6 +17,8 @@ import {
 } from 'lucide-react';
 import { UserTool, ToolCombination } from '../../types/index.js';
 import { api } from '../../services/api.js';
+import { GlassCard } from '../ui/GlassCard.js';
+import { SpatialToolWeb } from '../ui/SpatialToolWeb.js';
 
 interface CombineScreenProps {
   tools: UserTool[];
@@ -106,10 +106,7 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
         return;
       }
 
-      const res = await api.generateCombinations({
-        toolIds: targetIds
-      });
-
+      const res = await api.generateCombinations({ toolIds: targetIds });
       setCombinations(res.combinations || []);
       setNotice(res.message);
       setTimeout(() => setNotice(null), 6000);
@@ -172,11 +169,12 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
 
   const savedCount = combinations.filter(c => c.saved).length;
   const zeroCostCount = combinations.filter(c => c.is_zero_cost).length;
+  const selectedToolNames = tools.filter(t => selectedToolIds.includes(t.id)).map(t => t.name);
 
   return (
     <div className="space-y-6 py-4 max-w-6xl mx-auto">
       {/* Top Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
         <div>
           <span className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wider">
             Tool Combination Engine
@@ -200,7 +198,21 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
         </button>
       </div>
 
-      {/* Notice Banner */}
+      {/* 3D Spatial Tool Network Visualization Header */}
+      <GlassCard variant="primary" className="p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="space-y-2 max-w-md">
+          <span className="badge-tag badge-indigo">3D Spatial Synthesis</span>
+          <h2 className="text-lg font-bold text-slate-100">Capability Node Graph</h2>
+          <p className="text-xs text-slate-300 leading-relaxed">
+            Opportunity OS analyzes multi-tool capability overlap to generate zero-cost workflow recipes.
+          </p>
+        </div>
+        <div className="w-full md:w-1/2">
+          <SpatialToolWeb toolNames={selectedToolNames} />
+        </div>
+      </GlassCard>
+
+      {/* Notice & Error Banners */}
       {notice && (
         <div className="bg-indigo-950/40 border border-indigo-500/40 text-indigo-200 text-xs px-4 py-2.5 rounded-xl flex items-center gap-2">
           <Info className="h-4 w-4 text-indigo-400 shrink-0" />
@@ -208,7 +220,6 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
         </div>
       )}
 
-      {/* Error Banner */}
       {error && (
         <div className="bg-red-950/40 border border-red-500/40 text-red-200 text-xs px-4 py-2.5 rounded-xl flex items-center gap-2">
           <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
@@ -216,9 +227,9 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
         </div>
       )}
 
-      {/* Interactive Tool Selector Section */}
-      <div className="panel-card p-5 space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+      {/* Tool Selector Section */}
+      <GlassCard variant="secondary" className="p-5 space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
           <div className="flex items-center gap-2">
             <Wrench className="h-4 w-4 text-indigo-400" />
             <h2 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
@@ -253,8 +264,8 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                     onClick={() => toggleTool(t.id)}
                     className={`p-3 rounded-xl border text-left flex items-start justify-between transition-all active:scale-[0.97] ${
                       isSelected
-                        ? 'bg-indigo-950/40 border-indigo-500/70 text-slate-100 shadow-md shadow-indigo-950/50'
-                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                        ? 'bg-indigo-950/60 border-indigo-500/80 text-slate-100 shadow-lg shadow-indigo-950/50'
+                        : 'bg-slate-950/70 border-white/10 text-slate-400 hover:border-white/20'
                     }`}
                   >
                     <div className="space-y-1 pr-2">
@@ -289,10 +300,10 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
             </div>
           </div>
         )}
-      </div>
+      </GlassCard>
 
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900/80 p-3 rounded-xl border border-slate-800 text-xs">
+      {/* Filter Toolbar */}
+      <GlassCard variant="floating" className="p-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-slate-400 font-mono text-[11px] mr-2">
             Found: <strong className="text-slate-200">{filteredCombinations.length}</strong>
@@ -319,7 +330,7 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
           <select
             value={filterPattern}
             onChange={e => setFilterPattern(e.target.value)}
-            className="bg-slate-950 border border-slate-800 text-slate-300 rounded-lg px-2.5 py-1 text-xs focus:border-indigo-500 focus:outline-none"
+            className="bg-slate-950/80 border border-white/10 text-slate-300 rounded-lg px-2.5 py-1 text-xs focus:border-indigo-500 focus:outline-none"
           >
             <option value="all">All Workflow Patterns</option>
             <option value="GENERATE_DESIGN">Generate ➔ Design</option>
@@ -337,23 +348,23 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
           <select
             value={sortBy}
             onChange={e => setSortBy(e.target.value as any)}
-            className="bg-slate-950 border border-slate-800 text-slate-300 rounded-lg px-2.5 py-1 text-xs focus:border-indigo-500 focus:outline-none"
+            className="bg-slate-950/80 border border-white/10 text-slate-300 rounded-lg px-2.5 py-1 text-xs focus:border-indigo-500 focus:outline-none"
           >
             <option value="score">Highest Score</option>
             <option value="synergy">Highest Synergy</option>
             <option value="time">Time to Demo</option>
           </select>
         </div>
-      </div>
+      </GlassCard>
 
-      {/* Combinations List using .interactive-card */}
+      {/* Combination Cards */}
       {loading ? (
-        <div className="panel-card p-12 text-center space-y-3">
-          <div className="h-7 w-7 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin mx-auto"></div>
-          <p className="text-xs text-slate-400 font-mono">Evaluating multi-tool synergy and feasibility...</p>
+        <div className="py-12 text-center text-xs text-slate-400 font-mono flex items-center justify-center gap-2">
+          <Sparkles className="h-4 w-4 animate-spin text-indigo-400" />
+          Evaluating multi-tool synergy...
         </div>
       ) : filteredCombinations.length === 0 ? (
-        <div className="panel-card p-8 border border-slate-800 text-center max-w-xl mx-auto space-y-4 my-6">
+        <GlassCard variant="secondary" className="p-8 text-center max-w-xl mx-auto space-y-4 my-6">
           <Zap className="h-8 w-8 text-slate-600 mx-auto" />
           <div className="space-y-1.5">
             <h3 className="text-sm font-bold text-slate-200">No Matching Tool Combinations</h3>
@@ -372,18 +383,14 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
           >
             Reset Filters & Evaluate All Tools
           </button>
-        </div>
+        </GlassCard>
       ) : (
         <div className="space-y-5">
           {filteredCombinations.map((combo) => {
             const isBreakdownOpen = Boolean(expandedBreakdowns[combo.id]);
             return (
-              <div
-                key={combo.id}
-                className="interactive-card p-6 border-slate-800 space-y-5"
-              >
-                {/* Header */}
-                <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-800/80 pb-4">
+              <GlassCard key={combo.id} variant="secondary" interactive className="p-6 space-y-5">
+                <div className="flex flex-wrap items-start justify-between gap-3 border-b border-white/10 pb-4">
                   <div className="space-y-1.5 max-w-2xl">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="badge-tag bg-indigo-950/60 text-indigo-300 border border-indigo-500/30 font-mono text-[10px]">
@@ -394,7 +401,7 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                           <DollarSign className="h-3 w-3" /> ₹0 Upfront Cost
                         </span>
                       )}
-                      <span className="badge-tag bg-slate-900 text-slate-400 border border-slate-800 text-[10px] flex items-center gap-1">
+                      <span className="badge-tag bg-slate-900 text-slate-400 border border-white/10 text-[10px] flex items-center gap-1">
                         <Clock className="h-3 w-3" /> {combo.time_to_demo}
                       </span>
                     </div>
@@ -417,7 +424,6 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                       onClick={() => handleStartActionPlan(combo.id)}
                       disabled={startingPlanId === combo.id}
                       className="btn-primary text-xs py-1.5 px-3 bg-emerald-600 border-emerald-500/50"
-                      title="Start Action Plan"
                     >
                       <Play className={`h-3.5 w-3.5 ${startingPlanId === combo.id ? 'animate-spin' : ''}`} />
                       <span className="hidden sm:inline">{startingPlanId === combo.id ? 'Starting...' : 'Start Action Plan'}</span>
@@ -428,7 +434,6 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                       className={`btn-secondary p-2 ${
                         combo.saved ? 'bg-amber-950/40 border-amber-500 text-amber-300' : ''
                       }`}
-                      title={combo.saved ? 'Remove from Saved' : 'Save Combination'}
                     >
                       {combo.saved ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
                     </button>
@@ -445,7 +450,7 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                     {combo.capability_chain.map((stage, sIdx) => (
                       <div
                         key={sIdx}
-                        className="bg-slate-950 border border-slate-800 rounded-xl p-3 space-y-1"
+                        className="bg-slate-950/80 border border-white/10 rounded-xl p-3 space-y-1"
                       >
                         <div className="flex items-center justify-between text-[11px]">
                           <span className="font-bold text-slate-200 flex items-center gap-1.5">
@@ -463,22 +468,22 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                   </div>
                 </div>
 
-                {/* Outcome & Monetization */}
+                {/* Concrete Outcome & Monetization */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-                  <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-1.5">
+                  <div className="bg-slate-950/80 border border-white/10 rounded-xl p-3.5 space-y-1.5">
                     <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block">
                       Concrete Deliverable & Target Customer
                     </span>
                     <p className="text-xs text-slate-200 font-medium leading-snug">
                       {combo.concrete_outcome}
                     </p>
-                    <div className="pt-1 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400">
+                    <div className="pt-1 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-400">
                       <span>Buyer Persona:</span>
                       <strong className="text-slate-300">{combo.target_customer}</strong>
                     </div>
                   </div>
 
-                  <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-1.5">
+                  <div className="bg-slate-950/80 border border-white/10 rounded-xl p-3.5 space-y-1.5">
                     <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block">
                       Monetization Hypothesis
                     </span>
@@ -496,8 +501,8 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                   </div>
                 </div>
 
-                {/* User Feedback Widget */}
-                <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+                {/* Feedback Widget */}
+                <div className="bg-slate-950/80 border border-white/10 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
                   <span className="text-slate-400 font-medium">Was this combination idea useful?</span>
                   <div className="flex items-center gap-1.5">
                     <button
@@ -505,7 +510,7 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                       className={`btn-ghost text-xs border ${
                         feedbackStatus[combo.id] === 'useful'
                           ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                          : 'border-slate-800'
+                          : 'border-white/10'
                       }`}
                     >
                       👍 Useful
@@ -515,7 +520,7 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                       className={`btn-ghost text-xs border ${
                         feedbackStatus[combo.id] === 'not_useful'
                           ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                          : 'border-slate-800'
+                          : 'border-white/10'
                       }`}
                     >
                       👎 Not Useful
@@ -525,7 +530,7 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                       className={`btn-ghost text-xs border ${
                         feedbackStatus[combo.id] === 'not_relevant'
                           ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                          : 'border-slate-800'
+                          : 'border-white/10'
                       }`}
                     >
                       🚫 Not Relevant
@@ -534,7 +539,7 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                 </div>
 
                 {/* Score Breakdown Accordion */}
-                <div className="pt-2 border-t border-slate-800/60">
+                <div className="pt-2 border-t border-white/10">
                   <button
                     onClick={() => toggleBreakdown(combo.id)}
                     className="btn-ghost text-xs text-slate-400 w-full justify-between"
@@ -544,9 +549,9 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                   </button>
 
                   {isBreakdownOpen && (
-                    <div className="mt-3 p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-3 animate-fade-in">
+                    <div className="mt-3 p-4 bg-slate-950/90 rounded-xl border border-white/10 space-y-3 animate-fade-in">
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                        <div className="p-2.5 bg-slate-900/60 rounded-lg border border-slate-800 space-y-1">
+                        <div className="p-2.5 bg-slate-900/80 rounded-lg border border-white/5 space-y-1">
                           <div className="flex justify-between items-center text-xs">
                             <span className="text-slate-400">Tool Availability</span>
                             <span className="font-mono text-indigo-400 font-bold">
@@ -558,7 +563,7 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                           </p>
                         </div>
 
-                        <div className="p-2.5 bg-slate-900/60 rounded-lg border border-slate-800 space-y-1">
+                        <div className="p-2.5 bg-slate-900/80 rounded-lg border border-white/5 space-y-1">
                           <div className="flex justify-between items-center text-xs">
                             <span className="text-slate-400">Capability Synergy</span>
                             <span className="font-mono text-indigo-400 font-bold">
@@ -570,7 +575,7 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                           </p>
                         </div>
 
-                        <div className="p-2.5 bg-slate-900/60 rounded-lg border border-slate-800 space-y-1">
+                        <div className="p-2.5 bg-slate-900/80 rounded-lg border border-white/5 space-y-1">
                           <div className="flex justify-between items-center text-xs">
                             <span className="text-slate-400">Skill Fit</span>
                             <span className="font-mono text-indigo-400 font-bold">
@@ -582,7 +587,7 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                           </p>
                         </div>
 
-                        <div className="p-2.5 bg-slate-900/60 rounded-lg border border-slate-800 space-y-1">
+                        <div className="p-2.5 bg-slate-900/80 rounded-lg border border-white/5 space-y-1">
                           <div className="flex justify-between items-center text-xs">
                             <span className="text-slate-400">₹0 Feasibility</span>
                             <span className="font-mono text-emerald-400 font-bold">
@@ -597,7 +602,7 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
                     </div>
                   )}
                 </div>
-              </div>
+              </GlassCard>
             );
           })}
         </div>

@@ -25,6 +25,7 @@ import {
   ToolAccessType,
   GoalPriority
 } from '../../types/index.js';
+import { GlassCard } from '../ui/GlassCard.js';
 
 interface ProfileScreenProps {
   profile: UserProfile | null;
@@ -322,7 +323,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
       {/* TAB 1: OVERVIEW & CONSTRAINTS */}
       {activeTab === 'overview' && (
-        <div className="panel-card p-6 space-y-6">
+        <GlassCard variant="primary" className="panel-card p-6 space-y-6">
           <div className="flex items-center justify-between border-b border-slate-800 pb-4">
             <h2 className="text-sm font-bold text-slate-200 flex items-center gap-2">
               <User className="h-4 w-4 text-indigo-400" />
@@ -365,7 +366,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 </div>
               </div>
 
-              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+              <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800 space-y-3">
                 <h3 className="font-bold text-slate-300 text-xs uppercase tracking-wider">Evaluation Parameters</h3>
                 
                 <div className="grid grid-cols-2 gap-4 pt-1">
@@ -449,7 +450,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               </div>
             </div>
           )}
-        </div>
+        </GlassCard>
       )}
 
       {/* TAB 2: SKILLS using .interactive-card */}
@@ -465,7 +466,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {skills.map((skill) => (
-              <div key={skill.id} className="interactive-card p-4 space-y-3 flex flex-col justify-between">
+              <GlassCard key={skill.id} variant="secondary" className="interactive-card p-4 space-y-3 flex flex-col justify-between">
                 <div className="space-y-2">
                   <div className="flex items-start justify-between">
                     <h3 className="font-bold text-slate-100 text-xs">{skill.name}</h3>
@@ -491,7 +492,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
-              </div>
+              </GlassCard>
             ))}
           </div>
         </div>
@@ -510,7 +511,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {tools.map((tool) => (
-              <div key={tool.id} className="interactive-card p-4 space-y-3 flex flex-col justify-between">
+              <GlassCard key={tool.id} variant="secondary" className="interactive-card p-4 space-y-3 flex flex-col justify-between">
                 <div className="space-y-2">
                   <div className="flex items-start justify-between">
                     <div>
@@ -523,7 +524,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                   {tool.capabilities && tool.capabilities.length > 0 && (
                     <div className="flex flex-wrap gap-1 pt-1">
                       {tool.capabilities.map((cap, i) => (
-                        <span key={i} className="px-1.5 py-0.5 rounded bg-slate-950 border border-slate-800 text-[10px] text-slate-400 font-mono">
+                        <span key={i} className="px-1.5 py-0.5 rounded bg-slate-950/80 border border-slate-800 text-[10px] text-slate-400 font-mono">
                           {cap}
                         </span>
                       ))}
@@ -539,7 +540,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
-              </div>
+              </GlassCard>
             ))}
           </div>
         </div>
@@ -558,7 +559,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
           <div className="space-y-2">
             {goals.map((g) => (
-              <div key={g.id} className="interactive-card p-4 flex items-start justify-between gap-4">
+              <GlassCard key={g.id} variant="secondary" className="interactive-card p-4 flex items-start justify-between gap-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className={`badge-tag ${g.priority === 'High' ? 'badge-indigo' : 'badge-slate'}`}>{g.priority}</span>
@@ -569,7 +570,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 <button onClick={() => onDeleteGoal(g.id)} className="btn-ghost p-1 text-slate-400 hover:text-red-400">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
-              </div>
+              </GlassCard>
             ))}
           </div>
         </div>
@@ -588,7 +589,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {interests.map((inst) => (
-              <div key={inst.id} className="interactive-card p-4 flex items-center justify-between">
+              <GlassCard key={inst.id} variant="secondary" className="interactive-card p-4 flex items-center justify-between">
                 <div>
                   <span className="text-[10px] text-indigo-400 uppercase font-mono font-semibold">{inst.category}</span>
                   <h3 className="font-bold text-slate-200 text-xs">{inst.topic}</h3>
@@ -596,7 +597,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 <button onClick={() => onDeleteInterest(inst.id)} className="btn-ghost p-1 text-slate-400 hover:text-red-400">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
-              </div>
+              </GlassCard>
             ))}
           </div>
         </div>
@@ -615,7 +616,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
           <div className="space-y-2">
             {projects.map((proj) => (
-              <div key={proj.id} className="interactive-card p-4 flex items-start justify-between">
+              <GlassCard key={proj.id} variant="secondary" className="interactive-card p-4 flex items-start justify-between">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="badge-tag badge-emerald text-[10px]">{proj.status}</span>
@@ -626,7 +627,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 <button onClick={() => onDeleteProject(proj.id)} className="btn-ghost p-1 text-slate-400 hover:text-red-400">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
-              </div>
+              </GlassCard>
             ))}
           </div>
         </div>

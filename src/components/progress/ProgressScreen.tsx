@@ -30,6 +30,8 @@ import {
   ProgressOutcome
 } from '../../types/index.js';
 import { api } from '../../services/api.js';
+import { GlassCard } from '../ui/GlassCard.js';
+import { SpatialProgressRing } from '../ui/SpatialProgressRing.js';
 
 interface ProgressScreenProps {
   metrics: ProgressMetrics;
@@ -306,7 +308,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
   return (
     <div className="space-y-6 py-4 max-w-6xl mx-auto">
       {/* Header Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
         <div>
           <span className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wider">Execution Tracker</span>
           <h1 className="text-xl font-bold text-slate-100 flex items-center gap-2">
@@ -318,10 +320,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
           </p>
         </div>
 
-        <button
-          onClick={() => setLogFormOpen(!logFormOpen)}
-          className="btn-primary text-xs"
-        >
+        <button onClick={() => setLogFormOpen(!logFormOpen)} className="btn-primary text-xs">
           <PlusCircle className="h-4 w-4" />
           <span>{logFormOpen ? 'Close Logger' : 'Log Result'}</span>
         </button>
@@ -332,19 +331,19 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
         {metricCards.map((m, i) => {
           const Icon = m.icon;
           return (
-            <div key={i} className="panel-card p-3.5 space-y-1">
+            <GlassCard key={i} variant="secondary" className="p-3.5 space-y-1">
               <div className="flex items-center justify-between text-slate-400 text-[11px]">
                 <span className="truncate">{m.label}</span>
                 <Icon className="h-3.5 w-3.5 text-slate-500 shrink-0" />
               </div>
               <p className="text-lg font-bold text-slate-100 font-mono">{m.value}</p>
-            </div>
+            </GlassCard>
           );
         })}
       </div>
 
       {/* Humanized Preferences Summary */}
-      <div className="panel-card p-4 border border-purple-800/40 bg-purple-950/15 space-y-3">
+      <GlassCard variant="secondary" className="p-4 border-purple-800/40 bg-purple-950/15 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-purple-800/30 pb-2.5">
           <div className="flex items-center gap-2">
             <span className="badge-tag bg-purple-950 text-purple-300 border-purple-500/30 font-mono text-[10px]">Preferences</span>
@@ -363,7 +362,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-          <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 space-y-1">
+          <div className="bg-slate-950/60 p-3 rounded-xl border border-white/5 space-y-1">
             <span className="text-[10px] text-slate-400 uppercase font-mono block">Your Activity</span>
             <div className="text-base font-bold text-slate-100 font-mono">
               {learningProfile ? learningProfile.total_signals : 0} Activity Signals
@@ -371,7 +370,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
             <p className="text-[10px] text-slate-500">Learned from ratings, completed steps, and logged outcomes.</p>
           </div>
 
-          <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 space-y-1">
+          <div className="bg-slate-950/60 p-3 rounded-xl border border-white/5 space-y-1">
             <span className="text-[10px] text-slate-400 uppercase font-mono block">Preference Certainty</span>
             <div className="text-base font-bold text-purple-400 font-mono">
               {learningProfile ? (learningProfile.confidence_score * 100).toFixed(0) : 0}% Certainty
@@ -379,7 +378,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
             <p className="text-[10px] text-slate-500">Based on your activity patterns.</p>
           </div>
 
-          <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 space-y-1">
+          <div className="bg-slate-950/60 p-3 rounded-xl border border-white/5 space-y-1">
             <span className="text-[10px] text-slate-400 uppercase font-mono block">Learned Conclusion</span>
             <div className="text-xs font-semibold text-slate-200">
               {learningProfile && learningProfile.total_signals > 0 
@@ -389,17 +388,17 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
             <p className="text-[10px] text-slate-500">Adjusts match scores automatically.</p>
           </div>
         </div>
-      </div>
+      </GlassCard>
 
       {/* Result Logging Form */}
       {logFormOpen && (
-        <form onSubmit={handleSubmitLog} className="panel-card p-5 border border-indigo-500/50 space-y-4 bg-indigo-950/20 animate-fade-in">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+        <form onSubmit={handleSubmitLog} className="glass-panel-primary p-5 border-indigo-500/50 space-y-4 bg-indigo-950/20 animate-fade-in">
+          <div className="flex items-center justify-between border-b border-white/10 pb-2">
             <div className="flex items-center gap-2 text-indigo-300 text-xs font-bold uppercase tracking-wider">
               <PlusCircle className="h-4 w-4 text-indigo-400" />
               Log Verified Real-World Outcome
             </div>
-            <span className="text-[11px] text-slate-500">Truthful execution record</span>
+            <span className="text-[11px] text-slate-500 font-mono">Truthful execution record</span>
           </div>
 
           {logError && (
@@ -415,7 +414,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
               <select
                 value={formResultType}
                 onChange={e => setFormResultType(e.target.value as ProgressResultType)}
-                className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-indigo-500 focus:outline-none"
+                className="w-full bg-slate-950/80 border border-white/10 text-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-indigo-500 focus:outline-none"
               >
                 <option value="demo_created">Demo / Prototype Built</option>
                 <option value="prospect_contacted">Prospect Contacted</option>
@@ -434,7 +433,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
               <select
                 value={formOutcome}
                 onChange={e => setFormOutcome(e.target.value as ProgressOutcome)}
-                className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-indigo-500 focus:outline-none"
+                className="w-full bg-slate-950/80 border border-white/10 text-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-indigo-500 focus:outline-none"
               >
                 <option value="positive">Positive / Success</option>
                 <option value="neutral">Neutral / Learning</option>
@@ -450,7 +449,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
                 placeholder="e.g. 5000 or 1"
                 value={formValue}
                 onChange={e => setFormValue(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-indigo-500 focus:outline-none"
+                className="w-full bg-slate-950/80 border border-white/10 text-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-indigo-500 focus:outline-none"
               />
             </div>
           </div>
@@ -463,7 +462,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
               placeholder="e.g. Contacted 5 dental clinics on LinkedIn; received 1 positive reply asking for a demo."
               value={formNotes}
               onChange={e => setFormNotes(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg px-3 py-2 text-xs focus:border-indigo-500 focus:outline-none"
+              className="w-full bg-slate-950/80 border border-white/10 text-slate-200 rounded-lg px-3 py-2 text-xs focus:border-indigo-500 focus:outline-none"
             />
           </div>
 
@@ -475,23 +474,15 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
                 placeholder="https://..."
                 value={formEvidence}
                 onChange={e => setFormEvidence(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-indigo-500 focus:outline-none"
+                className="w-full bg-slate-950/80 border border-white/10 text-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-indigo-500 focus:outline-none"
               />
             </div>
 
             <div className="flex items-end justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setLogFormOpen(false)}
-                className="btn-secondary text-xs py-1.5 px-3"
-              >
+              <button type="button" onClick={() => setLogFormOpen(false)} className="btn-secondary text-xs py-1.5 px-3">
                 Cancel
               </button>
-              <button
-                type="submit"
-                disabled={submittingLog}
-                className="btn-primary text-xs py-1.5 px-4"
-              >
+              <button type="submit" disabled={submittingLog} className="btn-primary text-xs py-1.5 px-4">
                 {submittingLog ? 'Saving Log...' : 'Record Outcome'}
               </button>
             </div>
@@ -501,12 +492,9 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
 
       {/* Main Section: Action Plans */}
       {loadingPlans ? (
-        <div className="panel-card p-12 text-center space-y-3">
-          <div className="h-7 w-7 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin mx-auto"></div>
-          <p className="text-xs text-slate-400 font-mono">Loading action plans...</p>
-        </div>
+        <div className="py-12 text-center text-xs text-slate-400 font-mono">Loading action plans...</div>
       ) : plans.length === 0 ? (
-        <div className="panel-card p-10 border border-slate-800 text-center max-w-xl mx-auto space-y-4 my-6">
+        <GlassCard variant="secondary" className="p-10 text-center max-w-xl mx-auto space-y-4 my-6">
           <div className="h-12 w-12 rounded-full bg-indigo-950/60 border border-indigo-500/40 flex items-center justify-center mx-auto text-indigo-400">
             <CheckCircle2 className="h-6 w-6" />
           </div>
@@ -516,16 +504,10 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
               Opportunity OS action plans provide a concrete 6-phase roadmap (Learn ➔ Build ➔ Portfolio ➔ Prospect ➔ Outreach ➔ Result).
             </p>
           </div>
-          <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800 text-xs text-slate-400 max-w-md mx-auto text-left space-y-1.5">
-            <span className="text-[10px] font-mono text-indigo-400 font-bold uppercase block">How to start:</span>
-            <p>1. Open the <strong>Opportunities</strong> tab or <strong>Combine Tools</strong> tab.</p>
-            <p>2. Review any recommended opportunity or tool combination.</p>
-            <p>3. Click <span className="text-emerald-400 font-medium">"Start Action Plan"</span> to generate a personalized step-by-step roadmap.</p>
-          </div>
-        </div>
+        </GlassCard>
       ) : (
         <div className="space-y-5">
-          {/* Plan Selector Bar */}
+          {/* Plan Selector */}
           {plans.length > 1 && (
             <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
               <span className="text-xs text-slate-500 font-mono uppercase whitespace-nowrap">Your Plans:</span>
@@ -535,8 +517,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
                   onClick={() => setSelectedPlanId(p.id)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap border transition-all active:scale-[0.97] flex items-center gap-2 ${
                     p.id === selectedPlanId
-                      ? 'bg-indigo-950 border-indigo-500 text-indigo-200'
-                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                      ? 'bg-indigo-950/80 border-indigo-500 text-indigo-200'
+                      : 'bg-slate-950/60 border-white/10 text-slate-400 hover:border-white/20'
                   }`}
                 >
                   <span className="truncate max-w-[180px]">{p.title.replace('Action Plan: ', '')}</span>
@@ -550,18 +532,18 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
 
           {/* Active Plan Card */}
           {selectedPlan && (
-            <div className="interactive-card p-6 border-slate-800 space-y-6">
-              {/* Plan Header */}
-              <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-800/80 pb-4">
-                <div className="space-y-1.5 max-w-2xl">
+            <GlassCard variant="primary" interactive className="p-6 space-y-6">
+              {/* Header */}
+              <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 pb-4">
+                <div className="space-y-1.5 max-w-xl">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase border ${getStatusBadge(selectedPlan.status)}`}>
                       {selectedPlan.status.replace('_', ' ')}
                     </span>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-900 text-slate-400 border border-slate-800">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-900/80 text-slate-400 border border-white/10">
                       Difficulty: {selectedPlan.difficulty}
                     </span>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-900 text-slate-400 border border-slate-800 flex items-center gap-1">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-900/80 text-slate-400 border border-white/10 flex items-center gap-1">
                       <Clock className="h-3 w-3 text-slate-500" />
                       Est. Time: {selectedPlan.estimated_total_time}
                     </span>
@@ -569,80 +551,46 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
 
                   <h2 className="text-lg font-bold text-slate-100">{selectedPlan.title}</h2>
                   <p className="text-xs text-slate-300 leading-relaxed font-medium">{selectedPlan.objective}</p>
-                  <p className="text-xs text-slate-400 leading-relaxed">{selectedPlan.summary}</p>
                 </div>
 
-                {/* Controls */}
+                {/* 3D Spatial Progress Ring */}
+                <div className="w-full sm:w-auto flex justify-center">
+                  <SpatialProgressRing progressPercentage={selectedPlan.progress_percentage || 0} />
+                </div>
+              </div>
+
+              {/* Controls */}
+              <div className="flex items-center justify-between pt-2 border-b border-white/10 pb-4">
                 <div className="flex items-center gap-2">
                   {selectedPlan.status === 'not_started' && (
-                    <button
-                      onClick={() => handleStartPlan(selectedPlan.id)}
-                      className="btn-primary text-xs bg-emerald-600 border-emerald-500/50"
-                    >
+                    <button onClick={() => handleStartPlan(selectedPlan.id)} className="btn-primary text-xs bg-emerald-600 border-emerald-500/50">
                       <Play className="h-3.5 w-3.5" />
                       <span>Start Plan</span>
                     </button>
                   )}
                   {selectedPlan.status === 'in_progress' && (
                     <>
-                      <button
-                        onClick={() => handlePausePlan(selectedPlan.id)}
-                        className="btn-secondary text-xs py-1.5 px-2.5"
-                        title="Pause Plan"
-                      >
+                      <button onClick={() => handlePausePlan(selectedPlan.id)} className="btn-secondary text-xs py-1.5 px-2.5">
                         <Pause className="h-3.5 w-3.5" />
                         <span>Pause</span>
                       </button>
-                      <button
-                        onClick={() => handleCompletePlan(selectedPlan.id)}
-                        className="btn-primary text-xs bg-emerald-600 border-emerald-500/50 py-1.5 px-3"
-                        title="Complete Plan"
-                      >
+                      <button onClick={() => handleCompletePlan(selectedPlan.id)} className="btn-primary text-xs bg-emerald-600 border-emerald-500/50 py-1.5 px-3">
                         <Check className="h-3.5 w-3.5" />
                         <span>Complete</span>
                       </button>
                     </>
                   )}
                   {selectedPlan.status === 'paused' && (
-                    <button
-                      onClick={() => handleResumePlan(selectedPlan.id)}
-                      className="btn-primary text-xs py-1.5 px-3"
-                    >
+                    <button onClick={() => handleResumePlan(selectedPlan.id)} className="btn-primary text-xs py-1.5 px-3">
                       <Play className="h-3.5 w-3.5" />
                       <span>Resume</span>
                     </button>
                   )}
-
-                  <button
-                    onClick={() => handleDeletePlan(selectedPlan.id)}
-                    className="btn-ghost p-1.5 text-slate-500 hover:text-red-400"
-                    title="Delete Action Plan"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="space-y-2 bg-slate-950 p-4 rounded-xl border border-slate-800">
-                <div className="flex items-center justify-between text-xs font-mono">
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-400 uppercase font-bold text-[11px]">Execution Progress</span>
-                    <span className="text-slate-500">
-                      ({selectedPlan.completed_steps_count || 0} of {selectedPlan.total_steps_count || 6} Steps Completed)
-                    </span>
-                  </div>
-                  <span className="text-indigo-400 font-bold text-sm">
-                    {selectedPlan.progress_percentage || 0}%
-                  </span>
                 </div>
 
-                <div className="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden">
-                  <div
-                    className="bg-indigo-500 h-2.5 rounded-full transition-all duration-500 ease-out"
-                    style={{ width: `${selectedPlan.progress_percentage || 0}%` }}
-                  />
-                </div>
+                <button onClick={() => handleDeletePlan(selectedPlan.id)} className="btn-ghost p-1.5 text-slate-500 hover:text-red-400">
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </div>
 
               {/* 6-Phase Step Roadmap */}
@@ -666,10 +614,10 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
                           isCompleted
                             ? 'bg-emerald-950/10 border-emerald-500/30'
                             : isInProgress
-                            ? 'bg-slate-950 border-indigo-500/60 shadow-md shadow-indigo-950/40'
+                            ? 'bg-slate-950/90 border-indigo-500/60 shadow-lg shadow-indigo-950/40'
                             : isSkipped
                             ? 'bg-slate-950/40 border-slate-900 opacity-60'
-                            : 'bg-slate-950 border-slate-800'
+                            : 'bg-slate-950/70 border-white/5'
                         }`}
                       >
                         <div className="flex flex-wrap items-start justify-between gap-2">
@@ -694,7 +642,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
                         <p className="text-xs text-slate-300 leading-relaxed font-sans">{step.description}</p>
 
                         {step.notes && !isNoteEditing && (
-                          <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-300 flex items-start gap-2">
+                          <div className="p-2.5 rounded-lg bg-slate-900/80 border border-white/5 text-xs text-slate-300 flex items-start gap-2">
                             <MessageSquare className="h-3.5 w-3.5 text-indigo-400 shrink-0 mt-0.5" />
                             <div className="space-y-0.5">
                               <span className="text-[10px] font-mono text-slate-500 uppercase block">Step Note:</span>
@@ -713,23 +661,17 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
                               className="w-full bg-slate-900 border border-slate-800 text-slate-200 rounded-lg p-2 text-xs focus:border-indigo-500 focus:outline-none"
                             />
                             <div className="flex justify-end gap-2">
-                              <button
-                                onClick={() => setActiveStepNoteId(null)}
-                                className="btn-secondary text-[11px] py-1 px-2.5"
-                              >
+                              <button onClick={() => setActiveStepNoteId(null)} className="btn-secondary text-[11px] py-1 px-2.5">
                                 Cancel
                               </button>
-                              <button
-                                onClick={() => handleSaveStepNote(step.id)}
-                                className="btn-primary text-[11px] py-1 px-3"
-                              >
+                              <button onClick={() => handleSaveStepNote(step.id)} className="btn-primary text-[11px] py-1 px-3">
                                 Save Note
                               </button>
                             </div>
                           </div>
                         )}
 
-                        <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-800/40 text-xs">
+                        <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-white/5 text-xs">
                           <div className="flex items-center gap-1.5">
                             {!isCompleted ? (
                               <button
@@ -750,10 +692,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
                             )}
 
                             {!isCompleted && !isSkipped && (
-                              <button
-                                onClick={() => handleUpdateStepStatus(step.id, 'skipped')}
-                                className="btn-ghost text-[11px] py-1 px-2"
-                              >
+                              <button onClick={() => handleUpdateStepStatus(step.id, 'skipped')} className="btn-ghost text-[11px] py-1 px-2">
                                 Skip Step
                               </button>
                             )}
@@ -771,55 +710,46 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
                               </button>
                             )}
                           </div>
-
-                          {step.completed_at && (
-                            <span className="text-[10px] font-mono text-slate-500">
-                              Completed: {new Date(step.completed_at).toLocaleDateString()}
-                            </span>
-                          )}
                         </div>
                       </div>
                     );
                   })}
                 </div>
               </div>
-            </div>
+            </GlassCard>
           )}
         </div>
       )}
 
       {/* Execution Logs Feed */}
-      <div className="panel-card p-6 space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+      <GlassCard variant="secondary" className="p-6 space-y-4">
+        <div className="flex items-center justify-between border-b border-white/10 pb-3">
           <div className="flex items-center gap-2">
             <FileText className="h-4 w-4 text-indigo-400" />
             <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
               Real-World Execution Log Feed ({logs.length})
             </h3>
           </div>
-          <span className="text-[11px] text-slate-500">Verified outcomes across all attempts</span>
+          <span className="text-[11px] text-slate-500 font-mono">Verified outcomes</span>
         </div>
 
         {loadingLogs ? (
           <div className="py-6 text-center text-xs text-slate-500 font-mono">Loading execution logs...</div>
         ) : logs.length === 0 ? (
-          <div className="p-8 text-center space-y-2 bg-slate-900/40 rounded-xl border border-slate-800/60">
+          <div className="p-8 text-center space-y-2 bg-slate-950/60 rounded-xl border border-white/5">
             <Award className="h-7 w-7 text-slate-600 mx-auto" />
             <p className="text-xs text-slate-400 font-medium">No execution events logged yet.</p>
-            <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
-              Whenever you complete a demo, send an outreach message, or hear back from a prospect, click "Log Result" above.
-            </p>
           </div>
         ) : (
           <div className="space-y-2.5">
             {logs.map((log) => (
               <div
                 key={log.id}
-                className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex flex-wrap items-start justify-between gap-3 text-xs"
+                className="p-3.5 rounded-xl bg-slate-950/80 border border-white/5 flex flex-wrap items-start justify-between gap-3 text-xs"
               >
                 <div className="space-y-1 max-w-2xl">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-slate-900 border border-slate-800 text-indigo-300">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-slate-900 border border-white/10 text-indigo-300">
                       {log.result_type.replace('_', ' ')}
                     </span>
                     <span className={`px-2 py-0.5 rounded text-[10px] font-mono uppercase border ${getOutcomeBadge(log.outcome)}`}>
@@ -830,9 +760,6 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
                         {log.result_type === 'revenue_earned' ? `₹${log.numeric_value}` : `${log.numeric_value}`}
                       </span>
                     )}
-                    <span className="text-[10px] font-mono text-slate-500">
-                      {new Date(log.created_at).toLocaleDateString()}
-                    </span>
                   </div>
 
                   <p className="text-slate-300 leading-relaxed">{log.notes}</p>
@@ -850,18 +777,14 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
                   )}
                 </div>
 
-                <button
-                  onClick={() => handleDeleteLog(log.id)}
-                  className="btn-ghost p-1 text-slate-500 hover:text-red-400"
-                  title="Delete Log"
-                >
+                <button onClick={() => handleDeleteLog(log.id)} className="btn-ghost p-1 text-slate-500 hover:text-red-400">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
             ))}
           </div>
         )}
-      </div>
+      </GlassCard>
     </div>
   );
 };

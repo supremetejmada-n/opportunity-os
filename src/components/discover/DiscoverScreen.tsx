@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { api, DiscoveriesResponse } from '../../services/api.js';
 import { Discovery } from '../../types/index.js';
+import { GlassCard } from '../ui/GlassCard.js';
 
 interface DiscoverScreenProps {
   onScanClick: () => Promise<void>;
@@ -102,7 +103,7 @@ export const DiscoverScreen: React.FC<DiscoverScreenProps> = ({ onScanClick, isS
 
       {/* Scan Summary Banner */}
       {scanSummary && (
-        <div className="panel-card p-4 bg-slate-900/90 border border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <GlassCard variant="floating" className="p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 text-emerald-400" />
             <span className="font-bold text-slate-200">Last Discovery Scan Summary</span>
@@ -114,7 +115,7 @@ export const DiscoverScreen: React.FC<DiscoverScreenProps> = ({ onScanClick, isS
             <span>Verified: <strong className="text-emerald-400">{scanSummary.verified}</strong></span>
             <span>Stored: <strong className="text-indigo-400">{scanSummary.stored}</strong></span>
           </div>
-        </div>
+        </GlassCard>
       )}
 
       {/* Filter Tabs */}
@@ -142,7 +143,7 @@ export const DiscoverScreen: React.FC<DiscoverScreenProps> = ({ onScanClick, isS
           <p className="text-xs text-slate-400 font-mono">Loading verified discoveries from database...</p>
         </div>
       ) : discoveries.length === 0 ? (
-        <div className="panel-card p-8 text-center space-y-4 max-w-xl mx-auto my-6 bg-slate-900 border border-slate-800">
+        <GlassCard variant="secondary" className="panel-card p-8 text-center space-y-4 max-w-xl mx-auto my-6">
           <ShieldCheck className="h-8 w-8 text-slate-400 mx-auto" />
           <div className="space-y-1">
             <h3 className="text-base font-bold text-slate-100">No Discoveries Stored Yet</h3>
@@ -154,13 +155,13 @@ export const DiscoverScreen: React.FC<DiscoverScreenProps> = ({ onScanClick, isS
             <RefreshCw className={`h-3.5 w-3.5 ${isScanning ? 'animate-spin' : ''}`} />
             <span>Run First Discovery Scan</span>
           </button>
-        </div>
+        </GlassCard>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {discoveries.map((item) => {
             const SourceIcon = getSourceIcon(item.source);
             return (
-              <div key={item.id} className="interactive-card p-5 space-y-3 flex flex-col justify-between">
+              <GlassCard key={item.id} variant="secondary" className="interactive-card p-5 space-y-3 flex flex-col justify-between">
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2">
@@ -183,7 +184,7 @@ export const DiscoverScreen: React.FC<DiscoverScreenProps> = ({ onScanClick, isS
                   {item.capabilities && item.capabilities.length > 0 && (
                     <div className="flex flex-wrap gap-1 pt-1">
                       {item.capabilities.map((cap, idx) => (
-                        <span key={idx} className="px-2 py-0.5 rounded-md bg-slate-950 border border-slate-800 text-[10px] text-slate-300 font-mono flex items-center gap-1">
+                        <span key={idx} className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-[10px] text-slate-300 font-mono flex items-center gap-1">
                           <Tag className="h-2.5 w-2.5 text-slate-500" />
                           {cap}
                         </span>
@@ -218,7 +219,7 @@ export const DiscoverScreen: React.FC<DiscoverScreenProps> = ({ onScanClick, isS
                     </a>
                   </div>
                 </div>
-              </div>
+              </GlassCard>
             );
           })}
         </div>

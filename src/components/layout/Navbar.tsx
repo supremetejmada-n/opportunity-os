@@ -48,8 +48,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   const displayName = profile?.name ? profile.name.split(' ')[0] : 'Advisor';
 
   return (
-    <header className="sticky top-0 z-40 w-full px-4 pt-3 pb-1 bg-gradient-to-b from-slate-950 via-slate-950/95 to-transparent">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 rounded-2xl border border-slate-800/80 bg-slate-950/80 backdrop-blur-md shadow-xl shadow-black/40">
+    <header className="sticky top-0 z-40 w-full px-4 pt-3 pb-1 bg-gradient-to-b from-slate-950 via-slate-950/80 to-transparent">
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 rounded-2xl border border-white/10 bg-slate-950/75 backdrop-blur-xl shadow-2xl shadow-black/80 relative overflow-hidden">
+        {/* Specular glass reflection line top */}
+        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500/30 to-transparent pointer-events-none" />
         
         {/* Brand Title */}
         <button 

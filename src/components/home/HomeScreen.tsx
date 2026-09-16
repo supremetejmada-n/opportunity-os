@@ -15,6 +15,8 @@ import {
 import { UserProfile, UserSkill, UserTool, UserGoal } from '../../types/index.js';
 import { NavTab } from '../layout/Navbar.js';
 import { api } from '../../services/api.js';
+import { SpatialHeroOrb } from '../ui/SpatialHeroOrb.js';
+import { GlassCard } from '../ui/GlassCard.js';
 
 interface HomeScreenProps {
   profile: UserProfile | null;
@@ -52,46 +54,55 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const userName = profile?.name ? profile.name.split(' ')[0] : 'there';
 
   return (
-    <div className="space-y-8 py-4 max-w-5xl mx-auto">
-      {/* 1. HEADER SECTION: PERSONAL ADVISOR GREETING */}
-      <section className="space-y-3 border-b border-slate-800/80 pb-6">
+    <div className="space-y-8 py-4 max-w-6xl mx-auto">
+      {/* 1. ATMOSPHERIC SPATIAL HERO */}
+      <section className="relative space-y-4 border-b border-white/10 pb-8">
         <div className="flex items-center gap-2">
-          <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-mono font-semibold uppercase tracking-wider">
+          <span className="px-3 py-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs font-mono font-semibold tracking-wide">
             Personal Intelligence System
           </span>
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-100 tracking-tight leading-tight">
-          Good day, {userName}. What deserves your attention today?
-        </h1>
-        <p className="text-xs sm:text-sm text-slate-400 max-w-2xl leading-relaxed">
-          Here is your top personalized recommendation, calculated from your active skills, accessible tools, and budget constraints.
-        </p>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+          <div className="lg:col-span-7 space-y-3">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-100 tracking-tight leading-none bg-gradient-to-r from-slate-100 via-slate-200 to-indigo-200 bg-clip-text text-transparent">
+              Find something worth building.
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
+              Welcome back, <strong className="text-white font-semibold">{userName}</strong>. Opportunity OS has evaluated live public sources against your profile vector. Here is your top zero-capital match.
+            </p>
 
-        {/* Humanized Context Line */}
-        <div className="pt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-400 font-mono">
-          <span className="flex items-center gap-1.5 text-slate-300">
-            <Zap className="h-3.5 w-3.5 text-indigo-400" />
-            <strong className="text-slate-100 font-bold">{skills.length}</strong> active skills
-          </span>
-          <span className="text-slate-700">•</span>
-          <span className="flex items-center gap-1.5 text-slate-300">
-            <Wrench className="h-3.5 w-3.5 text-emerald-400" />
-            <strong className="text-slate-100 font-bold">{tools.length}</strong> tools ({freeToolsCount} free)
-          </span>
-          <span className="text-slate-700">•</span>
-          <span className="flex items-center gap-1.5 text-slate-300">
-            <Target className="h-3.5 w-3.5 text-amber-400" />
-            <strong className="text-slate-100 font-bold">{goals.length}</strong> goals
-          </span>
-          <span className="text-slate-700">•</span>
-          <span className="text-emerald-400 font-semibold flex items-center gap-1">
-            <ShieldCheck className="h-3.5 w-3.5" /> ₹{profile?.preferred_budget ?? 0} budget limit
-          </span>
+            {/* Humanized Vector Metrics Strip */}
+            <div className="pt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-400 font-mono">
+              <span className="flex items-center gap-1.5 text-slate-300">
+                <Zap className="h-3.5 w-3.5 text-indigo-400" />
+                <strong className="text-slate-100 font-bold">{skills.length}</strong> active skills
+              </span>
+              <span className="text-slate-700">•</span>
+              <span className="flex items-center gap-1.5 text-slate-300">
+                <Wrench className="h-3.5 w-3.5 text-emerald-400" />
+                <strong className="text-slate-100 font-bold">{tools.length}</strong> tools ({freeToolsCount} free)
+              </span>
+              <span className="text-slate-700">•</span>
+              <span className="flex items-center gap-1.5 text-slate-300">
+                <Target className="h-3.5 w-3.5 text-amber-400" />
+                <strong className="text-slate-100 font-bold">{goals.length}</strong> goals
+              </span>
+              <span className="text-slate-700">•</span>
+              <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                <ShieldCheck className="h-3.5 w-3.5" /> ₹{profile?.preferred_budget ?? 0} budget limit
+              </span>
+            </div>
+          </div>
+
+          {/* Interactive 3D Spatial Crystal Orb */}
+          <div className="lg:col-span-5 flex justify-center">
+            <SpatialHeroOrb />
+          </div>
         </div>
       </section>
 
-      {/* 2. HERO SECTION: TOP RECOMMENDATION SPOTLIGHT */}
+      {/* 2. PRIMARY RECOMMENDATION SHOWCASE */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -102,12 +113,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </div>
 
         {bestOpp ? (
-          <div className="interactive-card p-6 sm:p-8 space-y-6 border-indigo-500/40 bg-gradient-to-b from-slate-900/90 to-slate-950/90 shadow-2xl shadow-indigo-950/20">
+          <GlassCard variant="primary" interactive className="p-6 sm:p-8 space-y-6">
             {/* Top Surface Summary */}
-            <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-800/80 pb-5">
+            <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 pb-5">
               <div className="space-y-2 max-w-2xl">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-mono font-bold">
+                  <span className="px-3.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-mono font-bold shadow-md shadow-emerald-950/40">
                     {bestOpp.score}% Fit for You
                   </span>
                   <span className="badge-tag badge-slate text-xs">
@@ -126,7 +137,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 </p>
               </div>
 
-              <div className="bg-slate-950/80 p-3.5 rounded-xl border border-slate-800 text-right shrink-0 space-y-1">
+              <div className="bg-slate-950/80 p-4 rounded-xl border border-white/10 text-right shrink-0 space-y-1 shadow-inner">
                 <div className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Possible Earnings</div>
                 <div className="text-lg font-extrabold text-emerald-400 font-mono">
                   {bestOpp.earningPotential || bestOpp.earning_potential || '₹5,000–₹25,000/mo'}
@@ -136,7 +147,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </div>
 
             {/* Why This Fits You */}
-            <div className="space-y-3 bg-slate-950/60 p-4 rounded-xl border border-slate-800/80">
+            <div className="space-y-3 bg-slate-950/50 p-4 rounded-xl border border-white/5">
               <span className="text-xs font-bold text-indigo-300 uppercase tracking-wider block">
                 Why this fits you
               </span>
@@ -157,7 +168,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </div>
 
             {/* Main Primary CTA */}
-            <div className="pt-2 flex flex-wrap items-center justify-between gap-4 border-t border-slate-800/80">
+            <div className="pt-2 flex flex-wrap items-center justify-between gap-4 border-t border-white/10">
               <button
                 onClick={() => setShowDetails(!showDetails)}
                 className="btn-ghost text-xs flex items-center gap-1.5"
@@ -177,7 +188,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
             {/* Progressive Rationale Breakdown */}
             {showDetails && (
-              <div className="pt-3 border-t border-slate-800 space-y-3 bg-slate-950 p-4 rounded-xl text-xs animate-fade-in">
+              <div className="pt-3 border-t border-white/10 space-y-3 bg-slate-950/90 p-4 rounded-xl text-xs animate-fade-in">
                 <h4 className="font-bold text-slate-200 uppercase tracking-wider text-[11px]">
                   Recommendation Rationale
                 </h4>
@@ -186,19 +197,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 </p>
                 {bestOpp.scoreBreakdown && (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 font-mono text-[11px]">
-                    <div className="bg-slate-900 p-2.5 rounded-lg border border-slate-800">
+                    <div className="bg-slate-900/80 p-2.5 rounded-lg border border-white/5">
                       <span className="text-slate-400 block">Skill Fit</span>
                       <strong className="text-indigo-300">{bestOpp.scoreBreakdown.skillMatch || 22}/25 pts</strong>
                     </div>
-                    <div className="bg-slate-900 p-2.5 rounded-lg border border-slate-800">
+                    <div className="bg-slate-900/80 p-2.5 rounded-lg border border-white/5">
                       <span className="text-slate-400 block">Market Demand</span>
                       <strong className="text-indigo-300">{bestOpp.scoreBreakdown.marketDemand || 18}/20 pts</strong>
                     </div>
-                    <div className="bg-slate-900 p-2.5 rounded-lg border border-slate-800">
+                    <div className="bg-slate-900/80 p-2.5 rounded-lg border border-white/5">
                       <span className="text-slate-400 block">Tool Match</span>
                       <strong className="text-indigo-300">{bestOpp.scoreBreakdown.toolMatch || 14}/15 pts</strong>
                     </div>
-                    <div className="bg-slate-900 p-2.5 rounded-lg border border-slate-800">
+                    <div className="bg-slate-900/80 p-2.5 rounded-lg border border-white/5">
                       <span className="text-slate-400 block">₹0 Feasibility</span>
                       <strong className="text-emerald-400">{bestOpp.scoreBreakdown.startupCost || 15}/15 pts</strong>
                     </div>
@@ -206,11 +217,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 )}
               </div>
             )}
-          </div>
+          </GlassCard>
         ) : (
-          <div className="panel-card p-8 space-y-5 bg-slate-900/80 border border-slate-800">
+          <GlassCard variant="secondary" className="p-8 space-y-5">
             <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-slate-950 border border-slate-800 text-slate-400 text-xs font-mono font-semibold">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-slate-950 border border-white/10 text-slate-400 text-xs font-mono font-semibold">
                 <Info className="h-3.5 w-3.5 text-indigo-400" />
                 <span>Ready to Scan</span>
               </div>
@@ -225,24 +236,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </div>
 
             <div className="pt-2 flex flex-wrap items-center gap-3">
-              <button
-                onClick={onScanClick}
-                disabled={isScanning}
-                className="btn-primary"
-              >
+              <button onClick={onScanClick} disabled={isScanning} className="btn-primary">
                 <Zap className={`h-4 w-4 ${isScanning ? 'animate-spin' : ''}`} />
                 <span>{isScanning ? 'Scanning...' : 'Run First Scan'}</span>
               </button>
 
-              <button
-                onClick={() => setActiveTab('profile')}
-                className="btn-secondary text-xs"
-              >
+              <button onClick={() => setActiveTab('profile')} className="btn-secondary text-xs">
                 <span>Edit Profile</span>
                 <ArrowRight className="h-4 w-4 text-slate-400" />
               </button>
             </div>
-          </div>
+          </GlassCard>
         )}
       </section>
 
@@ -251,8 +255,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         <h2 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Worth Knowing</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="interactive-card p-5 flex items-start gap-4">
-            <div className="p-3 rounded-xl bg-indigo-950 border border-indigo-800/60 text-indigo-400 shrink-0">
+          <GlassCard variant="secondary" interactive className="p-5 flex items-start gap-4">
+            <div className="p-3 rounded-xl bg-indigo-950/80 border border-indigo-500/30 text-indigo-400 shrink-0">
               <Compass className="h-5 w-5" />
             </div>
             <div className="space-y-1">
@@ -261,10 +265,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 Recommendations prioritize workflows combining 2–4 tools you already own or can access for free.
               </p>
             </div>
-          </div>
+          </GlassCard>
 
-          <div className="interactive-card p-5 flex items-start gap-4">
-            <div className="p-3 rounded-xl bg-emerald-950 border border-emerald-800/60 text-emerald-400 shrink-0">
+          <GlassCard variant="secondary" interactive className="p-5 flex items-start gap-4">
+            <div className="p-3 rounded-xl bg-emerald-950/80 border border-emerald-500/30 text-emerald-400 shrink-0">
               <Zap className="h-5 w-5" />
             </div>
             <div className="space-y-1">
@@ -273,20 +277,20 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 As you rate recommendations or log progress, the system learns your preferred project types automatically.
               </p>
             </div>
-          </div>
+          </GlassCard>
         </div>
       </section>
 
-      {/* 4. YOUR NEXT MOVE */}
-      <section className="interactive-card p-6 border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950/30">
+      {/* 4. YOUR NEXT MOVE (FLOATING GLASS SECTION) */}
+      <GlassCard variant="floating" interactive className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="space-y-1">
-          <span className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wider block">
+          <span className="text-[10px] font-mono font-bold text-indigo-300 uppercase tracking-wider block">
             Your Next Move
           </span>
           <h3 className="text-base font-bold text-slate-100">
             {bestOpp ? 'Review your action plan' : 'Review your profile skills & tools'}
           </h3>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-300">
             {bestOpp 
               ? 'Start the step-by-step roadmap to build your first demo.' 
               : 'Keep your tools and goals updated to receive the best matches.'}
@@ -295,12 +299,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
         <button
           onClick={() => setActiveTab(bestOpp ? 'opportunities' : 'profile')}
-          className="btn-primary text-xs shrink-0 py-2.5 px-5"
+          className="btn-primary text-xs shrink-0 py-2.5 px-5 shadow-md shadow-indigo-950/50"
         >
           <span>{bestOpp ? 'See the plan' : 'Edit profile'}</span>
           <ArrowRight className="h-4 w-4" />
         </button>
-      </section>
+      </GlassCard>
     </div>
   );
 };
