@@ -95,9 +95,13 @@ export const DiscoverScreen: React.FC<DiscoverScreenProps> = ({ onScanClick, isS
           </p>
         </div>
 
-        <button onClick={handleTriggerScan} disabled={isScanning} className="btn-primary text-xs">
-          <RefreshCw className={`h-3.5 w-3.5 ${isScanning ? 'animate-spin' : ''}`} />
-          <span>{isScanning ? 'Scanning...' : 'Check for New Finds'}</span>
+        <button 
+          onClick={handleTriggerScan} 
+          disabled={isScanning} 
+          className="btn-primary text-xs py-2 px-4 h-9 font-bold shadow-lg shadow-peach-500/30 border border-white/40 flex items-center gap-2 hover:scale-[1.03] active:scale-[0.97] transition-all"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 text-navy-950 font-bold ${isScanning ? 'animate-spin' : ''}`} />
+          <span className="font-bold text-navy-950 tracking-wide">{isScanning ? 'Scanning...' : 'Scan Now'}</span>
         </button>
       </div>
 

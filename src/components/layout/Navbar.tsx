@@ -48,7 +48,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const displayName = profile?.name ? profile.name.split(' ')[0] : 'Advisor';
 
   return (
-    <header className="sticky top-0 z-40 w-full px-4 sm:px-6 pt-4 pb-2 bg-gradient-to-b from-navy-950 via-navy-950/80 to-transparent">
+    <header className="sticky top-0 z-40 w-full px-4 sm:px-6 pt-4 pb-3 mb-2 bg-gradient-to-b from-navy-950 via-navy-950/85 to-transparent">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-6 rounded-2xl border border-white/10 bg-navy-950/80 backdrop-blur-xl shadow-2xl shadow-black/80 relative overflow-hidden">
         {/* Specular glass reflection line top in warm peach */}
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-peach-500/40 to-transparent pointer-events-none" />
@@ -75,7 +75,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </button>
 
         {/* Desktop Navigation Pill Strip */}
-        <nav className="hidden md:flex items-center gap-2 bg-navy-900/90 p-1.5 rounded-xl border border-slate-800">
+        <nav className="hidden md:flex items-center gap-2.5 bg-navy-900/90 p-1.5 rounded-xl border border-slate-800">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -97,16 +97,16 @@ export const Navbar: React.FC<NavbarProps> = ({
         </nav>
 
         {/* Right Header Actions */}
-        <div className="flex items-center gap-2.5">
-          {/* Quick Trigger Scan Button */}
+        <div className="flex items-center gap-3">
+          {/* Highlighted Quick Trigger Scan Button */}
           <button
             onClick={onScanClick}
             disabled={isScanning}
-            className="btn-secondary text-xs py-1 px-3 h-8"
+            className="btn-primary text-xs py-1.5 px-4 h-9 font-bold shadow-lg shadow-peach-500/30 border border-white/40 flex items-center gap-2 hover:scale-[1.03] active:scale-[0.97] transition-all"
             title="Trigger discovery and evaluation scan"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${isScanning ? 'animate-spin text-peach-500' : 'text-slate-400'}`} />
-            <span className="hidden sm:inline font-medium">{isScanning ? 'Scanning...' : 'Scan Now'}</span>
+            <RefreshCw className={`h-3.5 w-3.5 text-navy-950 font-bold ${isScanning ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline font-bold tracking-wide text-navy-950">{isScanning ? 'Scanning...' : 'Scan Now'}</span>
           </button>
 
           {/* Profile Quick Pill */}
