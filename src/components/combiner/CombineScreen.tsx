@@ -178,14 +178,14 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
       {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
         <div>
-          <span className="text-[10px] font-mono font-bold text-peach-500 uppercase tracking-wider">
+          <span className="text-[10px] font-sans font-semibold text-peach-500 uppercase tracking-wider">
             Tool Combiner Engine
           </span>
-          <h1 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+          <h1 className="font-display text-2xl sm:text-3xl font-bold uppercase tracking-wider text-slate-100 flex items-center gap-2 pt-0.5">
             <Layers className="h-5 w-5 text-peach-500" />
-            Combine Accessible Tools
+            COMBINE TOOLS
           </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="font-sans text-xs text-slate-300 mt-0.5">
             Discover high-value workflows by synthesizing 2 or more of your accessible tools into zero-cost digital services.
           </p>
         </div>
@@ -205,9 +205,9 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
         <div className="flex items-center justify-between border-b border-white/10 pb-3">
           <div className="flex items-center gap-2">
             <Cpu className="h-4 w-4 text-peach-500" />
-            <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">3D Capability Graph</h3>
+            <h3 className="font-display text-lg font-bold text-slate-200 uppercase tracking-wider">3D Capability Graph</h3>
           </div>
-          <span className="badge-tag badge-peach">3D Spatial Synthesis</span>
+          <span className="badge-tag badge-peach font-sans">3D Spatial Synthesis</span>
         </div>
 
         <SpatialToolWeb toolNames={tools.map(t => t.name)} />

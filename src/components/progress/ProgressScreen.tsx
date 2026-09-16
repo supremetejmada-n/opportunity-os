@@ -320,12 +320,12 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
       {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
         <div>
-          <span className="text-[10px] font-mono font-bold text-peach-500 uppercase tracking-wider">Execution Tracker</span>
-          <h1 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+          <span className="text-[10px] font-sans font-semibold text-peach-500 uppercase tracking-wider">Execution Tracker</span>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold uppercase tracking-wider text-slate-100 flex items-center gap-2 pt-0.5">
             <TrendingUp className="h-5 w-5 text-peach-500" />
-            Your Action Plan & Progress
+            YOUR PLAN
           </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="font-sans text-xs text-slate-300 mt-0.5">
             Follow your 6-phase plan step by step and track your real-world results.
           </p>
         </div>

@@ -58,39 +58,39 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       {/* 1. ATMOSPHERIC SPATIAL HERO */}
       <section className="relative space-y-4 border-b border-white/10 pb-8">
         <div className="flex items-center gap-2">
-          <span className="px-3 py-1 rounded-full bg-peach-500/15 border border-peach-500/35 text-peach-500 text-xs font-mono font-semibold tracking-wide">
+          <span className="px-3 py-1 rounded-full bg-peach-500/15 border border-peach-500/35 text-peach-500 text-xs font-sans font-semibold tracking-wider uppercase">
             Personal Intelligence System
           </span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
           <div className="lg:col-span-7 space-y-3">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-100 tracking-tight leading-none bg-gradient-to-r from-slate-100 via-slate-200 to-peach-400 bg-clip-text text-transparent">
-              Find something worth building.
+            <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl font-extrabold uppercase tracking-wider leading-none bg-gradient-to-r from-slate-100 via-slate-200 to-peach-400 bg-clip-text text-transparent">
+              FIND SOMETHING WORTH BUILDING.
             </h1>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
+            <p className="font-sans text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
               Welcome back, <strong className="text-white font-semibold">{userName}</strong>. Opportunity OS has evaluated live public sources against your profile vector. Here is your top zero-capital match.
             </p>
 
             {/* Humanized Vector Metrics Strip */}
-            <div className="pt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-400 font-mono">
+            <div className="pt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-400 font-sans">
               <span className="flex items-center gap-1.5 text-slate-300">
                 <Zap className="h-3.5 w-3.5 text-peach-500" />
-                <strong className="text-slate-100 font-bold">{skills.length}</strong> active skills
+                <strong className="text-slate-100 font-bold num-tabular">{skills.length}</strong> active skills
               </span>
               <span className="text-slate-700">•</span>
               <span className="flex items-center gap-1.5 text-slate-300">
                 <Wrench className="h-3.5 w-3.5 text-emerald-400" />
-                <strong className="text-slate-100 font-bold">{tools.length}</strong> tools ({freeToolsCount} free)
+                <strong className="text-slate-100 font-bold num-tabular">{tools.length}</strong> tools ({freeToolsCount} free)
               </span>
               <span className="text-slate-700">•</span>
               <span className="flex items-center gap-1.5 text-slate-300">
                 <Target className="h-3.5 w-3.5 text-amber-400" />
-                <strong className="text-slate-100 font-bold">{goals.length}</strong> goals
+                <strong className="text-slate-100 font-bold num-tabular">{goals.length}</strong> goals
               </span>
               <span className="text-slate-700">•</span>
               <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                <ShieldCheck className="h-3.5 w-3.5" /> ₹{profile?.preferred_budget ?? 0} budget limit
+                <ShieldCheck className="h-3.5 w-3.5" /> <span className="num-tabular">₹{profile?.preferred_budget ?? 0}</span> budget limit
               </span>
             </div>
           </div>
@@ -107,9 +107,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-peach-500" />
-            <h2 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Top Recommendation</h2>
+            <h2 className="font-display text-lg font-bold text-slate-200 uppercase tracking-wider">Top Recommendation</h2>
           </div>
-          <span className="badge-tag badge-peach">#1 Match Score</span>
+          <span className="badge-tag badge-peach font-sans">#1 Match Score</span>
         </div>
 
         {bestOpp ? (

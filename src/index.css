@@ -1,9 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Big+Shoulders+Display:wght@700;800;900&family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
+    --font-display: 'Bebas Neue', 'Big Shoulders Display', sans-serif-condensed, sans-serif;
+    --font-body: 'Outfit', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     --bg-env: #161e2f;
     --bg-surface: #242f49;
     --bg-slate: #384358;
@@ -24,13 +28,27 @@
       radial-gradient(circle at 50% 45%, rgba(36, 47, 73, 0.7) 0%, transparent 85%);
     background-attachment: fixed;
     color: #f8fafc;
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: var(--font-body);
     margin: 0;
     padding: 0;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     min-height: 100vh;
   }
+}
+
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: 0.05em;
+}
+
+.font-sans {
+  font-family: var(--font-body);
+}
+
+.num-tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
 }
 
 /* Custom Scrollbar */

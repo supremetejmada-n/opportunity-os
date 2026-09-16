@@ -85,12 +85,12 @@ export const DiscoverScreen: React.FC<DiscoverScreenProps> = ({ onScanClick, isS
       {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
         <div>
-          <span className="text-[10px] font-mono font-bold text-peach-500 uppercase tracking-wider">Discovery Feed</span>
-          <h1 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+          <span className="text-[10px] font-sans font-semibold text-peach-500 uppercase tracking-wider">Discovery Feed</span>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold uppercase tracking-wider text-slate-100 flex items-center gap-2 pt-0.5">
             <Compass className="h-5 w-5 text-peach-500" />
-            What's New
+            WHAT'S NEW
           </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="font-sans text-xs text-slate-300 mt-0.5">
             Verified open-source tools, free models, and market signals collected from public sources.
           </p>
         </div>

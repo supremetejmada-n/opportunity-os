@@ -63,12 +63,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <h1 className="text-xs font-bold text-slate-100 tracking-tight font-sans">
+              <h1 className="font-display text-sm font-bold text-slate-100 tracking-wider uppercase">
                 Opportunity OS
               </h1>
               <span className="h-1.5 w-1.5 rounded-full bg-peach-500 animate-pulse" title="Engine Active" />
             </div>
-            <p className="text-[9px] font-mono text-slate-400">
+            <p className="text-[10px] font-sans text-slate-400 font-medium">
               Personal Advisor
             </p>
           </div>

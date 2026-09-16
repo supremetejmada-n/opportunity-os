@@ -274,10 +274,13 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   return (
     <div className="space-y-6 py-4 max-w-5xl mx-auto">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
         <div>
-          <h1 className="text-xl font-bold text-slate-100">What We Know About You</h1>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <span className="text-[10px] font-sans font-semibold text-peach-500 uppercase tracking-wider">Vector Identity</span>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold uppercase tracking-wider text-slate-100 pt-0.5">
+            USER PROFILE
+          </h1>
+          <p className="font-sans text-xs text-slate-300 mt-0.5">
             Manage your active skills, accessible tools, goals, interests, and execution constraints.
           </p>
         </div>
