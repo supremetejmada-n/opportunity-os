@@ -296,7 +296,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
       </div>
 
       {/* Sub-Tab Navigation */}
-      <div className="flex overflow-x-auto gap-2 border-b border-white/10 pb-2 scrollbar-none">
+      <div className="flex overflow-x-auto gap-3 sm:gap-3.5 border-b border-white/10 pb-3 scrollbar-none">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -304,7 +304,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all active:scale-[0.97] ${
+              className={`flex items-center gap-2.5 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all active:scale-[0.97] ${
                 isActive
                   ? 'bg-peach-500 text-navy-950 font-bold shadow-md shadow-peach-500/30 border border-white/30'
                   : 'bg-navy-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
@@ -313,7 +313,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               <Icon className="h-3.5 w-3.5" />
               <span>{tab.label}</span>
               {tab.count !== undefined && (
-                <span className={`ml-1 px-1.5 py-0.2 rounded text-[10px] ${
+                <span className={`ml-1.5 px-2 py-0.5 rounded text-[10px] ${
                   isActive ? 'bg-navy-950 text-peach-500 font-bold' : 'bg-slate-800 text-slate-400'
                 }`}>
                   {tab.count}

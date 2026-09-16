@@ -119,13 +119,13 @@ export const DiscoverScreen: React.FC<DiscoverScreenProps> = ({ onScanClick, isS
       )}
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto border-b border-white/10 pb-2 scrollbar-none">
-        <span className="text-xs font-mono text-slate-500 mr-2">Source Filter:</span>
+      <div className="flex items-center gap-3 sm:gap-3.5 overflow-x-auto border-b border-white/10 pb-3 scrollbar-none">
+        <span className="text-xs font-mono text-slate-500 mr-2 shrink-0">Source Filter:</span>
         {['all', 'github', 'huggingface', 'rss'].map((src) => (
           <button
             key={src}
             onClick={() => setSelectedSource(src)}
-            className={`px-3 py-1 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all active:scale-[0.97] ${
+            className={`px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all active:scale-[0.97] whitespace-nowrap ${
               selectedSource === src
                 ? 'bg-peach-500 text-navy-950 font-bold shadow-md shadow-peach-500/30 border border-white/30'
                 : 'bg-navy-900 text-slate-400 hover:text-slate-200'

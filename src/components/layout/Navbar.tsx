@@ -75,7 +75,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </button>
 
         {/* Desktop Navigation Pill Strip */}
-        <nav className="hidden md:flex items-center gap-1.5 bg-navy-900/90 p-1.5 rounded-xl border border-slate-800">
+        <nav className="hidden md:flex items-center gap-2 bg-navy-900/90 p-1.5 rounded-xl border border-slate-800">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -83,7 +83,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-sans transition-all active:scale-[0.97] ${
+                className={`flex items-center gap-2.5 px-4 py-2 rounded-lg text-xs font-sans transition-all active:scale-[0.97] ${
                   isActive
                     ? 'bg-peach-500 text-navy-950 font-bold shadow-md shadow-peach-500/30 border border-white/30'
                     : 'text-slate-400 font-semibold hover:text-slate-100 hover:bg-slate-800/50'
