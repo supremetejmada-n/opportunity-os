@@ -27,43 +27,44 @@ export const SpatialProgressRing: React.FC<SpatialProgressRingProps> = ({ progre
     const group = new THREE.Group();
     scene.add(group);
 
-    // Torus Ring representing full 100% path
+    // Base Track Torus (Slate Blue)
     const trackGeo = new THREE.TorusGeometry(1.2, 0.04, 16, 100);
-    const trackMat = new THREE.MeshBasicMaterial({ color: 0x1e293b, transparent: true, opacity: 0.6 });
+    const trackMat = new THREE.MeshBasicMaterial({ color: 0x384358, transparent: true, opacity: 0.5 });
     const trackMesh = new THREE.Mesh(trackGeo, trackMat);
     group.add(trackMesh);
 
-    // Progress Arc Torus
+    // Progress Arc Torus (Luminous Warm Peach)
     const arcLength = (progressPercentage / 100) * Math.PI * 2 || 0.01;
     const progressGeo = new THREE.TorusGeometry(1.2, 0.06, 16, 64, arcLength);
     const progressMat = new THREE.MeshStandardMaterial({
-      color: 0x6366f1,
-      emissive: 0x4f46e5,
-      emissiveIntensity: 0.8,
-      roughness: 0.2,
+      color: 0xffa586,
+      emissive: 0xf09271,
+      emissiveIntensity: 1.2,
+      roughness: 0.15,
     });
     const progressMesh = new THREE.Mesh(progressGeo, progressMat);
     progressMesh.rotation.z = Math.PI / 2;
     group.add(progressMesh);
 
-    // Inner Floating Sphere Core
+    // Inner Floating Sphere Core (Navy Glass with Crimson Highlight)
     const coreGeo = new THREE.SphereGeometry(0.45, 32, 32);
     const coreMat = new THREE.MeshPhysicalMaterial({
-      color: 0x818cf8,
+      color: 0x242f49,
       transmission: 0.8,
-      thickness: 0.5,
+      thickness: 0.6,
       transparent: true,
       opacity: 0.9,
       roughness: 0.1,
+      clearcoat: 1.0,
     });
     const coreMesh = new THREE.Mesh(coreGeo, coreMat);
     group.add(coreMesh);
 
     // Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+    const ambientLight = new THREE.AmbientLight(0xf8fafc, 0.8);
     scene.add(ambientLight);
 
-    const pointLight = new THREE.PointLight(0x818cf8, 2, 6);
+    const pointLight = new THREE.PointLight(0xffa586, 3, 6);
     pointLight.position.set(2, 2, 3);
     scene.add(pointLight);
 
@@ -103,7 +104,7 @@ export const SpatialProgressRing: React.FC<SpatialProgressRingProps> = ({ progre
       <div ref={containerRef} className="w-full h-full" />
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
         <span className="text-2xl font-black font-mono text-slate-100">{progressPercentage}%</span>
-        <span className="text-[10px] font-mono text-indigo-300 uppercase tracking-wider">Progress</span>
+        <span className="text-[10px] font-mono text-peach-500 uppercase tracking-wider font-semibold">Progress</span>
       </div>
     </div>
   );

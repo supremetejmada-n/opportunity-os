@@ -13,7 +13,9 @@ import {
   Check,
   AlertCircle,
   Info,
-  Play
+  Play,
+  RefreshCw,
+  Cpu
 } from 'lucide-react';
 import { UserTool, ToolCombination } from '../../types/index.js';
 import { api } from '../../services/api.js';
@@ -176,130 +178,105 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
       {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
         <div>
-          <span className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wider">
-            Tool Combination Engine
+          <span className="text-[10px] font-mono font-bold text-peach-500 uppercase tracking-wider">
+            Tool Combiner Engine
           </span>
           <h1 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-            <Layers className="h-5 w-5 text-indigo-400" />
-            What Can You Make With Your Tools?
+            <Layers className="h-5 w-5 text-peach-500" />
+            Combine Accessible Tools
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
-            Select 2 to 4 tools you access to discover high-value digital services you can build for free today.
+            Discover high-value workflows by synthesizing 2 or more of your accessible tools into zero-cost digital services.
           </p>
         </div>
 
         <button
           onClick={() => handleGenerate(false)}
-          disabled={generating || tools.length < 2}
+          disabled={generating}
           className="btn-primary text-xs"
         >
-          <Sparkles className={`h-3.5 w-3.5 ${generating ? 'animate-spin' : ''}`} />
-          <span>{generating ? 'Evaluating...' : 'Combine My Tools'}</span>
+          <RefreshCw className={`h-3.5 w-3.5 ${generating ? 'animate-spin' : ''}`} />
+          <span>{generating ? 'Synthesizing...' : 'Generate New Combinations'}</span>
         </button>
       </div>
 
-      {/* 3D Spatial Tool Network Visualization Header */}
-      <GlassCard variant="primary" className="p-4 flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="space-y-2 max-w-md">
-          <span className="badge-tag badge-indigo">3D Spatial Synthesis</span>
-          <h2 className="text-lg font-bold text-slate-100">Capability Node Graph</h2>
-          <p className="text-xs text-slate-300 leading-relaxed">
-            Opportunity OS analyzes multi-tool capability overlap to generate zero-cost workflow recipes.
-          </p>
+      {/* 3D Capability Graph Banner */}
+      <GlassCard variant="primary" className="p-6 relative overflow-hidden">
+        <div className="flex items-center justify-between border-b border-white/10 pb-3">
+          <div className="flex items-center gap-2">
+            <Cpu className="h-4 w-4 text-peach-500" />
+            <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">3D Capability Graph</h3>
+          </div>
+          <span className="badge-tag badge-peach">3D Spatial Synthesis</span>
         </div>
-        <div className="w-full md:w-1/2">
-          <SpatialToolWeb toolNames={selectedToolNames} />
-        </div>
+
+        <SpatialToolWeb toolNames={tools.map(t => t.name)} />
       </GlassCard>
 
-      {/* Notice & Error Banners */}
+      {/* Notice Banner */}
       {notice && (
-        <div className="bg-indigo-950/40 border border-indigo-500/40 text-indigo-200 text-xs px-4 py-2.5 rounded-xl flex items-center gap-2">
-          <Info className="h-4 w-4 text-indigo-400 shrink-0" />
+        <div className="bg-burgundy-900/40 border border-crimson-500/40 text-peach-300 text-xs px-4 py-2.5 rounded-xl flex items-center gap-2">
+          <Info className="h-4 w-4 text-peach-500 shrink-0" />
           <span>{notice}</span>
-        </div>
-      )}
-
-      {error && (
-        <div className="bg-red-950/40 border border-red-500/40 text-red-200 text-xs px-4 py-2.5 rounded-xl flex items-center gap-2">
-          <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />
-          <span>{error}</span>
         </div>
       )}
 
       {/* Tool Selector Section */}
       <GlassCard variant="secondary" className="p-5 space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
           <div className="flex items-center gap-2">
-            <Wrench className="h-4 w-4 text-indigo-400" />
+            <Wrench className="h-4 w-4 text-peach-500" />
             <h2 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
-              Tool Palette ({selectedToolIds.length} / {tools.length} Selected)
+              Select Tools to Combine ({selectedToolIds.length} of {tools.length} selected)
             </h2>
           </div>
 
           <div className="flex items-center gap-2 text-xs">
-            <button onClick={handleSelectFirst3} className="btn-ghost text-[11px] py-1 px-2.5">
-              Preset: Top 3
-            </button>
-            <button onClick={handleSelectAll} className="btn-ghost text-[11px] py-1 px-2.5">
-              Select All
-            </button>
-            <button onClick={handleClearSelection} className="btn-ghost text-[11px] py-1 px-2.5">
-              Clear
-            </button>
-            <button onClick={() => setShowToolSelector(!showToolSelector)} className="btn-ghost p-1">
-              {showToolSelector ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </button>
+            <button onClick={handleSelectFirst3} className="btn-ghost py-1 px-2.5 text-xs">Select First 3</button>
+            <button onClick={handleSelectAll} className="btn-ghost py-1 px-2.5 text-xs">Select All</button>
+            <button onClick={handleClearSelection} className="btn-ghost py-1 px-2.5 text-xs">Clear</button>
           </div>
         </div>
 
-        {showToolSelector && (
-          <div className="space-y-3 animate-fade-in">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {tools.map((t) => {
-                const isSelected = selectedToolIds.includes(t.id);
-                return (
-                  <button
-                    key={t.id}
-                    onClick={() => toggleTool(t.id)}
-                    className={`p-3 rounded-xl border text-left flex items-start justify-between transition-all active:scale-[0.97] ${
-                      isSelected
-                        ? 'bg-indigo-950/60 border-indigo-500/80 text-slate-100 shadow-lg shadow-indigo-950/50'
-                        : 'bg-slate-950/70 border-white/10 text-slate-400 hover:border-white/20'
-                    }`}
-                  >
-                    <div className="space-y-1 pr-2">
-                      <h3 className="font-bold text-xs leading-snug">{t.name}</h3>
-                      <span className="text-[10px] text-slate-500 block font-mono">
-                        {t.category} • {t.access_type || 'Free'}
-                      </span>
-                    </div>
-                    <div
-                      className={`h-4 w-4 rounded flex items-center justify-center shrink-0 mt-0.5 ${
-                        isSelected ? 'bg-indigo-600 text-white' : 'border border-slate-700'
-                      }`}
-                    >
-                      {isSelected && <Check className="h-3 w-3" />}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="pt-2 flex flex-wrap items-center justify-between gap-3 text-xs">
-              <span className="text-slate-500 text-[11px]">
-                Tip: Select 2 to 4 tools to generate a focused combination recipe.
-              </span>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
+          {tools.map(tool => {
+            const isSelected = selectedToolIds.includes(tool.id);
+            return (
               <button
-                onClick={() => handleGenerate(true)}
-                disabled={generating || selectedToolIds.length < 2 || selectedToolIds.length > 4}
-                className="btn-secondary text-xs py-1.5 px-4 disabled:opacity-40"
+                key={tool.id}
+                onClick={() => toggleTool(tool.id)}
+                className={`p-3 rounded-xl border text-left transition-all active:scale-[0.97] flex flex-col justify-between space-y-2 ${
+                  isSelected
+                    ? 'bg-burgundy-900/60 border-peach-500/80 text-slate-100 shadow-lg shadow-burgundy-900/50'
+                    : 'bg-navy-950/60 border-white/10 text-slate-400 hover:text-slate-200 hover:border-white/20'
+                }`}
               >
-                Combine Selected ({selectedToolIds.length}) Tools
+                <div className="flex items-start justify-between gap-1 w-full">
+                  <span className="font-bold text-xs leading-tight line-clamp-1">{tool.name}</span>
+                  <div className={`h-4 w-4 rounded flex items-center justify-center text-[10px] shrink-0 ${
+                    isSelected ? 'bg-peach-500 text-navy-950 font-bold' : 'border border-slate-700'
+                  }`}>
+                    {isSelected && '✓'}
+                  </div>
+                </div>
+                <span className="text-[10px] font-mono opacity-75">{tool.category}</span>
               </button>
-            </div>
-          </div>
-        )}
+            );
+          })}
+        </div>
+
+        <div className="pt-2 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <span className="text-slate-500 text-[11px]">
+            Tip: Select 2 to 4 tools to generate a focused combination recipe.
+          </span>
+          <button
+            onClick={() => handleGenerate(true)}
+            disabled={generating || selectedToolIds.length < 2 || selectedToolIds.length > 4}
+            className="btn-secondary text-xs py-1.5 px-4 disabled:opacity-40"
+          >
+            Combine Selected ({selectedToolIds.length}) Tools
+          </button>
+        </div>
       </GlassCard>
 
       {/* Filter Toolbar */}
@@ -330,7 +307,7 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
           <select
             value={filterPattern}
             onChange={e => setFilterPattern(e.target.value)}
-            className="bg-slate-950/80 border border-white/10 text-slate-300 rounded-lg px-2.5 py-1 text-xs focus:border-indigo-500 focus:outline-none"
+            className="bg-navy-950/80 border border-white/10 text-slate-300 rounded-lg px-2.5 py-1 text-xs focus:border-peach-500 focus:outline-none"
           >
             <option value="all">All Workflow Patterns</option>
             <option value="GENERATE_DESIGN">Generate ➔ Design</option>
@@ -348,7 +325,7 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
           <select
             value={sortBy}
             onChange={e => setSortBy(e.target.value as any)}
-            className="bg-slate-950/80 border border-white/10 text-slate-300 rounded-lg px-2.5 py-1 text-xs focus:border-indigo-500 focus:outline-none"
+            className="bg-navy-950/80 border border-white/10 text-slate-300 rounded-lg px-2.5 py-1 text-xs focus:border-peach-500 focus:outline-none"
           >
             <option value="score">Highest Score</option>
             <option value="synergy">Highest Synergy</option>
@@ -360,7 +337,7 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
       {/* Combination Cards */}
       {loading ? (
         <div className="py-12 text-center text-xs text-slate-400 font-mono flex items-center justify-center gap-2">
-          <Sparkles className="h-4 w-4 animate-spin text-indigo-400" />
+          <Sparkles className="h-4 w-4 animate-spin text-peach-500" />
           Evaluating multi-tool synergy...
         </div>
       ) : filteredCombinations.length === 0 ? (

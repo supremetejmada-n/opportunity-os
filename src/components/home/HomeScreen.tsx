@@ -58,14 +58,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       {/* 1. ATMOSPHERIC SPATIAL HERO */}
       <section className="relative space-y-4 border-b border-white/10 pb-8">
         <div className="flex items-center gap-2">
-          <span className="px-3 py-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs font-mono font-semibold tracking-wide">
+          <span className="px-3 py-1 rounded-full bg-peach-500/15 border border-peach-500/35 text-peach-500 text-xs font-mono font-semibold tracking-wide">
             Personal Intelligence System
           </span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
           <div className="lg:col-span-7 space-y-3">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-100 tracking-tight leading-none bg-gradient-to-r from-slate-100 via-slate-200 to-indigo-200 bg-clip-text text-transparent">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-100 tracking-tight leading-none bg-gradient-to-r from-slate-100 via-slate-200 to-peach-400 bg-clip-text text-transparent">
               Find something worth building.
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
@@ -75,7 +75,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             {/* Humanized Vector Metrics Strip */}
             <div className="pt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-400 font-mono">
               <span className="flex items-center gap-1.5 text-slate-300">
-                <Zap className="h-3.5 w-3.5 text-indigo-400" />
+                <Zap className="h-3.5 w-3.5 text-peach-500" />
                 <strong className="text-slate-100 font-bold">{skills.length}</strong> active skills
               </span>
               <span className="text-slate-700">•</span>
@@ -106,10 +106,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-indigo-400" />
+            <Sparkles className="h-4 w-4 text-peach-500" />
             <h2 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Top Recommendation</h2>
           </div>
-          <span className="badge-tag badge-indigo">#1 Match Score</span>
+          <span className="badge-tag badge-peach">#1 Match Score</span>
         </div>
 
         {bestOpp ? (
@@ -137,7 +137,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 </p>
               </div>
 
-              <div className="bg-slate-950/80 p-4 rounded-xl border border-white/10 text-right shrink-0 space-y-1 shadow-inner">
+              <div className="bg-navy-950/80 p-4 rounded-xl border border-white/10 text-right shrink-0 space-y-1 shadow-inner">
                 <div className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">Possible Earnings</div>
                 <div className="text-lg font-extrabold text-emerald-400 font-mono">
                   {bestOpp.earningPotential || bestOpp.earning_potential || '₹5,000–₹25,000/mo'}
@@ -147,8 +147,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </div>
 
             {/* Why This Fits You */}
-            <div className="space-y-3 bg-slate-950/50 p-4 rounded-xl border border-white/5">
-              <span className="text-xs font-bold text-indigo-300 uppercase tracking-wider block">
+            <div className="space-y-3 bg-navy-950/50 p-4 rounded-xl border border-white/5">
+              <span className="text-xs font-bold text-peach-500 uppercase tracking-wider block">
                 Why this fits you
               </span>
               <ul className="space-y-2 text-xs text-slate-200">
@@ -173,13 +173,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 onClick={() => setShowDetails(!showDetails)}
                 className="btn-ghost text-xs flex items-center gap-1.5"
               >
-                {showDetails ? <ChevronUp className="h-4 w-4 text-indigo-400" /> : <ChevronDown className="h-4 w-4 text-indigo-400" />}
+                {showDetails ? <ChevronUp className="h-4 w-4 text-peach-500" /> : <ChevronDown className="h-4 w-4 text-peach-500" />}
                 <span>{showDetails ? 'Hide match breakdown' : 'Why this was recommended'}</span>
               </button>
 
               <button
                 onClick={() => setActiveTab('opportunities')}
-                className="btn-primary text-xs flex items-center gap-2 py-2.5 px-6 shadow-lg shadow-indigo-950/60"
+                className="btn-primary text-xs flex items-center gap-2 py-2.5 px-6"
               >
                 <span>See the plan</span>
                 <ArrowRight className="h-4 w-4" />
@@ -188,7 +188,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
             {/* Progressive Rationale Breakdown */}
             {showDetails && (
-              <div className="pt-3 border-t border-white/10 space-y-3 bg-slate-950/90 p-4 rounded-xl text-xs animate-fade-in">
+              <div className="pt-3 border-t border-white/10 space-y-3 bg-navy-950/90 p-4 rounded-xl text-xs animate-fade-in">
                 <h4 className="font-bold text-slate-200 uppercase tracking-wider text-[11px]">
                   Recommendation Rationale
                 </h4>
@@ -197,19 +197,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 </p>
                 {bestOpp.scoreBreakdown && (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 font-mono text-[11px]">
-                    <div className="bg-slate-900/80 p-2.5 rounded-lg border border-white/5">
+                    <div className="bg-navy-900/80 p-2.5 rounded-lg border border-white/5">
                       <span className="text-slate-400 block">Skill Fit</span>
-                      <strong className="text-indigo-300">{bestOpp.scoreBreakdown.skillMatch || 22}/25 pts</strong>
+                      <strong className="text-peach-500">{bestOpp.scoreBreakdown.skillMatch || 22}/25 pts</strong>
                     </div>
-                    <div className="bg-slate-900/80 p-2.5 rounded-lg border border-white/5">
+                    <div className="bg-navy-900/80 p-2.5 rounded-lg border border-white/5">
                       <span className="text-slate-400 block">Market Demand</span>
-                      <strong className="text-indigo-300">{bestOpp.scoreBreakdown.marketDemand || 18}/20 pts</strong>
+                      <strong className="text-peach-500">{bestOpp.scoreBreakdown.marketDemand || 18}/20 pts</strong>
                     </div>
-                    <div className="bg-slate-900/80 p-2.5 rounded-lg border border-white/5">
+                    <div className="bg-navy-900/80 p-2.5 rounded-lg border border-white/5">
                       <span className="text-slate-400 block">Tool Match</span>
-                      <strong className="text-indigo-300">{bestOpp.scoreBreakdown.toolMatch || 14}/15 pts</strong>
+                      <strong className="text-peach-500">{bestOpp.scoreBreakdown.toolMatch || 14}/15 pts</strong>
                     </div>
-                    <div className="bg-slate-900/80 p-2.5 rounded-lg border border-white/5">
+                    <div className="bg-navy-900/80 p-2.5 rounded-lg border border-white/5">
                       <span className="text-slate-400 block">₹0 Feasibility</span>
                       <strong className="text-emerald-400">{bestOpp.scoreBreakdown.startupCost || 15}/15 pts</strong>
                     </div>
@@ -221,8 +221,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         ) : (
           <GlassCard variant="secondary" className="p-8 space-y-5">
             <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-slate-950 border border-white/10 text-slate-400 text-xs font-mono font-semibold">
-                <Info className="h-3.5 w-3.5 text-indigo-400" />
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-navy-950 border border-white/10 text-slate-400 text-xs font-mono font-semibold">
+                <Info className="h-3.5 w-3.5 text-peach-500" />
                 <span>Ready to Scan</span>
               </div>
 
@@ -256,7 +256,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <GlassCard variant="secondary" interactive className="p-5 flex items-start gap-4">
-            <div className="p-3 rounded-xl bg-indigo-950/80 border border-indigo-500/30 text-indigo-400 shrink-0">
+            <div className="p-3 rounded-xl bg-burgundy-900/80 border border-crimson-500/30 text-peach-500 shrink-0">
               <Compass className="h-5 w-5" />
             </div>
             <div className="space-y-1">
@@ -284,7 +284,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       {/* 4. YOUR NEXT MOVE (FLOATING GLASS SECTION) */}
       <GlassCard variant="floating" interactive className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="space-y-1">
-          <span className="text-[10px] font-mono font-bold text-indigo-300 uppercase tracking-wider block">
+          <span className="text-[10px] font-mono font-bold text-peach-500 uppercase tracking-wider block">
             Your Next Move
           </span>
           <h3 className="text-base font-bold text-slate-100">
@@ -299,7 +299,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
         <button
           onClick={() => setActiveTab(bestOpp ? 'opportunities' : 'profile')}
-          className="btn-primary text-xs shrink-0 py-2.5 px-5 shadow-md shadow-indigo-950/50"
+          className="btn-primary text-xs shrink-0 py-2.5 px-5"
         >
           <span>{bestOpp ? 'See the plan' : 'Edit profile'}</span>
           <ArrowRight className="h-4 w-4" />

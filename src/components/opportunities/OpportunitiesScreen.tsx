@@ -133,9 +133,9 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
       {/* Header Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
         <div>
-          <span className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wider">Opportunity Catalog</span>
+          <span className="text-[10px] font-mono font-bold text-peach-500 uppercase tracking-wider">Opportunity Catalog</span>
           <h1 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-indigo-400" />
+            <Sparkles className="h-5 w-5 text-peach-500" />
             Ways to Earn
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
@@ -329,7 +329,7 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
                   </div>
 
                   <div>
-                    <h3 className="text-base font-bold text-slate-100 group-hover:text-indigo-300 transition-colors">
+                    <h3 className="text-base font-bold text-slate-100 group-hover:text-peach-400 transition-colors">
                       {opp.title}
                     </h3>
                     <p className="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">
@@ -338,11 +338,11 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-xs pt-1">
-                    <div className="bg-slate-950/80 p-2.5 rounded-lg border border-white/5">
+                    <div className="bg-navy-950/80 p-2.5 rounded-lg border border-white/5">
                       <div className="text-[10px] font-mono uppercase text-slate-400">Possible Earnings</div>
                       <div className="font-semibold text-emerald-400 mt-0.5">{earning}</div>
                     </div>
-                    <div className="bg-slate-950/80 p-2.5 rounded-lg border border-white/5">
+                    <div className="bg-navy-950/80 p-2.5 rounded-lg border border-white/5">
                       <div className="text-[10px] font-mono uppercase text-slate-400">Potential Customers</div>
                       <div className="font-semibold text-slate-300 mt-0.5 truncate">{customer}</div>
                     </div>
@@ -353,7 +353,7 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
                       <div className="text-[10px] font-mono uppercase text-slate-400">Tools You'll Use</div>
                       <div className="flex flex-wrap gap-1.5">
                         {reqTools.map((tool: string, idx: number) => (
-                          <span key={idx} className="px-2 py-0.5 rounded-md bg-indigo-950/60 border border-indigo-500/30 text-indigo-300 text-[11px] font-medium">
+                          <span key={idx} className="px-2 py-0.5 rounded-md bg-burgundy-900/60 border border-crimson-500/30 text-peach-400 text-[11px] font-medium">
                             {tool}
                           </span>
                         ))}
@@ -363,7 +363,7 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
                 </div>
 
                 <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs">
-                  <span className="text-indigo-400 font-semibold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                  <span className="text-peach-500 font-semibold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
                     See opportunity <ArrowRight className="h-3.5 w-3.5" />
                   </span>
                   <span className="text-[11px] text-slate-400 font-mono">₹0 to start</span>
@@ -402,9 +402,9 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
               </button>
             </div>
 
-            <div className="bg-indigo-950/40 border border-indigo-500/30 rounded-xl p-4 space-y-2">
-              <h4 className="text-xs font-bold text-indigo-300 uppercase tracking-wider flex items-center gap-1.5">
-                <Sparkles className="h-4 w-4 text-indigo-400" />
+            <div className="bg-burgundy-900/40 border border-crimson-500/30 rounded-xl p-4 space-y-2">
+              <h4 className="text-xs font-bold text-peach-500 uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles className="h-4 w-4 text-peach-500" />
                 Why This Fits You
               </h4>
               <ul className="space-y-1.5 text-xs text-slate-200">
@@ -425,15 +425,15 @@ export const OpportunitiesScreen: React.FC<OpportunitiesScreenProps> = ({ onStar
 
             <div className="space-y-3 border-b border-white/10 pb-5">
               <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
-                <Layers className="h-4 w-4 text-indigo-400" />
+                <Layers className="h-4 w-4 text-peach-500" />
                 What You'll Make & Deliver
               </h4>
 
               <div className="flex flex-col sm:flex-row items-center gap-2">
                 {(selectedOpp.workflow || []).map((step: string, idx: number) => (
                   <React.Fragment key={idx}>
-                    <div className="flex-1 bg-slate-950/80 p-3 rounded-xl border border-white/10 text-xs space-y-1 w-full">
-                      <div className="text-[10px] font-mono text-indigo-400 font-bold uppercase">Step {idx + 1}</div>
+                    <div className="flex-1 bg-navy-950/80 p-3 rounded-xl border border-white/10 text-xs space-y-1 w-full">
+                      <div className="text-[10px] font-mono text-peach-500 font-bold uppercase">Step {idx + 1}</div>
                       <div className="text-slate-200 font-medium">{step}</div>
                     </div>
                     {idx < (selectedOpp.workflow || []).length - 1 && (

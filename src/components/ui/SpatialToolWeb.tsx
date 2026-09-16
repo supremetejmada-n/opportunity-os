@@ -32,7 +32,8 @@ export const SpatialToolWeb: React.FC<SpatialToolWebProps> = ({ toolNames, class
     const nodes: THREE.Mesh[] = [];
     const positions: THREE.Vector3[] = [];
 
-    const colors = [0x818cf8, 0x34d399, 0xfbbf24, 0x38bdf8, 0xf43f5e];
+    // Colors based on palette: Warm Peach active node, Slate Blue nodes, Crimson accents
+    const colors = [0xffa586, 0x384358, 0x242f49, 0xb51a2b, 0x384358];
 
     for (let i = 0; i < nodeCount; i++) {
       const angle = (i / nodeCount) * Math.PI * 2;
@@ -44,7 +45,7 @@ export const SpatialToolWeb: React.FC<SpatialToolWebProps> = ({ toolNames, class
       const pos = new THREE.Vector3(x, y, z);
       positions.push(pos);
 
-      // Node Geometry
+      // Node Geometry (Smoked Navy / Slate Glass with Warm Peach emphasis on primary node)
       const nodeGeo = new THREE.OctahedronGeometry(0.3, 0);
       const nodeMat = new THREE.MeshPhysicalMaterial({
         color: colors[i % colors.length],
@@ -55,7 +56,7 @@ export const SpatialToolWeb: React.FC<SpatialToolWebProps> = ({ toolNames, class
         transparent: true,
         opacity: 0.9,
         emissive: colors[i % colors.length],
-        emissiveIntensity: 0.4,
+        emissiveIntensity: i === 0 ? 0.8 : 0.2,
       });
       const nodeMesh = new THREE.Mesh(nodeGeo, nodeMat);
       nodeMesh.position.copy(pos);
@@ -63,11 +64,11 @@ export const SpatialToolWeb: React.FC<SpatialToolWebProps> = ({ toolNames, class
       nodes.push(nodeMesh);
     }
 
-    // Connect Nodes with Energy Lines
+    // Connect Nodes with Vivid Crimson Energy Lines
     const lineMaterial = new THREE.LineBasicMaterial({
-      color: 0x818cf8,
+      color: 0xb51a2b,
       transparent: true,
-      opacity: 0.4,
+      opacity: 0.45,
     });
 
     const linePoints: THREE.Vector3[] = [];
@@ -81,33 +82,33 @@ export const SpatialToolWeb: React.FC<SpatialToolWebProps> = ({ toolNames, class
     const lineMesh = new THREE.LineSegments(lineGeo, lineMaterial);
     group.add(lineMesh);
 
-    // Center Core Node (Synthesis Outcome)
+    // Center Core Node (Illuminated Synthesis Outcome in Warm Peach)
     const centerGeo = new THREE.IcosahedronGeometry(0.4, 0);
     const centerMat = new THREE.MeshStandardMaterial({
-      color: 0x34d399,
-      emissive: 0x10b981,
-      emissiveIntensity: 0.8,
-      roughness: 0.3,
+      color: 0xffa586,
+      emissive: 0xf09271,
+      emissiveIntensity: 1.2,
+      roughness: 0.2,
     });
     const centerMesh = new THREE.Mesh(centerGeo, centerMat);
     group.add(centerMesh);
 
-    // Connect all nodes to center core
+    // Connect all nodes to center core with subtle warm light lines
     const centerLinePoints: THREE.Vector3[] = [];
     positions.forEach(pos => {
       centerLinePoints.push(pos);
       centerLinePoints.push(new THREE.Vector3(0, 0, 0));
     });
     const centerLineGeo = new THREE.BufferGeometry().setFromPoints(centerLinePoints);
-    const centerLineMat = new THREE.LineBasicMaterial({ color: 0x34d399, transparent: true, opacity: 0.3 });
+    const centerLineMat = new THREE.LineBasicMaterial({ color: 0xffa586, transparent: true, opacity: 0.35 });
     const centerLineMesh = new THREE.LineSegments(centerLineGeo, centerLineMat);
     group.add(centerLineMesh);
 
     // Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+    const ambientLight = new THREE.AmbientLight(0xf8fafc, 0.8);
     scene.add(ambientLight);
 
-    const pointLight = new THREE.PointLight(0x818cf8, 2, 8);
+    const pointLight = new THREE.PointLight(0xffa586, 2.5, 8);
     pointLight.position.set(0, 0, 3);
     scene.add(pointLight);
 

@@ -83,11 +83,11 @@ export const DiscoverScreen: React.FC<DiscoverScreenProps> = ({ onScanClick, isS
   return (
     <div className="space-y-6 py-4 max-w-6xl mx-auto">
       {/* Top Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
         <div>
-          <span className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wider">Discovery Feed</span>
+          <span className="text-[10px] font-mono font-bold text-peach-500 uppercase tracking-wider">Discovery Feed</span>
           <h1 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-            <Compass className="h-5 w-5 text-indigo-400" />
+            <Compass className="h-5 w-5 text-peach-500" />
             What's New
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
@@ -113,13 +113,13 @@ export const DiscoverScreen: React.FC<DiscoverScreenProps> = ({ onScanClick, isS
             <span>Discovered: <strong className="text-slate-100">{scanSummary.discovered}</strong></span>
             <span>Deduplicated: <strong className="text-slate-100">{scanSummary.duplicatesRemoved}</strong></span>
             <span>Verified: <strong className="text-emerald-400">{scanSummary.verified}</strong></span>
-            <span>Stored: <strong className="text-indigo-400">{scanSummary.stored}</strong></span>
+            <span>Stored: <strong className="text-peach-500">{scanSummary.stored}</strong></span>
           </div>
         </GlassCard>
       )}
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto border-b border-slate-800/80 pb-2 scrollbar-none">
+      <div className="flex items-center gap-2 overflow-x-auto border-b border-white/10 pb-2 scrollbar-none">
         <span className="text-xs font-mono text-slate-500 mr-2">Source Filter:</span>
         {['all', 'github', 'huggingface', 'rss'].map((src) => (
           <button
@@ -127,8 +127,8 @@ export const DiscoverScreen: React.FC<DiscoverScreenProps> = ({ onScanClick, isS
             onClick={() => setSelectedSource(src)}
             className={`px-3 py-1 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all active:scale-[0.97] ${
               selectedSource === src
-                ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-950/60'
-                : 'bg-slate-900 text-slate-400 hover:text-slate-200'
+                ? 'bg-peach-500 text-navy-950 font-bold shadow-md shadow-peach-500/30 border border-white/30'
+                : 'bg-navy-900 text-slate-400 hover:text-slate-200'
             }`}
           >
             {src === 'all' ? 'All Sources' : src === 'rss' ? 'Web Feeds' : src}

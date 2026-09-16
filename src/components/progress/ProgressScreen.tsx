@@ -277,12 +277,12 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
 
   const getPhaseBadge = (phase: string) => {
     switch (phase) {
-      case 'LEARN': return 'bg-blue-950/60 text-blue-400 border-blue-500/40';
+      case 'LEARN': return 'bg-navy-900/80 text-peach-300 border-peach-500/30';
       case 'BUILD': return 'bg-emerald-950/60 text-emerald-400 border-emerald-500/40';
-      case 'PORTFOLIO': return 'bg-purple-950/60 text-purple-400 border-purple-500/40';
+      case 'PORTFOLIO': return 'bg-burgundy-900/60 text-peach-400 border-crimson-500/40';
       case 'PROSPECT': return 'bg-amber-950/60 text-amber-400 border-amber-500/40';
-      case 'OUTREACH': return 'bg-rose-950/60 text-rose-400 border-rose-500/40';
-      case 'RESULT': return 'bg-indigo-950/60 text-indigo-400 border-indigo-500/40';
+      case 'OUTREACH': return 'bg-crimson-600/30 text-peach-300 border-crimson-500/50';
+      case 'RESULT': return 'bg-burgundy-900/80 text-peach-400 border-peach-500/50';
       default: return 'bg-slate-900 text-slate-400 border-slate-700';
     }
   };
@@ -290,30 +290,40 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed': return 'bg-emerald-950/80 text-emerald-300 border-emerald-500/50';
-      case 'in_progress': return 'bg-indigo-950/80 text-indigo-300 border-indigo-500/50';
+      case 'in_progress': return 'bg-burgundy-900/80 text-peach-300 border-crimson-500/50';
       case 'paused': return 'bg-amber-950/80 text-amber-300 border-amber-500/50';
       case 'skipped': return 'bg-slate-900 text-slate-500 border-slate-800';
-      default: return 'bg-slate-950 text-slate-400 border-slate-800';
+      default: return 'bg-navy-950 text-slate-400 border-slate-800';
     }
   };
 
   const getOutcomeBadge = (outcome?: string) => {
     switch (outcome) {
       case 'positive': return 'bg-emerald-950/50 text-emerald-400 border-emerald-500/30';
-      case 'negative': return 'bg-red-950/50 text-red-400 border-red-500/30';
+      case 'negative': return 'bg-crimson-600/20 text-crimson-400 border-crimson-500/30';
       default: return 'bg-slate-900 text-slate-400 border-slate-700';
+    }
+  };
+
+  const getLogTypeBadge = (type: ProgressResultType | string) => {
+    switch (type) {
+      case 'ACTION': return 'bg-slate-900 text-slate-300 border-slate-700';
+      case 'DECISION': return 'bg-amber-950/60 text-amber-300 border-amber-500/40';
+      case 'LEARNING': return 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40';
+      case 'RESULT': return 'bg-burgundy-900/60 text-peach-400 border-crimson-500/40';
+      default: return 'bg-slate-900 text-slate-400 border-slate-800';
     }
   };
 
   return (
     <div className="space-y-6 py-4 max-w-6xl mx-auto">
-      {/* Header Bar */}
+      {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
         <div>
-          <span className="text-[10px] font-mono font-bold text-indigo-400 uppercase tracking-wider">Execution Tracker</span>
+          <span className="text-[10px] font-mono font-bold text-peach-500 uppercase tracking-wider">Execution Tracker</span>
           <h1 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-indigo-400" />
-            Your Plan & Progress
+            <TrendingUp className="h-5 w-5 text-peach-500" />
+            Your Action Plan & Progress
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">
             Follow your 6-phase plan step by step and track your real-world results.

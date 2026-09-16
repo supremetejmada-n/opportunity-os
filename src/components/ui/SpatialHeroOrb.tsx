@@ -28,67 +28,67 @@ export const SpatialHeroOrb: React.FC<SpatialHeroOrbProps> = ({ className = '' }
     const group = new THREE.Group();
     scene.add(group);
 
-    // Outer Glass Crystal (Icosahedron)
+    // Outer Glass Crystal (Icosahedron) - Smoked Navy Glass with Slate Edge
     const glassGeometry = new THREE.IcosahedronGeometry(1.4, 0);
     const glassMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0x818cf8,
-      metalness: 0.1,
-      roughness: 0.15,
-      transmission: 0.85,
-      thickness: 1.2,
+      color: 0x242f49,
+      metalness: 0.2,
+      roughness: 0.1,
+      transmission: 0.82,
+      thickness: 1.4,
       transparent: true,
-      opacity: 0.85,
-      reflectivity: 0.9,
+      opacity: 0.88,
+      reflectivity: 0.95,
       clearcoat: 1.0,
-      clearcoatRoughness: 0.1,
+      clearcoatRoughness: 0.08,
       wireframe: false,
     });
     const glassMesh = new THREE.Mesh(glassGeometry, glassMaterial);
     group.add(glassMesh);
 
-    // Outer Wireframe Overlay
+    // Outer Wireframe Overlay (Slate Blue)
     const wireframeGeometry = new THREE.IcosahedronGeometry(1.42, 1);
     const wireframeMaterial = new THREE.MeshBasicMaterial({
-      color: 0x6366f1,
+      color: 0x384358,
       wireframe: true,
       transparent: true,
-      opacity: 0.25,
+      opacity: 0.35,
     });
     const wireframeMesh = new THREE.Mesh(wireframeGeometry, wireframeMaterial);
     group.add(wireframeMesh);
 
-    // Glowing Inner Core Sphere
+    // Glowing Inner Core Sphere (Luminous Warm Peach)
     const coreGeometry = new THREE.SphereGeometry(0.55, 32, 32);
     const coreMaterial = new THREE.MeshStandardMaterial({
-      color: 0x38bdf8,
-      emissive: 0x4f46e5,
-      emissiveIntensity: 1.5,
-      roughness: 0.2,
-      metalness: 0.8,
+      color: 0xffa586,
+      emissive: 0xf09271,
+      emissiveIntensity: 2.0,
+      roughness: 0.15,
+      metalness: 0.6,
     });
     const coreMesh = new THREE.Mesh(coreGeometry, coreMaterial);
     group.add(coreMesh);
 
-    // Orbiting Ring
+    // Orbiting Ring (Vivid Crimson / Deep Burgundy)
     const ringGeometry = new THREE.TorusGeometry(1.85, 0.02, 16, 100);
     const ringMaterial = new THREE.MeshBasicMaterial({
-      color: 0x34d399,
+      color: 0xb51a2b,
       transparent: true,
-      opacity: 0.5,
+      opacity: 0.6,
     });
     const ringMesh = new THREE.Mesh(ringGeometry, ringMaterial);
     ringMesh.rotation.x = Math.PI / 3;
     group.add(ringMesh);
 
     // Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+    const ambientLight = new THREE.AmbientLight(0xf8fafc, 0.7);
     scene.add(ambientLight);
 
-    const pointLight1 = new THREE.PointLight(0x818cf8, 3, 10);
+    const pointLight1 = new THREE.PointLight(0xffa586, 3.5, 10);
     pointLight1.position.set(2, 3, 4);
     scene.add(pointLight1);
 
-    const pointLight2 = new THREE.PointLight(0x34d399, 2, 10);
+    const pointLight2 = new THREE.PointLight(0xb51a2b, 2.5, 10);
     pointLight2.position.set(-3, -2, 2);
     scene.add(pointLight2);
 
@@ -156,7 +156,7 @@ export const SpatialHeroOrb: React.FC<SpatialHeroOrbProps> = ({ className = '' }
   return (
     <div className={`relative w-full h-[280px] sm:h-[320px] flex items-center justify-center ${className}`}>
       <div ref={containerRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
-      <div className="absolute inset-0 pointer-events-none bg-radial from-indigo-500/10 via-transparent to-transparent rounded-full blur-2xl" />
+      <div className="absolute inset-0 pointer-events-none bg-radial from-peach-500/15 via-burgundy-900/20 to-transparent rounded-full blur-3xl" />
     </div>
   );
 };

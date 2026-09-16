@@ -48,17 +48,17 @@ export const Navbar: React.FC<NavbarProps> = ({
   const displayName = profile?.name ? profile.name.split(' ')[0] : 'Advisor';
 
   return (
-    <header className="sticky top-0 z-40 w-full px-4 pt-3 pb-1 bg-gradient-to-b from-slate-950 via-slate-950/80 to-transparent">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 rounded-2xl border border-white/10 bg-slate-950/75 backdrop-blur-xl shadow-2xl shadow-black/80 relative overflow-hidden">
-        {/* Specular glass reflection line top */}
-        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500/30 to-transparent pointer-events-none" />
+    <header className="sticky top-0 z-40 w-full px-4 pt-3 pb-1 bg-gradient-to-b from-navy-950 via-navy-950/80 to-transparent">
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 rounded-2xl border border-white/10 bg-navy-950/80 backdrop-blur-xl shadow-2xl shadow-black/80 relative overflow-hidden">
+        {/* Specular glass reflection line top in warm peach */}
+        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-peach-500/40 to-transparent pointer-events-none" />
         
         {/* Brand Title */}
         <button 
           onClick={() => handleNavClick('home')}
           className="flex items-center gap-2.5 group cursor-pointer text-left"
         >
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-sm shadow-indigo-500/30 group-hover:scale-105 transition-transform">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-peach-500 text-navy-950 font-bold shadow-md shadow-peach-500/30 group-hover:scale-105 transition-transform">
             <Sparkles className="h-3.5 w-3.5" />
           </div>
           <div>
@@ -66,7 +66,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <h1 className="text-xs font-bold text-slate-100 tracking-tight font-sans">
                 Opportunity OS
               </h1>
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" title="Engine Active" />
+              <span className="h-1.5 w-1.5 rounded-full bg-peach-500 animate-pulse" title="Engine Active" />
             </div>
             <p className="text-[9px] font-mono text-slate-400">
               Personal Advisor
@@ -75,7 +75,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </button>
 
         {/* Desktop Navigation Pill Strip */}
-        <nav className="hidden md:flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800/80">
+        <nav className="hidden md:flex items-center gap-1 bg-navy-900/90 p-1 rounded-xl border border-slate-800">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -83,13 +83,13 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
-                className={`flex items-center gap-2 px-3 py-1 rounded-lg text-xs font-semibold transition-all active:scale-[0.97] ${
+                className={`flex items-center gap-2 px-3 py-1 rounded-lg text-xs transition-all active:scale-[0.97] ${
                   isActive
-                    ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-950/50'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                    ? 'bg-peach-500 text-navy-950 font-bold shadow-md shadow-peach-500/30 border border-white/30'
+                    : 'text-slate-400 font-semibold hover:text-slate-100 hover:bg-slate-800/50'
                 }`}
               >
-                <Icon className={`h-3.5 w-3.5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                <Icon className={`h-3.5 w-3.5 ${isActive ? 'text-navy-950' : 'text-slate-400'}`} />
                 <span>{item.label}</span>
               </button>
             );
@@ -105,7 +105,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="btn-secondary text-xs py-1 px-3 h-8"
             title="Trigger discovery and evaluation scan"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${isScanning ? 'animate-spin text-indigo-400' : 'text-slate-400'}`} />
+            <RefreshCw className={`h-3.5 w-3.5 ${isScanning ? 'animate-spin text-peach-500' : 'text-slate-400'}`} />
             <span className="hidden sm:inline font-medium">{isScanning ? 'Scanning...' : 'Scan Now'}</span>
           </button>
 
@@ -114,14 +114,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={() => handleNavClick('profile')}
             className={`flex items-center gap-2 rounded-full p-1 pl-2.5 pr-1 border transition-all active:scale-[0.97] ${
               activeTab === 'profile'
-                ? 'border-indigo-500/50 bg-indigo-500/10'
-                : 'border-slate-800 bg-slate-900/80 hover:border-slate-700'
+                ? 'border-peach-500/50 bg-peach-500/10'
+                : 'border-slate-800 bg-navy-900/80 hover:border-slate-700'
             }`}
           >
             <span className="text-xs font-semibold text-slate-300 hidden sm:inline">
               {displayName}
             </span>
-            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-950 text-indigo-300 text-[10px] font-bold border border-indigo-800/50">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-burgundy-900 text-peach-500 text-[10px] font-bold border border-crimson-500/40">
               <User className="h-3 w-3" />
             </div>
           </button>
