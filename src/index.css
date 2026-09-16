@@ -16,12 +16,12 @@
   }
 
   body {
-    background-color: #161e2f;
+    background-color: #101623;
     background-image: 
-      radial-gradient(circle at 20% 15%, rgba(255, 165, 134, 0.14) 0%, transparent 45%),
-      radial-gradient(circle at 80% 75%, rgba(181, 26, 43, 0.12) 0%, transparent 50%),
-      radial-gradient(circle at 50% 90%, rgba(84, 26, 46, 0.35) 0%, transparent 60%),
-      radial-gradient(circle at 50% 50%, rgba(36, 47, 73, 0.65) 0%, transparent 80%);
+      radial-gradient(ellipse 80% 50% at 30% -10%, rgba(255, 165, 134, 0.22) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 60% at 85% 65%, rgba(181, 26, 43, 0.18) 0%, transparent 65%),
+      radial-gradient(ellipse 90% 70% at 50% 110%, rgba(84, 26, 46, 0.45) 0%, transparent 70%),
+      radial-gradient(circle at 50% 45%, rgba(36, 47, 73, 0.7) 0%, transparent 85%);
     background-attachment: fixed;
     color: #f8fafc;
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -39,7 +39,7 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #161e2f;
+  background: #101623;
 }
 ::-webkit-scrollbar-thumb {
   background: #384358;
@@ -49,53 +49,86 @@
   background: #ffa586;
 }
 
-/* Emil Kowalski Spatial Glass & Motion System — Midnight Navy + Warm Peach/Crimson Palette */
+/* Atmospheric Ambient Light Motion */
+@keyframes ambientDrift {
+  0%, 100% {
+    opacity: 0.85;
+    transform: scale(1) translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08) translateY(-10px);
+  }
+}
 
+.animate-ambient-light {
+  animation: ambientDrift 12s ease-in-out infinite alternate;
+}
+
+/* Emil Kowalski Atmospheric Glass System — Rich Translucent Dark Navy + Environmental Warm Light */
+
+/* 1. Primary Hero Glass (Highest Transparency + Bleed-through Light) */
 .glass-panel-primary {
-  background-color: rgba(22, 30, 47, 0.78);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(56, 67, 88, 0.45);
+  background: linear-gradient(135deg, rgba(22, 30, 47, 0.55) 0%, rgba(16, 22, 35, 0.65) 100%);
+  backdrop-filter: blur(20px) saturate(170%);
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
+  border: 1px solid rgba(255, 165, 134, 0.25);
+  border-top: 1px solid rgba(255, 165, 134, 0.45);
   border-radius: 1.25rem;
-  box-shadow: 0 20px 50px -10px rgba(10, 14, 24, 0.85), inset 0 1px 0 0 rgba(255, 165, 134, 0.15);
+  box-shadow: 
+    0 25px 60px -15px rgba(10, 14, 24, 0.9),
+    0 0 40px -10px rgba(84, 26, 46, 0.5),
+    inset 0 1px 0 0 rgba(255, 165, 134, 0.3);
   transition: transform 200ms var(--ease-out), border-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
 }
 
+/* 2. Secondary Content Glass (Medium Transparency + Soft Depth) */
 .glass-panel-secondary {
-  background-color: rgba(36, 47, 73, 0.45);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(56, 67, 88, 0.35);
+  background: linear-gradient(135deg, rgba(36, 47, 73, 0.4) 0%, rgba(22, 30, 47, 0.5) 100%);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid rgba(56, 67, 88, 0.45);
+  border-top: 1px solid rgba(255, 165, 134, 0.2);
   border-radius: 1rem;
-  box-shadow: 0 10px 30px -8px rgba(10, 14, 24, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.04);
+  box-shadow: 
+    0 15px 35px -10px rgba(10, 14, 24, 0.75),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
   transition: transform 200ms var(--ease-out), border-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
 }
 
+/* 3. Floating Glass (Vivid Edge Highlight + High Luminance Bleed) */
 .glass-panel-floating {
-  background-color: rgba(36, 47, 73, 0.55);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 165, 134, 0.3);
+  background: linear-gradient(135deg, rgba(36, 47, 73, 0.5) 0%, rgba(84, 26, 46, 0.3) 100%);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  border: 1px solid rgba(255, 165, 134, 0.4);
   border-radius: 0.75rem;
-  box-shadow: 0 8px 24px -4px rgba(84, 26, 46, 0.4);
+  box-shadow: 
+    0 12px 30px -6px rgba(84, 26, 46, 0.5),
+    0 0 25px -5px rgba(255, 165, 134, 0.2);
 }
 
-/* Interactive Cards with Tactile Physics & Warm Reflection */
+/* Atmospheric Interactive Cards (Environmental Light Reflection on Hover) */
 .interactive-card {
-  background-color: rgba(36, 47, 73, 0.4);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(56, 67, 88, 0.4);
+  background: linear-gradient(135deg, rgba(36, 47, 73, 0.35) 0%, rgba(22, 30, 47, 0.45) 100%);
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  border: 1px solid rgba(56, 67, 88, 0.45);
+  border-top: 1px solid rgba(255, 165, 134, 0.15);
   border-radius: 1rem;
-  box-shadow: 0 10px 25px -5px rgba(22, 30, 47, 0.6);
+  box-shadow: 0 10px 30px -8px rgba(10, 14, 24, 0.7);
   transition: transform 200ms var(--ease-out), border-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
 }
 
 @media (hover: hover) and (pointer: fine) {
   .interactive-card:hover {
     transform: translateY(-4px);
-    border-color: rgba(255, 165, 134, 0.45);
-    box-shadow: 0 20px 40px -12px rgba(255, 165, 134, 0.2), inset 0 1px 0 0 rgba(255, 165, 134, 0.2);
+    border-color: rgba(255, 165, 134, 0.55);
+    border-top-color: rgba(255, 165, 134, 0.8);
+    box-shadow: 
+      0 20px 45px -10px rgba(255, 165, 134, 0.25),
+      0 0 30px -5px rgba(181, 26, 43, 0.2),
+      inset 0 1px 0 0 rgba(255, 165, 134, 0.35);
   }
 }
 
@@ -103,7 +136,7 @@
   transform: scale(0.985);
 }
 
-/* Luminous Warm Peach Primary Button */
+/* Luminous Warm Peach Primary Button (Concentrated Light Source) */
 .btn-primary {
   background: linear-gradient(135deg, #ffa586 0%, #f09271 100%);
   color: #161e2f;
@@ -111,8 +144,8 @@
   font-size: 0.875rem;
   padding: 0.5rem 1.25rem;
   border-radius: 0.625rem;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 4px 16px -2px rgba(255, 165, 134, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 20px -2px rgba(255, 165, 134, 0.55), 0 0 15px -3px rgba(181, 26, 43, 0.3);
   transition: transform 160ms var(--ease-out), background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
   display: inline-flex;
   align-items: center;
@@ -125,8 +158,8 @@
 @media (hover: hover) and (pointer: fine) {
   .btn-primary:hover {
     background: linear-gradient(135deg, #ffb399 0%, #ffa586 100%);
-    border-color: rgba(255, 255, 255, 0.5);
-    box-shadow: 0 6px 24px -2px rgba(255, 165, 134, 0.65);
+    border-color: rgba(255, 255, 255, 0.6);
+    box-shadow: 0 6px 28px -2px rgba(255, 165, 134, 0.75), 0 0 20px -2px rgba(181, 26, 43, 0.4);
   }
 }
 
@@ -137,14 +170,15 @@
 /* Secondary Translucent Navy CTA */
 .btn-secondary {
   background-color: rgba(36, 47, 73, 0.6);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: #e2e8f0;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #f1f5f9;
   font-weight: 600;
   font-size: 0.875rem;
   padding: 0.5rem 1.25rem;
   border-radius: 0.625rem;
   border: 1px solid rgba(56, 67, 88, 0.6);
+  border-top: 1px solid rgba(255, 165, 134, 0.2);
   transition: transform 160ms var(--ease-out), background-color 160ms ease, color 160ms ease, border-color 160ms ease;
   display: inline-flex;
   align-items: center;
@@ -158,7 +192,8 @@
   .btn-secondary:hover {
     background-color: rgba(56, 67, 88, 0.8);
     color: #ffffff;
-    border-color: rgba(255, 165, 134, 0.35);
+    border-color: rgba(255, 165, 134, 0.4);
+    box-shadow: 0 4px 15px -3px rgba(255, 165, 134, 0.2);
   }
 }
 
@@ -195,7 +230,7 @@
   transform: scale(0.97);
 }
 
-/* Badges & Tags */
+/* Badges & Luminous Tags */
 .badge-tag {
   display: inline-flex;
   align-items: center;
@@ -210,13 +245,15 @@
 .badge-peach {
   background-color: rgba(255, 165, 134, 0.15);
   color: #ffa586;
-  border: 1px solid rgba(255, 165, 134, 0.35);
+  border: 1px solid rgba(255, 165, 134, 0.4);
+  box-shadow: 0 0 12px -2px rgba(255, 165, 134, 0.25);
 }
 
 .badge-crimson {
-  background-color: rgba(181, 26, 43, 0.15);
+  background-color: rgba(181, 26, 43, 0.2);
   color: #f87171;
-  border: 1px solid rgba(181, 26, 43, 0.35);
+  border: 1px solid rgba(181, 26, 43, 0.45);
+  box-shadow: 0 0 12px -2px rgba(181, 26, 43, 0.3);
 }
 
 .badge-emerald {
@@ -232,18 +269,18 @@
 }
 
 .badge-slate {
-  background-color: rgba(56, 67, 88, 0.25);
-  color: #9da8bc;
-  border: 1px solid rgba(56, 67, 88, 0.4);
+  background-color: rgba(56, 67, 88, 0.3);
+  color: #cbd5e1;
+  border: 1px solid rgba(56, 67, 88, 0.5);
 }
 
-/* Modals with Hardware-Accelerated Smoked Glass Entrance */
+/* Modals with Deep Smoked Glass & Crimson/Burgundy Shadow Atmosphere */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(16, 22, 35, 0.88);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background-color: rgba(10, 14, 24, 0.88);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   z-index: 50;
   display: flex;
   align-items: center;
@@ -253,16 +290,20 @@
 }
 
 .modal-content {
-  background-color: rgba(22, 30, 47, 0.94);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  background: linear-gradient(135deg, rgba(22, 30, 47, 0.95) 0%, rgba(16, 22, 35, 0.98) 100%);
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
   border: 1px solid rgba(56, 67, 88, 0.6);
+  border-top: 1px solid rgba(255, 165, 134, 0.4);
   border-radius: 1.25rem;
   width: 100%;
   max-width: 44rem;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 30px 80px -15px rgba(84, 26, 46, 0.6), 0 0 40px -10px rgba(255, 165, 134, 0.12);
+  box-shadow: 
+    0 35px 90px -15px rgba(10, 14, 24, 0.95),
+    0 0 60px -10px rgba(84, 26, 46, 0.7),
+    0 0 30px -5px rgba(255, 165, 134, 0.2);
   animation: modalScaleIn 200ms var(--ease-out) forwards;
 }
 
@@ -293,7 +334,8 @@
   .btn-secondary,
   .btn-ghost,
   .modal-content,
-  .modal-overlay {
+  .modal-overlay,
+  .animate-ambient-light {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
     transform: none !important;
