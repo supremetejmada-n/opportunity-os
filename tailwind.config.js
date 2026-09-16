@@ -63,8 +63,8 @@ export default {
         },
       },
       fontFamily: {
-        display: ['Bebas Neue', 'Big Shoulders Display', 'Impact', 'sans-serif-condensed', 'sans-serif'],
-        sans: ['Outfit', 'Plus Jakarta Sans', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        display: ['Okine', 'MADE Okine Sans', 'Unbounded', 'Syne', 'Red Hat Display', 'sans-serif'],
+        sans: ['Arint', 'Sora', 'Outfit', 'Lexend', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
     },

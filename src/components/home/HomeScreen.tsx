@@ -65,8 +65,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
           <div className="lg:col-span-7 space-y-3">
-            <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl font-extrabold uppercase tracking-wider leading-none bg-gradient-to-r from-slate-100 via-slate-200 to-peach-400 bg-clip-text text-transparent">
-              FIND SOMETHING WORTH BUILDING.
+            <h1 className="font-display text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight bg-gradient-to-r from-slate-100 via-slate-200 to-peach-400 bg-clip-text text-transparent">
+              Find something worth building.
             </h1>
             <p className="font-sans text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
               Welcome back, <strong className="text-white font-semibold">{userName}</strong>. Opportunity OS has evaluated live public sources against your profile vector. Here is your top zero-capital match.
