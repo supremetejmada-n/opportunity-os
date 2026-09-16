@@ -160,7 +160,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-transparent text-slate-100 flex flex-col font-sans">
       {/* EXACTLY ONE Navigation Bar */}
       <Navbar
         activeTab={activeTab}
@@ -268,7 +268,7 @@ export const App: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-900 bg-slate-950 py-5 text-center text-xs text-slate-500">
+      <footer className="border-t border-slate-800/40 bg-navy-950/40 backdrop-blur-md py-5 text-center text-xs text-slate-500">
         <p>Personal AI Opportunity Engine • Simple interface. Deep intelligence. Zero clutter.</p>
       </footer>
     </div>
