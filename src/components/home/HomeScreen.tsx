@@ -54,18 +54,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const userName = profile?.name ? profile.name.split(' ')[0] : 'there';
 
   return (
-    <div className="space-y-8 py-4 max-w-6xl mx-auto">
+    <div className="space-y-10 sm:space-y-12 py-6 max-w-6xl mx-auto">
       {/* 1. ATMOSPHERIC SPATIAL HERO */}
-      <section className="relative space-y-4 border-b border-white/10 pb-8">
+      <section className="relative space-y-6 border-b border-white/10 pb-10">
         <div className="flex items-center gap-2">
-          <span className="px-3 py-1 rounded-full bg-peach-500/15 border border-peach-500/35 text-peach-500 text-xs font-sans font-semibold tracking-wider uppercase">
+          <span className="px-3.5 py-1 rounded-full bg-peach-500/15 border border-peach-500/35 text-peach-500 text-xs font-sans font-semibold tracking-wider uppercase">
             Personal Intelligence System
           </span>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-          <div className="lg:col-span-7 space-y-3">
-            <h1 className="font-display text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight bg-gradient-to-r from-slate-100 via-slate-200 to-peach-400 bg-clip-text text-transparent">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+          <div className="lg:col-span-7 space-y-4">
+            <h1 className="font-display text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1] bg-gradient-to-r from-slate-100 via-slate-200 to-peach-400 bg-clip-text text-transparent pb-1">
               Find something worth building.
             </h1>
             <p className="font-sans text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
@@ -73,7 +73,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </p>
 
             {/* Humanized Vector Metrics Strip */}
-            <div className="pt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-400 font-sans">
+            <div className="pt-3 flex flex-wrap items-center gap-x-5 gap-y-2.5 text-xs text-slate-400 font-sans">
               <span className="flex items-center gap-1.5 text-slate-300">
                 <Zap className="h-3.5 w-3.5 text-peach-500" />
                 <strong className="text-slate-100 font-bold num-tabular">{skills.length}</strong> active skills
@@ -103,9 +103,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       </section>
 
       {/* 2. PRIMARY RECOMMENDATION SHOWCASE */}
-      <section className="space-y-3">
+      <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <Sparkles className="h-4 w-4 text-peach-500" />
             <h2 className="font-display text-lg font-bold text-slate-200 uppercase tracking-wider">Top Recommendation</h2>
           </div>

@@ -39,11 +39,13 @@
 
 .font-display {
   font-family: var(--font-display);
-  letter-spacing: 0.05em;
+  letter-spacing: -0.015em;
+  line-height: 1.12;
 }
 
 .font-sans {
   font-family: var(--font-body);
+  letter-spacing: -0.005em;
 }
 
 .num-tabular {

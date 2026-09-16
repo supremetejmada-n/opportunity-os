@@ -48,22 +48,22 @@ export const Navbar: React.FC<NavbarProps> = ({
   const displayName = profile?.name ? profile.name.split(' ')[0] : 'Advisor';
 
   return (
-    <header className="sticky top-0 z-40 w-full px-4 pt-3 pb-1 bg-gradient-to-b from-navy-950 via-navy-950/80 to-transparent">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 rounded-2xl border border-white/10 bg-navy-950/80 backdrop-blur-xl shadow-2xl shadow-black/80 relative overflow-hidden">
+    <header className="sticky top-0 z-40 w-full px-4 sm:px-6 pt-4 pb-2 bg-gradient-to-b from-navy-950 via-navy-950/80 to-transparent">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-6 rounded-2xl border border-white/10 bg-navy-950/80 backdrop-blur-xl shadow-2xl shadow-black/80 relative overflow-hidden">
         {/* Specular glass reflection line top in warm peach */}
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-peach-500/40 to-transparent pointer-events-none" />
         
         {/* Brand Title */}
         <button 
           onClick={() => handleNavClick('home')}
-          className="flex items-center gap-2.5 group cursor-pointer text-left"
+          className="flex items-center gap-3 group cursor-pointer text-left"
         >
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-peach-500 text-navy-950 font-bold shadow-md shadow-peach-500/30 group-hover:scale-105 transition-transform">
-            <Sparkles className="h-3.5 w-3.5" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-peach-500 text-navy-950 font-bold shadow-md shadow-peach-500/30 group-hover:scale-105 transition-transform">
+            <Sparkles className="h-4 w-4" />
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <h1 className="font-display text-sm font-bold text-slate-100 tracking-wider uppercase">
+              <h1 className="font-display text-sm sm:text-base font-bold text-slate-100 tracking-tight">
                 Opportunity OS
               </h1>
               <span className="h-1.5 w-1.5 rounded-full bg-peach-500 animate-pulse" title="Engine Active" />
@@ -75,7 +75,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </button>
 
         {/* Desktop Navigation Pill Strip */}
-        <nav className="hidden md:flex items-center gap-1 bg-navy-900/90 p-1 rounded-xl border border-slate-800">
+        <nav className="hidden md:flex items-center gap-1.5 bg-navy-900/90 p-1.5 rounded-xl border border-slate-800">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -83,7 +83,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
-                className={`flex items-center gap-2 px-3 py-1 rounded-lg text-xs transition-all active:scale-[0.97] ${
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-sans transition-all active:scale-[0.97] ${
                   isActive
                     ? 'bg-peach-500 text-navy-950 font-bold shadow-md shadow-peach-500/30 border border-white/30'
                     : 'text-slate-400 font-semibold hover:text-slate-100 hover:bg-slate-800/50'
