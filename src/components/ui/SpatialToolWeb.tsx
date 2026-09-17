@@ -10,7 +10,17 @@ interface SpatialToolWebProps {
 
 export const SpatialToolWeb: React.FC<SpatialToolWebProps> = ({ toolNames, activeIndices = [], className = '' }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { mousePos, isReducedMotion } = useSpatialScroll();
+  const { mousePosRef, isReducedMotion } = useSpatialScroll();
+  const isReducedMotionRef = useRef(isReducedMotion);
+  const activeIndicesRef = useRef(activeIndices);
+
+  useEffect(() => {
+    isReducedMotionRef.current = isReducedMotion;
+  }, [isReducedMotion]);
+
+  useEffect(() => {
+    activeIndicesRef.current = activeIndices;
+  }, [activeIndices]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -18,24 +28,32 @@ export const SpatialToolWeb: React.FC<SpatialToolWebProps> = ({ toolNames, activ
     const width = container.clientWidth || 400;
     const height = container.clientHeight || 220;
 
+    // 1. Scene, Camera, Renderer
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
     camera.position.z = 4.5;
 
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'high-performance' });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     container.appendChild(renderer.domElement);
 
+    const handleContextLost = (e: Event) => {
+      e.preventDefault();
+      console.warn('[SpatialToolWeb] WebGL context lost');
+    };
+    const canvas = renderer.domElement;
+    canvas.addEventListener('webglcontextlost', handleContextLost, false);
+
     const group = new THREE.Group();
     scene.add(group);
 
-    // Create 3D Nodes based on tool count
+    // 2. Create 3D Nodes based on tool count
     const nodeCount = Math.max(toolNames.length, 3);
     const nodes: THREE.Mesh[] = [];
+    const nodeMaterials: THREE.MeshPhysicalMaterial[] = [];
+    const nodeGeometries: THREE.BufferGeometry[] = [];
     const positions: THREE.Vector3[] = [];
-
-    const colors = [0xffa586, 0x384358, 0x242f49, 0xb51a2b, 0x384358];
 
     for (let i = 0; i < nodeCount; i++) {
       const angle = (i / nodeCount) * Math.PI * 2;
@@ -47,10 +65,12 @@ export const SpatialToolWeb: React.FC<SpatialToolWebProps> = ({ toolNames, activ
       const pos = new THREE.Vector3(x, y, z);
       positions.push(pos);
 
-      const isActive = activeIndices.length === 0 || activeIndices.includes(i);
+      const isActive = activeIndicesRef.current.length === 0 || activeIndicesRef.current.includes(i);
       const nodeColor = isActive ? (i === 0 ? 0xffa586 : 0xb51a2b) : 0x384358;
 
-      const nodeGeo = new THREE.OctahedronGeometry(isActive ? 0.35 : 0.25, 0);
+      const nodeGeo = new THREE.OctahedronGeometry(0.32, 0);
+      nodeGeometries.push(nodeGeo);
+
       const nodeMat = new THREE.MeshPhysicalMaterial({
         color: nodeColor,
         metalness: 0.3,
@@ -62,6 +82,8 @@ export const SpatialToolWeb: React.FC<SpatialToolWebProps> = ({ toolNames, activ
         emissive: nodeColor,
         emissiveIntensity: isActive ? 1.0 : 0.1,
       });
+      nodeMaterials.push(nodeMat);
+
       const nodeMesh = new THREE.Mesh(nodeGeo, nodeMat);
       nodeMesh.position.copy(pos);
       group.add(nodeMesh);
@@ -70,9 +92,9 @@ export const SpatialToolWeb: React.FC<SpatialToolWebProps> = ({ toolNames, activ
 
     // Connect Nodes with Vivid Crimson / Warm Peach Lines
     const lineMaterial = new THREE.LineBasicMaterial({
-      color: activeIndices.length > 0 ? 0xffa586 : 0xb51a2b,
+      color: 0xffa586,
       transparent: true,
-      opacity: activeIndices.length > 0 ? 0.75 : 0.4,
+      opacity: 0.6,
     });
 
     const linePoints: THREE.Vector3[] = [];
@@ -91,7 +113,7 @@ export const SpatialToolWeb: React.FC<SpatialToolWebProps> = ({ toolNames, activ
     const centerMat = new THREE.MeshStandardMaterial({
       color: 0xffa586,
       emissive: 0xf09271,
-      emissiveIntensity: activeIndices.length > 0 ? 2.5 : 1.4,
+      emissiveIntensity: 1.8,
       roughness: 0.15,
     });
     const centerMesh = new THREE.Mesh(centerGeo, centerMat);
@@ -107,7 +129,7 @@ export const SpatialToolWeb: React.FC<SpatialToolWebProps> = ({ toolNames, activ
     const centerLineMat = new THREE.LineBasicMaterial({
       color: 0xffa586,
       transparent: true,
-      opacity: activeIndices.length > 0 ? 0.6 : 0.3,
+      opacity: 0.5,
     });
     const centerLineMesh = new THREE.LineSegments(centerLineGeo, centerLineMat);
     group.add(centerLineMesh);
@@ -120,35 +142,62 @@ export const SpatialToolWeb: React.FC<SpatialToolWebProps> = ({ toolNames, activ
     pointLight.position.set(0, 0, 3);
     scene.add(pointLight);
 
-    // Animation Loop
+    // 3. Continuous Animation Loop
     let animationFrameId: number;
-    let clock = new THREE.Clock();
+    const clock = new THREE.Clock();
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
-      const elapsedTime = clock.getElapsedTime();
 
-      if (!isReducedMotion) {
-        group.rotation.y += 0.005;
-        centerMesh.rotation.x += 0.01;
-        centerMesh.rotation.z += 0.01;
+      try {
+        const delta = clock.getDelta();
+        const elapsedTime = clock.getElapsedTime();
 
-        // Pointer inertia lerp
-        const targetRotY = mousePos.normalizedX * 0.35;
-        const targetRotX = -mousePos.normalizedY * 0.35;
-        group.rotation.y += (targetRotY - group.rotation.y) * 0.04;
-        group.rotation.x += (targetRotX - group.rotation.x) * 0.04;
+        if (!isReducedMotionRef.current) {
+          group.rotation.y += delta * 0.25;
+          centerMesh.rotation.x += delta * 0.5;
+          centerMesh.rotation.z += delta * 0.5;
 
-        nodes.forEach((node, idx) => {
-          node.position.y = positions[idx].y + Math.sin(elapsedTime * 2 + idx) * 0.08;
-          node.rotation.y += 0.01 * (idx % 2 === 0 ? 1 : -1);
-        });
+          // Pointer inertia lerp
+          const normX = mousePosRef.current ? mousePosRef.current.normalizedX : 0;
+          const normY = mousePosRef.current ? mousePosRef.current.normalizedY : 0;
+          const targetRotY = normX * 0.35;
+          const targetRotX = -normY * 0.35;
+          group.rotation.y += (targetRotY - group.rotation.y) * 0.04;
+          group.rotation.x += (targetRotX - group.rotation.x) * 0.04;
+
+          // Dynamic scale & emissive response to activeIndicesRef
+          nodes.forEach((node, idx) => {
+            node.position.y = positions[idx].y + Math.sin(elapsedTime * 2 + idx) * 0.08;
+            node.rotation.y += delta * (idx % 2 === 0 ? 0.6 : -0.6);
+
+            const isActive = activeIndicesRef.current.length === 0 || activeIndicesRef.current.includes(idx);
+            const targetScale = isActive ? 1.15 : 0.7;
+            node.scale.setScalar(THREE.MathUtils.lerp(node.scale.x, targetScale, 0.08));
+
+            const targetEmissive = isActive ? 1.2 : 0.15;
+            const targetOpacity = isActive ? 0.95 : 0.4;
+            nodeMaterials[idx].emissiveIntensity = THREE.MathUtils.lerp(
+              nodeMaterials[idx].emissiveIntensity,
+              targetEmissive,
+              0.08
+            );
+            nodeMaterials[idx].opacity = THREE.MathUtils.lerp(
+              nodeMaterials[idx].opacity,
+              targetOpacity,
+              0.08
+            );
+          });
+        }
+
+        renderer.render(scene, camera);
+      } catch (err) {
+        console.error('[SpatialToolWeb] Render error:', err);
       }
-
-      renderer.render(scene, camera);
     };
     animate();
 
+    // 4. Resize Observer
     const handleResize = () => {
       if (!container) return;
       const w = container.clientWidth || 400;
@@ -160,9 +209,11 @@ export const SpatialToolWeb: React.FC<SpatialToolWebProps> = ({ toolNames, activ
     const resizeObserver = new ResizeObserver(handleResize);
     resizeObserver.observe(container);
 
+    // 5. Cleanup on Unmount
     return () => {
       cancelAnimationFrame(animationFrameId);
       resizeObserver.disconnect();
+      canvas.removeEventListener('webglcontextlost', handleContextLost);
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
       }
@@ -173,12 +224,15 @@ export const SpatialToolWeb: React.FC<SpatialToolWebProps> = ({ toolNames, activ
       centerMat.dispose();
       centerLineGeo.dispose();
       centerLineMat.dispose();
+      nodeGeometries.forEach(g => g.dispose());
+      nodeMaterials.forEach(m => m.dispose());
     };
-  }, [toolNames, activeIndices, mousePos.normalizedX, mousePos.normalizedY, isReducedMotion]);
+  }, [toolNames.length]); // Re-init ONLY if total tool count changes!
 
   return (
     <div className={`relative w-full h-[200px] flex items-center justify-center ${className}`}>
-      <div ref={containerRef} className="w-full h-full" />
+      <div ref={containerRef} className="w-full h-full relative z-10" />
     </div>
   );
 };
+

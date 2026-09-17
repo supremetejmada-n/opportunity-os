@@ -8,7 +8,12 @@ interface SpatialHeroOrbProps {
 
 export const SpatialHeroOrb: React.FC<SpatialHeroOrbProps> = ({ className = '' }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { mousePos, isReducedMotion } = useSpatialScroll();
+  const { mousePosRef, isReducedMotion } = useSpatialScroll();
+  const isReducedMotionRef = useRef(isReducedMotion);
+
+  useEffect(() => {
+    isReducedMotionRef.current = isReducedMotion;
+  }, [isReducedMotion]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -16,17 +21,25 @@ export const SpatialHeroOrb: React.FC<SpatialHeroOrbProps> = ({ className = '' }
     const width = container.clientWidth || 320;
     const height = container.clientHeight || 320;
 
-    // Scene, Camera, Renderer
+    // 1. Scene, Camera, Renderer
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
     camera.position.z = 5;
 
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'high-performance' });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     container.appendChild(renderer.domElement);
 
-    // Main Group
+    // Context loss handlers
+    const handleContextLost = (e: Event) => {
+      e.preventDefault();
+      console.warn('[SpatialHeroOrb] WebGL context lost');
+    };
+    const canvas = renderer.domElement;
+    canvas.addEventListener('webglcontextlost', handleContextLost, false);
+
+    // 2. Main Group
     const group = new THREE.Group();
     scene.add(group);
 
@@ -103,38 +116,47 @@ export const SpatialHeroOrb: React.FC<SpatialHeroOrbProps> = ({ className = '' }
     pointLight2.position.set(-3, -3, 2);
     scene.add(pointLight2);
 
-    // Animation Loop with Spring Float & Pointer Inertia
+    // 3. Continuous Animation Loop with Frame-Rate Independence & Pointer Inertia
     let animationFrameId: number;
-    let clock = new THREE.Clock();
+    const clock = new THREE.Clock();
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
-      const elapsedTime = clock.getElapsedTime();
 
-      if (!isReducedMotion) {
-        // Continuous rotation
-        glassMesh.rotation.y += 0.004;
-        glassMesh.rotation.x += 0.002;
-        wireframeMesh.rotation.y -= 0.003;
-        coreMesh.rotation.y += 0.007;
-        ringMesh1.rotation.z += 0.005;
-        ringMesh2.rotation.z -= 0.004;
+      try {
+        const delta = clock.getDelta();
+        const elapsedTime = clock.getElapsedTime();
 
-        // Subtle sine wave floating motion
-        group.position.y = Math.sin(elapsedTime * 1.4) * 0.12;
+        if (!isReducedMotionRef.current) {
+          // Continuous rotations (frame-rate independent using delta)
+          glassMesh.rotation.y += delta * 0.24;
+          glassMesh.rotation.x += delta * 0.12;
+          wireframeMesh.rotation.y -= delta * 0.18;
+          coreMesh.rotation.y += delta * 0.42;
+          ringMesh1.rotation.z += delta * 0.3;
+          ringMesh2.rotation.z -= delta * 0.24;
 
-        // Pointer inertia lerp smoothing
-        const targetRotY = mousePos.normalizedX * 0.45;
-        const targetRotX = -mousePos.normalizedY * 0.45;
-        group.rotation.y += (targetRotY - group.rotation.y) * 0.05;
-        group.rotation.x += (targetRotX - group.rotation.x) * 0.05;
+          // Subtle sine wave floating motion
+          group.position.y = Math.sin(elapsedTime * 1.4) * 0.12;
+
+          // Pointer inertia lerp smoothing via ref
+          const normX = mousePosRef.current ? mousePosRef.current.normalizedX : 0;
+          const normY = mousePosRef.current ? mousePosRef.current.normalizedY : 0;
+          const targetRotY = normX * 0.45;
+          const targetRotX = -normY * 0.45;
+
+          group.rotation.y += (targetRotY - group.rotation.y) * 0.05;
+          group.rotation.x += (targetRotX - group.rotation.x) * 0.05;
+        }
+
+        renderer.render(scene, camera);
+      } catch (err) {
+        console.error('[SpatialHeroOrb] Render error:', err);
       }
-
-      renderer.render(scene, camera);
     };
     animate();
 
-    // Resize Observer
+    // 4. Resize Observer
     const handleResize = () => {
       if (!container) return;
       const w = container.clientWidth || 320;
@@ -146,9 +168,11 @@ export const SpatialHeroOrb: React.FC<SpatialHeroOrbProps> = ({ className = '' }
     const resizeObserver = new ResizeObserver(handleResize);
     resizeObserver.observe(container);
 
+    // 5. Cleanup ONLY on Component Unmount
     return () => {
       cancelAnimationFrame(animationFrameId);
       resizeObserver.disconnect();
+      canvas.removeEventListener('webglcontextlost', handleContextLost);
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
       }
@@ -164,12 +188,13 @@ export const SpatialHeroOrb: React.FC<SpatialHeroOrbProps> = ({ className = '' }
       ringGeometry2.dispose();
       ringMaterial2.dispose();
     };
-  }, [mousePos.normalizedX, mousePos.normalizedY, isReducedMotion]);
+  }, []); // Mounted EXACTLY ONCE!
 
   return (
     <div className={`relative w-full h-[280px] sm:h-[340px] flex items-center justify-center ${className}`}>
-      <div ref={containerRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
+      <div ref={containerRef} className="w-full h-full cursor-grab active:cursor-grabbing relative z-10" />
       <div className="absolute inset-0 pointer-events-none bg-radial from-peach-500/15 via-burgundy-900/20 to-transparent rounded-full blur-3xl animate-pulse" />
     </div>
   );
 };
+
