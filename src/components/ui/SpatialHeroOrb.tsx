@@ -116,7 +116,7 @@ export const SpatialHeroOrb: React.FC<SpatialHeroOrbProps> = ({ className = '' }
     pointLight2.position.set(-3, -3, 2);
     scene.add(pointLight2);
 
-    // 3. Continuous Animation Loop with Robust Timing
+    // 3. Continuous Animation Loop with Unconditional Vivid Motion
     let animationFrameId: number;
     let lastTime = performance.now();
     const startTime = performance.now();
@@ -130,27 +130,26 @@ export const SpatialHeroOrb: React.FC<SpatialHeroOrbProps> = ({ className = '' }
         lastTime = now;
         const elapsedTime = (now - startTime) / 1000;
 
-        if (!isReducedMotionRef.current) {
-          // Continuous rotations (vivid, physical movement)
-          glassMesh.rotation.y += delta * 0.5;
-          glassMesh.rotation.x += delta * 0.25;
-          wireframeMesh.rotation.y -= delta * 0.4;
-          coreMesh.rotation.y += delta * 0.8;
-          ringMesh1.rotation.z += delta * 0.6;
-          ringMesh2.rotation.z -= delta * 0.5;
+        // Unconditional continuous physical rotations (Entire 3D system & components)
+        group.rotation.y += delta * 0.8; // ENTIRE ORB + RINGS ROTATE CONTINUOUSLY!
+        glassMesh.rotation.y += delta * 0.4;
+        glassMesh.rotation.x += delta * 0.3;
+        wireframeMesh.rotation.y -= delta * 0.5;
+        coreMesh.rotation.y += delta * 1.0;
+        ringMesh1.rotation.z += delta * 0.7;
+        ringMesh2.rotation.z -= delta * 0.6;
 
-          // Sine wave floating motion
-          group.position.y = Math.sin(elapsedTime * 1.6) * 0.15;
+        // Continuous floating sine motion
+        group.position.y = Math.sin(elapsedTime * 2.0) * 0.18;
 
-          // Pointer inertia lerp smoothing via ref
-          const normX = mousePosRef.current ? mousePosRef.current.normalizedX : 0;
-          const normY = mousePosRef.current ? mousePosRef.current.normalizedY : 0;
-          const targetRotY = normX * 0.55;
-          const targetRotX = -normY * 0.55;
+        // Pointer inertia lerp smoothing via ref
+        const normX = mousePosRef.current ? mousePosRef.current.normalizedX : 0;
+        const normY = mousePosRef.current ? mousePosRef.current.normalizedY : 0;
+        const targetRotZ = normX * 0.4;
+        const targetRotX = -normY * 0.4;
 
-          group.rotation.y += (targetRotY - group.rotation.y) * 0.06;
-          group.rotation.x += (targetRotX - group.rotation.x) * 0.06;
-        }
+        group.rotation.z += (targetRotZ - group.rotation.z) * 0.08;
+        group.rotation.x += (targetRotX - group.rotation.x) * 0.08;
 
         renderer.render(scene, camera);
       } catch (err) {
@@ -200,5 +199,6 @@ export const SpatialHeroOrb: React.FC<SpatialHeroOrbProps> = ({ className = '' }
     </div>
   );
 };
+
 
 

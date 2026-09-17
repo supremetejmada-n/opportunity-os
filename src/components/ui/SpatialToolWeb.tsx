@@ -156,42 +156,42 @@ export const SpatialToolWeb: React.FC<SpatialToolWebProps> = ({ toolNames, activ
         lastTime = now;
         const elapsedTime = (now - startTime) / 1000;
 
-        if (!isReducedMotionRef.current) {
-          group.rotation.y += delta * 0.4;
-          centerMesh.rotation.x += delta * 0.8;
-          centerMesh.rotation.z += delta * 0.8;
+        // Unconditional group and node rotations
+        group.rotation.y += delta * 0.6;
+        centerMesh.rotation.x += delta * 0.8;
+        centerMesh.rotation.z += delta * 0.8;
 
-          // Pointer inertia lerp
-          const normX = mousePosRef.current ? mousePosRef.current.normalizedX : 0;
-          const normY = mousePosRef.current ? mousePosRef.current.normalizedY : 0;
-          const targetRotY = normX * 0.4;
-          const targetRotX = -normY * 0.4;
-          group.rotation.y += (targetRotY - group.rotation.y) * 0.05;
-          group.rotation.x += (targetRotX - group.rotation.x) * 0.05;
+        // Pointer inertia lerp
+        const normX = mousePosRef.current ? mousePosRef.current.normalizedX : 0;
+        const normY = mousePosRef.current ? mousePosRef.current.normalizedY : 0;
+        const targetRotY = normX * 0.4;
+        const targetRotX = -normY * 0.4;
+        group.rotation.y += (targetRotY - group.rotation.y) * 0.05;
+        group.rotation.x += (targetRotX - group.rotation.x) * 0.05;
 
-          // Dynamic scale & emissive response to activeIndicesRef
-          nodes.forEach((node, idx) => {
-            node.position.y = positions[idx].y + Math.sin(elapsedTime * 2 + idx) * 0.1;
-            node.rotation.y += delta * (idx % 2 === 0 ? 1.0 : -1.0);
+        // Dynamic scale & emissive response to activeIndicesRef
+        nodes.forEach((node, idx) => {
+          node.position.y = positions[idx].y + Math.sin(elapsedTime * 2 + idx) * 0.1;
+          node.rotation.y += delta * (idx % 2 === 0 ? 1.0 : -1.0);
 
-            const isActive = activeIndicesRef.current.length === 0 || activeIndicesRef.current.includes(idx);
-            const targetScale = isActive ? 1.15 : 0.7;
-            node.scale.setScalar(THREE.MathUtils.lerp(node.scale.x, targetScale, 0.08));
+          const isActive = activeIndicesRef.current.length === 0 || activeIndicesRef.current.includes(idx);
+          const targetScale = isActive ? 1.15 : 0.7;
+          node.scale.setScalar(THREE.MathUtils.lerp(node.scale.x, targetScale, 0.08));
 
-            const targetEmissive = isActive ? 1.2 : 0.15;
-            const targetOpacity = isActive ? 0.95 : 0.4;
-            nodeMaterials[idx].emissiveIntensity = THREE.MathUtils.lerp(
-              nodeMaterials[idx].emissiveIntensity,
-              targetEmissive,
-              0.08
-            );
-            nodeMaterials[idx].opacity = THREE.MathUtils.lerp(
-              nodeMaterials[idx].opacity,
-              targetOpacity,
-              0.08
-            );
-          });
-        }
+          const targetEmissive = isActive ? 1.2 : 0.15;
+          const targetOpacity = isActive ? 0.95 : 0.4;
+          nodeMaterials[idx].emissiveIntensity = THREE.MathUtils.lerp(
+            nodeMaterials[idx].emissiveIntensity,
+            targetEmissive,
+            0.08
+          );
+          nodeMaterials[idx].opacity = THREE.MathUtils.lerp(
+            nodeMaterials[idx].opacity,
+            targetOpacity,
+            0.08
+          );
+        });
+
 
         renderer.render(scene, camera);
       } catch (err) {

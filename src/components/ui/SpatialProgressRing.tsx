@@ -116,22 +116,22 @@ export const SpatialProgressRing: React.FC<SpatialProgressRingProps> = ({ progre
           progressMesh.geometry = progressGeo;
         }
 
-        if (!isReducedMotionRef.current) {
-          group.rotation.y += delta * 0.5;
-          group.rotation.x += delta * 0.2;
-          coreMesh.rotation.y -= delta * 0.7;
+        // Unconditional continuous physical rotations
+        group.rotation.y += delta * 0.6;
+        group.rotation.x += delta * 0.25;
+        coreMesh.rotation.y -= delta * 0.8;
 
-          // Pointer inertia lerp
-          const normX = mousePosRef.current ? mousePosRef.current.normalizedX : 0;
-          const normY = mousePosRef.current ? mousePosRef.current.normalizedY : 0;
-          const targetRotY = normX * 0.35;
-          const targetRotX = -normY * 0.35;
-          group.rotation.y += (targetRotY - group.rotation.y) * 0.05;
-          group.rotation.x += (targetRotX - group.rotation.x) * 0.05;
+        // Pointer inertia lerp
+        const normX = mousePosRef.current ? mousePosRef.current.normalizedX : 0;
+        const normY = mousePosRef.current ? mousePosRef.current.normalizedY : 0;
+        const targetRotY = normX * 0.35;
+        const targetRotX = -normY * 0.35;
+        group.rotation.y += (targetRotY - group.rotation.y) * 0.05;
+        group.rotation.x += (targetRotX - group.rotation.x) * 0.05;
 
-          // Core light pulse
-          progressMat.emissiveIntensity = 1.5 + Math.sin(elapsedTime * 3) * 0.4;
-        }
+        // Core light pulse
+        progressMat.emissiveIntensity = 1.5 + Math.sin(elapsedTime * 3) * 0.4;
+
 
         renderer.render(scene, camera);
       } catch (err) {
