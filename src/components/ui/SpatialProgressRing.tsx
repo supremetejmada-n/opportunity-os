@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { useSpatialScroll } from './SpatialScrollProvider.js';
 
 interface SpatialProgressRingProps {
   progressPercentage: number;
@@ -8,6 +9,7 @@ interface SpatialProgressRingProps {
 
 export const SpatialProgressRing: React.FC<SpatialProgressRingProps> = ({ progressPercentage, className = '' }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const { mousePos, isReducedMotion } = useSpatialScroll();
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -34,27 +36,27 @@ export const SpatialProgressRing: React.FC<SpatialProgressRingProps> = ({ progre
     group.add(trackMesh);
 
     // Progress Arc Torus (Luminous Warm Peach)
-    const arcLength = (progressPercentage / 100) * Math.PI * 2 || 0.01;
-    const progressGeo = new THREE.TorusGeometry(1.2, 0.06, 16, 64, arcLength);
+    const targetArcLength = (Math.max(progressPercentage, 1) / 100) * Math.PI * 2;
+    const progressGeo = new THREE.TorusGeometry(1.2, 0.065, 16, 64, targetArcLength);
     const progressMat = new THREE.MeshStandardMaterial({
       color: 0xffa586,
       emissive: 0xf09271,
-      emissiveIntensity: 1.2,
-      roughness: 0.15,
+      emissiveIntensity: 1.5,
+      roughness: 0.1,
     });
     const progressMesh = new THREE.Mesh(progressGeo, progressMat);
     progressMesh.rotation.z = Math.PI / 2;
     group.add(progressMesh);
 
     // Inner Floating Sphere Core (Navy Glass with Crimson Highlight)
-    const coreGeo = new THREE.SphereGeometry(0.45, 32, 32);
+    const coreGeo = new THREE.SphereGeometry(0.48, 32, 32);
     const coreMat = new THREE.MeshPhysicalMaterial({
       color: 0x242f49,
-      transmission: 0.8,
+      transmission: 0.85,
       thickness: 0.6,
       transparent: true,
-      opacity: 0.9,
-      roughness: 0.1,
+      opacity: 0.92,
+      roughness: 0.08,
       clearcoat: 1.0,
     });
     const coreMesh = new THREE.Mesh(coreGeo, coreMat);
@@ -64,16 +66,32 @@ export const SpatialProgressRing: React.FC<SpatialProgressRingProps> = ({ progre
     const ambientLight = new THREE.AmbientLight(0xf8fafc, 0.8);
     scene.add(ambientLight);
 
-    const pointLight = new THREE.PointLight(0xffa586, 3, 6);
+    const pointLight = new THREE.PointLight(0xffa586, 3.5, 6);
     pointLight.position.set(2, 2, 3);
     scene.add(pointLight);
 
     let animationFrameId: number;
+    let clock = new THREE.Clock();
+
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
-      group.rotation.y += 0.006;
-      group.rotation.x += 0.003;
-      coreMesh.rotation.y -= 0.01;
+      const elapsedTime = clock.getElapsedTime();
+
+      if (!isReducedMotion) {
+        group.rotation.y += 0.005;
+        group.rotation.x += 0.002;
+        coreMesh.rotation.y -= 0.008;
+
+        // Pointer inertia lerp
+        const targetRotY = mousePos.normalizedX * 0.3;
+        const targetRotX = -mousePos.normalizedY * 0.3;
+        group.rotation.y += (targetRotY - group.rotation.y) * 0.04;
+        group.rotation.x += (targetRotX - group.rotation.x) * 0.04;
+
+        // Core light pulse
+        progressMat.emissiveIntensity = 1.5 + Math.sin(elapsedTime * 3) * 0.3;
+      }
+
       renderer.render(scene, camera);
     };
     animate();
@@ -96,15 +114,21 @@ export const SpatialProgressRing: React.FC<SpatialProgressRingProps> = ({ progre
         container.removeChild(renderer.domElement);
       }
       renderer.dispose();
+      trackGeo.dispose();
+      trackMat.dispose();
+      progressGeo.dispose();
+      progressMat.dispose();
+      coreGeo.dispose();
+      coreMat.dispose();
     };
-  }, [progressPercentage]);
+  }, [progressPercentage, mousePos.normalizedX, mousePos.normalizedY, isReducedMotion]);
 
   return (
     <div className={`relative w-full h-[220px] flex items-center justify-center ${className}`}>
       <div ref={containerRef} className="w-full h-full" />
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
-        <span className="text-2xl font-black font-mono text-slate-100">{progressPercentage}%</span>
-        <span className="text-[10px] font-mono text-peach-500 uppercase tracking-wider font-semibold">Progress</span>
+        <span className="text-2xl font-black font-sans num-tabular text-slate-100">{progressPercentage}%</span>
+        <span className="text-[10px] font-sans text-peach-500 uppercase tracking-wider font-semibold">Progress</span>
       </div>
     </div>
   );

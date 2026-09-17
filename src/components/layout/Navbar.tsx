@@ -11,6 +11,7 @@ import {
   X
 } from 'lucide-react';
 import { UserProfile } from '../../types/index.js';
+import { MagneticButton } from '../ui/MagneticButton.js';
 
 export type NavTab = 'home' | 'discover' | 'opportunities' | 'combine' | 'progress' | 'profile';
 
@@ -98,16 +99,17 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Right Header Actions */}
         <div className="flex items-center gap-3">
-          {/* Highlighted Quick Trigger Scan Button */}
-          <button
+          {/* Highlighted Magnetic Quick Trigger Scan Button */}
+          <MagneticButton
             onClick={onScanClick}
             disabled={isScanning}
-            className="btn-primary text-xs py-1.5 px-4 h-9 font-bold shadow-lg shadow-peach-500/30 border border-white/40 flex items-center gap-2 hover:scale-[1.03] active:scale-[0.97] transition-all"
+            variant="primary"
+            className="text-xs py-1.5 px-4 h-9 font-bold shadow-lg shadow-peach-500/30 border border-white/40"
             title="Trigger discovery and evaluation scan"
           >
             <RefreshCw className={`h-3.5 w-3.5 text-navy-950 font-bold ${isScanning ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline font-bold tracking-wide text-navy-950">{isScanning ? 'Scanning...' : 'Scan Now'}</span>
-          </button>
+          </MagneticButton>
 
           {/* Profile Quick Pill */}
           <button

@@ -17,6 +17,7 @@ import { NavTab } from '../layout/Navbar.js';
 import { api } from '../../services/api.js';
 import { SpatialHeroOrb } from '../ui/SpatialHeroOrb.js';
 import { GlassCard } from '../ui/GlassCard.js';
+import { MagneticButton } from '../ui/MagneticButton.js';
 
 interface HomeScreenProps {
   profile: UserProfile | null;
@@ -177,13 +178,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 <span>{showDetails ? 'Hide match breakdown' : 'Why this was recommended'}</span>
               </button>
 
-              <button
+              <MagneticButton
                 onClick={() => setActiveTab('opportunities')}
-                className="btn-primary text-xs flex items-center gap-2 py-2.5 px-6"
+                variant="primary"
+                className="text-xs py-2.5 px-6 font-bold shadow-lg shadow-peach-500/30"
               >
                 <span>See the plan</span>
-                <ArrowRight className="h-4 w-4" />
-              </button>
+                <ArrowRight className="h-4 w-4 text-navy-950 font-bold" />
+              </MagneticButton>
             </div>
 
             {/* Progressive Rationale Breakdown */}

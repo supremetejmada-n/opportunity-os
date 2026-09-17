@@ -1,13 +1,16 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { useSpatialScroll } from './SpatialScrollProvider.js';
 
 interface SpatialToolWebProps {
   toolNames: string[];
+  activeIndices?: number[];
   className?: string;
 }
 
-export const SpatialToolWeb: React.FC<SpatialToolWebProps> = ({ toolNames, className = '' }) => {
+export const SpatialToolWeb: React.FC<SpatialToolWebProps> = ({ toolNames, activeIndices = [], className = '' }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const { mousePos, isReducedMotion } = useSpatialScroll();
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -32,7 +35,6 @@ export const SpatialToolWeb: React.FC<SpatialToolWebProps> = ({ toolNames, class
     const nodes: THREE.Mesh[] = [];
     const positions: THREE.Vector3[] = [];
 
-    // Colors based on palette: Warm Peach active node, Slate Blue nodes, Crimson accents
     const colors = [0xffa586, 0x384358, 0x242f49, 0xb51a2b, 0x384358];
 
     for (let i = 0; i < nodeCount; i++) {
@@ -45,18 +47,20 @@ export const SpatialToolWeb: React.FC<SpatialToolWebProps> = ({ toolNames, class
       const pos = new THREE.Vector3(x, y, z);
       positions.push(pos);
 
-      // Node Geometry (Smoked Navy / Slate Glass with Warm Peach emphasis on primary node)
-      const nodeGeo = new THREE.OctahedronGeometry(0.3, 0);
+      const isActive = activeIndices.length === 0 || activeIndices.includes(i);
+      const nodeColor = isActive ? (i === 0 ? 0xffa586 : 0xb51a2b) : 0x384358;
+
+      const nodeGeo = new THREE.OctahedronGeometry(isActive ? 0.35 : 0.25, 0);
       const nodeMat = new THREE.MeshPhysicalMaterial({
-        color: colors[i % colors.length],
-        metalness: 0.2,
-        roughness: 0.2,
-        transmission: 0.7,
+        color: nodeColor,
+        metalness: 0.3,
+        roughness: 0.15,
+        transmission: 0.75,
         thickness: 0.8,
         transparent: true,
-        opacity: 0.9,
-        emissive: colors[i % colors.length],
-        emissiveIntensity: i === 0 ? 0.8 : 0.2,
+        opacity: isActive ? 0.95 : 0.5,
+        emissive: nodeColor,
+        emissiveIntensity: isActive ? 1.0 : 0.1,
       });
       const nodeMesh = new THREE.Mesh(nodeGeo, nodeMat);
       nodeMesh.position.copy(pos);
@@ -64,11 +68,11 @@ export const SpatialToolWeb: React.FC<SpatialToolWebProps> = ({ toolNames, class
       nodes.push(nodeMesh);
     }
 
-    // Connect Nodes with Vivid Crimson Energy Lines
+    // Connect Nodes with Vivid Crimson / Warm Peach Lines
     const lineMaterial = new THREE.LineBasicMaterial({
-      color: 0xb51a2b,
+      color: activeIndices.length > 0 ? 0xffa586 : 0xb51a2b,
       transparent: true,
-      opacity: 0.45,
+      opacity: activeIndices.length > 0 ? 0.75 : 0.4,
     });
 
     const linePoints: THREE.Vector3[] = [];
@@ -82,48 +86,64 @@ export const SpatialToolWeb: React.FC<SpatialToolWebProps> = ({ toolNames, class
     const lineMesh = new THREE.LineSegments(lineGeo, lineMaterial);
     group.add(lineMesh);
 
-    // Center Core Node (Illuminated Synthesis Outcome in Warm Peach)
-    const centerGeo = new THREE.IcosahedronGeometry(0.4, 0);
+    // Center Core Node (Illuminated Synthesis Outcome)
+    const centerGeo = new THREE.IcosahedronGeometry(0.45, 0);
     const centerMat = new THREE.MeshStandardMaterial({
       color: 0xffa586,
       emissive: 0xf09271,
-      emissiveIntensity: 1.2,
-      roughness: 0.2,
+      emissiveIntensity: activeIndices.length > 0 ? 2.5 : 1.4,
+      roughness: 0.15,
     });
     const centerMesh = new THREE.Mesh(centerGeo, centerMat);
     group.add(centerMesh);
 
-    // Connect all nodes to center core with subtle warm light lines
+    // Connect all nodes to center core
     const centerLinePoints: THREE.Vector3[] = [];
     positions.forEach(pos => {
       centerLinePoints.push(pos);
       centerLinePoints.push(new THREE.Vector3(0, 0, 0));
     });
     const centerLineGeo = new THREE.BufferGeometry().setFromPoints(centerLinePoints);
-    const centerLineMat = new THREE.LineBasicMaterial({ color: 0xffa586, transparent: true, opacity: 0.35 });
+    const centerLineMat = new THREE.LineBasicMaterial({
+      color: 0xffa586,
+      transparent: true,
+      opacity: activeIndices.length > 0 ? 0.6 : 0.3,
+    });
     const centerLineMesh = new THREE.LineSegments(centerLineGeo, centerLineMat);
     group.add(centerLineMesh);
 
-    // Lights
+    // Lighting
     const ambientLight = new THREE.AmbientLight(0xf8fafc, 0.8);
     scene.add(ambientLight);
 
-    const pointLight = new THREE.PointLight(0xffa586, 2.5, 8);
+    const pointLight = new THREE.PointLight(0xffa586, 3.0, 10);
     pointLight.position.set(0, 0, 3);
     scene.add(pointLight);
 
     // Animation Loop
     let animationFrameId: number;
+    let clock = new THREE.Clock();
+
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
+      const elapsedTime = clock.getElapsedTime();
 
-      group.rotation.y += 0.005;
-      centerMesh.rotation.x += 0.01;
-      centerMesh.rotation.z += 0.01;
+      if (!isReducedMotion) {
+        group.rotation.y += 0.005;
+        centerMesh.rotation.x += 0.01;
+        centerMesh.rotation.z += 0.01;
 
-      nodes.forEach((node, idx) => {
-        node.rotation.y += 0.01 * (idx % 2 === 0 ? 1 : -1);
-      });
+        // Pointer inertia lerp
+        const targetRotY = mousePos.normalizedX * 0.35;
+        const targetRotX = -mousePos.normalizedY * 0.35;
+        group.rotation.y += (targetRotY - group.rotation.y) * 0.04;
+        group.rotation.x += (targetRotX - group.rotation.x) * 0.04;
+
+        nodes.forEach((node, idx) => {
+          node.position.y = positions[idx].y + Math.sin(elapsedTime * 2 + idx) * 0.08;
+          node.rotation.y += 0.01 * (idx % 2 === 0 ? 1 : -1);
+        });
+      }
 
       renderer.render(scene, camera);
     };
@@ -147,8 +167,14 @@ export const SpatialToolWeb: React.FC<SpatialToolWebProps> = ({ toolNames, class
         container.removeChild(renderer.domElement);
       }
       renderer.dispose();
+      lineGeo.dispose();
+      lineMaterial.dispose();
+      centerGeo.dispose();
+      centerMat.dispose();
+      centerLineGeo.dispose();
+      centerLineMat.dispose();
     };
-  }, [toolNames]);
+  }, [toolNames, activeIndices, mousePos.normalizedX, mousePos.normalizedY, isReducedMotion]);
 
   return (
     <div className={`relative w-full h-[200px] flex items-center justify-center ${className}`}>

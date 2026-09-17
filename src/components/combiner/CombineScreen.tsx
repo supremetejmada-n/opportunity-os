@@ -210,7 +210,10 @@ export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan
           <span className="badge-tag badge-peach font-sans">3D Spatial Synthesis</span>
         </div>
 
-        <SpatialToolWeb toolNames={tools.map(t => t.name)} />
+        <SpatialToolWeb 
+          toolNames={tools.map(t => t.name)} 
+          activeIndices={tools.map((t, idx) => selectedToolIds.includes(t.id) ? idx : -1).filter(idx => idx !== -1)} 
+        />
       </GlassCard>
 
       {/* Notice Banner */}

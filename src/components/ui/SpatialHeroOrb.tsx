@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { useSpatialScroll } from './SpatialScrollProvider.js';
 
 interface SpatialHeroOrbProps {
   className?: string;
@@ -7,6 +8,7 @@ interface SpatialHeroOrbProps {
 
 export const SpatialHeroOrb: React.FC<SpatialHeroOrbProps> = ({ className = '' }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const { mousePos, isReducedMotion } = useSpatialScroll();
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -24,99 +26,109 @@ export const SpatialHeroOrb: React.FC<SpatialHeroOrbProps> = ({ className = '' }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     container.appendChild(renderer.domElement);
 
-    // Group for objects
+    // Main Group
     const group = new THREE.Group();
     scene.add(group);
 
-    // Outer Glass Crystal (Icosahedron) - Smoked Navy Glass with Slate Edge
-    const glassGeometry = new THREE.IcosahedronGeometry(1.4, 0);
+    // Outer Smoked Navy Glass Crystal (Icosahedron)
+    const glassGeometry = new THREE.IcosahedronGeometry(1.45, 0);
     const glassMaterial = new THREE.MeshPhysicalMaterial({
       color: 0x242f49,
-      metalness: 0.2,
-      roughness: 0.1,
-      transmission: 0.82,
-      thickness: 1.4,
+      metalness: 0.25,
+      roughness: 0.08,
+      transmission: 0.85,
+      thickness: 1.5,
       transparent: true,
-      opacity: 0.88,
+      opacity: 0.9,
       reflectivity: 0.95,
       clearcoat: 1.0,
-      clearcoatRoughness: 0.08,
-      wireframe: false,
+      clearcoatRoughness: 0.05,
     });
     const glassMesh = new THREE.Mesh(glassGeometry, glassMaterial);
     group.add(glassMesh);
 
-    // Outer Wireframe Overlay (Slate Blue)
-    const wireframeGeometry = new THREE.IcosahedronGeometry(1.42, 1);
+    // Outer Slate Blue Wireframe Overlay
+    const wireframeGeometry = new THREE.IcosahedronGeometry(1.47, 1);
     const wireframeMaterial = new THREE.MeshBasicMaterial({
       color: 0x384358,
       wireframe: true,
       transparent: true,
-      opacity: 0.35,
+      opacity: 0.4,
     });
     const wireframeMesh = new THREE.Mesh(wireframeGeometry, wireframeMaterial);
     group.add(wireframeMesh);
 
     // Glowing Inner Core Sphere (Luminous Warm Peach)
-    const coreGeometry = new THREE.SphereGeometry(0.55, 32, 32);
+    const coreGeometry = new THREE.SphereGeometry(0.58, 32, 32);
     const coreMaterial = new THREE.MeshStandardMaterial({
       color: 0xffa586,
       emissive: 0xf09271,
-      emissiveIntensity: 2.0,
-      roughness: 0.15,
-      metalness: 0.6,
+      emissiveIntensity: 2.2,
+      roughness: 0.1,
+      metalness: 0.7,
     });
     const coreMesh = new THREE.Mesh(coreGeometry, coreMaterial);
     group.add(coreMesh);
 
-    // Orbiting Ring (Vivid Crimson / Deep Burgundy)
-    const ringGeometry = new THREE.TorusGeometry(1.85, 0.02, 16, 100);
-    const ringMaterial = new THREE.MeshBasicMaterial({
+    // Orbiting Rings (Vivid Crimson & Warm Peach)
+    const ringGeometry1 = new THREE.TorusGeometry(1.9, 0.02, 16, 100);
+    const ringMaterial1 = new THREE.MeshBasicMaterial({
       color: 0xb51a2b,
       transparent: true,
-      opacity: 0.6,
+      opacity: 0.65,
     });
-    const ringMesh = new THREE.Mesh(ringGeometry, ringMaterial);
-    ringMesh.rotation.x = Math.PI / 3;
-    group.add(ringMesh);
+    const ringMesh1 = new THREE.Mesh(ringGeometry1, ringMaterial1);
+    ringMesh1.rotation.x = Math.PI / 3;
+    group.add(ringMesh1);
 
-    // Lights
-    const ambientLight = new THREE.AmbientLight(0xf8fafc, 0.7);
+    const ringGeometry2 = new THREE.TorusGeometry(2.1, 0.015, 16, 100);
+    const ringMaterial2 = new THREE.MeshBasicMaterial({
+      color: 0xffa586,
+      transparent: true,
+      opacity: 0.4,
+    });
+    const ringMesh2 = new THREE.Mesh(ringGeometry2, ringMaterial2);
+    ringMesh2.rotation.y = Math.PI / 4;
+    group.add(ringMesh2);
+
+    // Ambient & Point Lighting
+    const ambientLight = new THREE.AmbientLight(0xf8fafc, 0.8);
     scene.add(ambientLight);
 
-    const pointLight1 = new THREE.PointLight(0xffa586, 3.5, 10);
-    pointLight1.position.set(2, 3, 4);
+    const pointLight1 = new THREE.PointLight(0xffa586, 4.0, 12);
+    pointLight1.position.set(3, 3, 4);
     scene.add(pointLight1);
 
-    const pointLight2 = new THREE.PointLight(0xb51a2b, 2.5, 10);
-    pointLight2.position.set(-3, -2, 2);
+    const pointLight2 = new THREE.PointLight(0xb51a2b, 3.0, 12);
+    pointLight2.position.set(-3, -3, 2);
     scene.add(pointLight2);
 
-    // Mouse Parallax Interaction
-    let mouseX = 0;
-    let mouseY = 0;
-    const handleMouseMove = (event: MouseEvent) => {
-      const rect = container.getBoundingClientRect();
-      mouseX = ((event.clientX - rect.left) / width - 0.5) * 2;
-      mouseY = ((event.clientY - rect.top) / height - 0.5) * 2;
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-
-    // Animation Loop
+    // Animation Loop with Spring Float & Pointer Inertia
     let animationFrameId: number;
+    let clock = new THREE.Clock();
+
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
+      const elapsedTime = clock.getElapsedTime();
 
-      // Rotations
-      glassMesh.rotation.y += 0.005;
-      glassMesh.rotation.x += 0.003;
-      wireframeMesh.rotation.y -= 0.004;
-      coreMesh.rotation.y += 0.008;
-      ringMesh.rotation.z += 0.006;
+      if (!isReducedMotion) {
+        // Continuous rotation
+        glassMesh.rotation.y += 0.004;
+        glassMesh.rotation.x += 0.002;
+        wireframeMesh.rotation.y -= 0.003;
+        coreMesh.rotation.y += 0.007;
+        ringMesh1.rotation.z += 0.005;
+        ringMesh2.rotation.z -= 0.004;
 
-      // Smooth Parallax tilt
-      group.rotation.y += (mouseX * 0.4 - group.rotation.y) * 0.05;
-      group.rotation.x += (-mouseY * 0.4 - group.rotation.x) * 0.05;
+        // Subtle sine wave floating motion
+        group.position.y = Math.sin(elapsedTime * 1.4) * 0.12;
+
+        // Pointer inertia lerp smoothing
+        const targetRotY = mousePos.normalizedX * 0.45;
+        const targetRotX = -mousePos.normalizedY * 0.45;
+        group.rotation.y += (targetRotY - group.rotation.y) * 0.05;
+        group.rotation.x += (targetRotX - group.rotation.x) * 0.05;
+      }
 
       renderer.render(scene, camera);
     };
@@ -135,7 +147,6 @@ export const SpatialHeroOrb: React.FC<SpatialHeroOrbProps> = ({ className = '' }
     resizeObserver.observe(container);
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
       cancelAnimationFrame(animationFrameId);
       resizeObserver.disconnect();
       if (container.contains(renderer.domElement)) {
@@ -148,15 +159,17 @@ export const SpatialHeroOrb: React.FC<SpatialHeroOrbProps> = ({ className = '' }
       wireframeMaterial.dispose();
       coreGeometry.dispose();
       coreMaterial.dispose();
-      ringGeometry.dispose();
-      ringMaterial.dispose();
+      ringGeometry1.dispose();
+      ringMaterial1.dispose();
+      ringGeometry2.dispose();
+      ringMaterial2.dispose();
     };
-  }, []);
+  }, [mousePos.normalizedX, mousePos.normalizedY, isReducedMotion]);
 
   return (
-    <div className={`relative w-full h-[280px] sm:h-[320px] flex items-center justify-center ${className}`}>
+    <div className={`relative w-full h-[280px] sm:h-[340px] flex items-center justify-center ${className}`}>
       <div ref={containerRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
-      <div className="absolute inset-0 pointer-events-none bg-radial from-peach-500/15 via-burgundy-900/20 to-transparent rounded-full blur-3xl" />
+      <div className="absolute inset-0 pointer-events-none bg-radial from-peach-500/15 via-burgundy-900/20 to-transparent rounded-full blur-3xl animate-pulse" />
     </div>
   );
 };

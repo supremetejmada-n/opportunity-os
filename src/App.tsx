@@ -6,6 +6,7 @@ import { DiscoverScreen } from './components/discover/DiscoverScreen.js';
 import { OpportunitiesScreen } from './components/opportunities/OpportunitiesScreen.js';
 import { CombineScreen } from './components/combiner/CombineScreen.js';
 import { ProgressScreen } from './components/progress/ProgressScreen.js';
+import { SpatialScrollProvider } from './components/ui/SpatialScrollProvider.js';
 import { api, FullProfileData } from './services/api.js';
 import { UserProfile, UserSkill, UserTool, UserGoal, UserInterest, UserProject, ProgressMetrics } from './types/index.js';
 import { AlertCircle, RefreshCw } from 'lucide-react';
@@ -160,117 +161,119 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-transparent text-slate-100 flex flex-col font-sans">
-      {/* EXACTLY ONE Navigation Bar */}
-      <Navbar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        profile={profileData?.profile || null}
-        onScanClick={handleScanClick}
-        isScanning={isScanning}
-      />
+    <SpatialScrollProvider>
+      <div className="min-h-screen bg-transparent text-slate-100 flex flex-col font-sans">
+        {/* EXACTLY ONE Navigation Bar */}
+        <Navbar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          profile={profileData?.profile || null}
+          onScanClick={handleScanClick}
+          isScanning={isScanning}
+        />
 
-      {/* Notification Toast Banner */}
-      {scanNotice && (
-        <div className="bg-indigo-600/90 text-white text-xs px-4 py-2 text-center font-semibold flex items-center justify-center gap-2 border-b border-indigo-500/50">
-          <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-          <span>{scanNotice}</span>
-        </div>
-      )}
-
-      {/* Main Viewport Container */}
-      <main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-3">
-            <div className="h-8 w-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
-            <p className="text-xs font-semibold text-slate-400">Loading Personal AI Opportunity Engine...</p>
+        {/* Notification Toast Banner */}
+        {scanNotice && (
+          <div className="bg-indigo-600/90 text-white text-xs px-4 py-2 text-center font-semibold flex items-center justify-center gap-2 border-b border-indigo-500/50">
+            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+            <span>{scanNotice}</span>
           </div>
-        ) : error ? (
-          <div className="panel-card p-8 border border-red-500/30 text-center max-w-md mx-auto my-12 space-y-4">
-            <AlertCircle className="h-10 w-10 text-red-400 mx-auto" />
-            <div className="space-y-1">
-              <h3 className="text-base font-bold text-slate-100">Connection Failed</h3>
-              <p className="text-xs text-slate-400">{error}</p>
-            </div>
-            <button onClick={loadProfile} className="btn-primary text-xs">
-              Retry Connection
-            </button>
-          </div>
-        ) : (
-          <>
-            {activeTab === 'home' && (
-              <HomeScreen
-                profile={profileData?.profile || null}
-                skills={profileData?.skills || []}
-                tools={profileData?.tools || []}
-                goals={profileData?.goals || []}
-                setActiveTab={setActiveTab}
-                onScanClick={handleScanClick}
-                isScanning={isScanning}
-              />
-            )}
-
-            {activeTab === 'profile' && (
-              <ProfileScreen
-                profile={profileData?.profile || null}
-                skills={profileData?.skills || []}
-                tools={profileData?.tools || []}
-                goals={profileData?.goals || []}
-                interests={profileData?.interests || []}
-                projects={profileData?.projects || []}
-                onUpdateProfile={handleUpdateProfile}
-                onAddSkill={handleAddSkill}
-                onUpdateSkill={handleUpdateSkill}
-                onDeleteSkill={handleDeleteSkill}
-                onAddTool={handleAddTool}
-                onUpdateTool={handleUpdateTool}
-                onDeleteTool={handleDeleteTool}
-                onAddGoal={handleAddGoal}
-                onDeleteGoal={handleDeleteGoal}
-                onAddInterest={handleAddInterest}
-                onDeleteInterest={handleDeleteInterest}
-                onAddProject={handleAddProject}
-                onDeleteProject={handleDeleteProject}
-              />
-            )}
-
-            {activeTab === 'discover' && (
-              <DiscoverScreen onScanClick={handleScanClick} isScanning={isScanning} />
-            )}
-
-            {activeTab === 'opportunities' && (
-              <OpportunitiesScreen
-                onStartPlan={() => {
-                  setActiveTab('progress');
-                  loadProfile();
-                }}
-              />
-            )}
-
-            {activeTab === 'combine' && (
-              <CombineScreen
-                tools={profileData?.tools || []}
-                onStartPlan={() => {
-                  setActiveTab('progress');
-                  loadProfile();
-                }}
-              />
-            )}
-
-            {activeTab === 'progress' && (
-              <ProgressScreen
-                metrics={metrics}
-                onRefreshMetrics={loadProfile}
-              />
-            )}
-          </>
         )}
-      </main>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-800/40 bg-navy-950/40 backdrop-blur-md py-5 text-center text-xs text-slate-500">
-        <p>Personal AI Opportunity Engine • Simple interface. Deep intelligence. Zero clutter.</p>
-      </footer>
-    </div>
+        {/* Main Viewport Container */}
+        <main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-3">
+              <div className="h-8 w-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
+              <p className="text-xs font-semibold text-slate-400">Loading Personal AI Opportunity Engine...</p>
+            </div>
+          ) : error ? (
+            <div className="panel-card p-8 border border-red-500/30 text-center max-w-md mx-auto my-12 space-y-4">
+              <AlertCircle className="h-10 w-10 text-red-400 mx-auto" />
+              <div className="space-y-1">
+                <h3 className="text-base font-bold text-slate-100">Connection Failed</h3>
+                <p className="text-xs text-slate-400">{error}</p>
+              </div>
+              <button onClick={loadProfile} className="btn-primary text-xs">
+                Retry Connection
+              </button>
+            </div>
+          ) : (
+            <div className="transition-opacity duration-300 ease-out">
+              {activeTab === 'home' && (
+                <HomeScreen
+                  profile={profileData?.profile || null}
+                  skills={profileData?.skills || []}
+                  tools={profileData?.tools || []}
+                  goals={profileData?.goals || []}
+                  setActiveTab={setActiveTab}
+                  onScanClick={handleScanClick}
+                  isScanning={isScanning}
+                />
+              )}
+
+              {activeTab === 'profile' && (
+                <ProfileScreen
+                  profile={profileData?.profile || null}
+                  skills={profileData?.skills || []}
+                  tools={profileData?.tools || []}
+                  goals={profileData?.goals || []}
+                  interests={profileData?.interests || []}
+                  projects={profileData?.projects || []}
+                  onUpdateProfile={handleUpdateProfile}
+                  onAddSkill={handleAddSkill}
+                  onUpdateSkill={handleUpdateSkill}
+                  onDeleteSkill={handleDeleteSkill}
+                  onAddTool={handleAddTool}
+                  onUpdateTool={handleUpdateTool}
+                  onDeleteTool={handleDeleteTool}
+                  onAddGoal={handleAddGoal}
+                  onDeleteGoal={handleDeleteGoal}
+                  onAddInterest={handleAddInterest}
+                  onDeleteInterest={handleDeleteInterest}
+                  onAddProject={handleAddProject}
+                  onDeleteProject={handleDeleteProject}
+                />
+              )}
+
+              {activeTab === 'discover' && (
+                <DiscoverScreen onScanClick={handleScanClick} isScanning={isScanning} />
+              )}
+
+              {activeTab === 'opportunities' && (
+                <OpportunitiesScreen
+                  onStartPlan={() => {
+                    setActiveTab('progress');
+                    loadProfile();
+                  }}
+                />
+              )}
+
+              {activeTab === 'combine' && (
+                <CombineScreen
+                  tools={profileData?.tools || []}
+                  onStartPlan={() => {
+                    setActiveTab('progress');
+                    loadProfile();
+                  }}
+                />
+              )}
+
+              {activeTab === 'progress' && (
+                <ProgressScreen
+                  metrics={metrics}
+                  onRefreshMetrics={loadProfile}
+                />
+              )}
+            </div>
+          )}
+        </main>
+
+        {/* Footer */}
+        <footer className="border-t border-slate-800/40 bg-navy-950/40 backdrop-blur-md py-5 text-center text-xs text-slate-500">
+          <p>Personal AI Opportunity Engine • Simple interface. Deep intelligence. Zero clutter.</p>
+        </footer>
+      </div>
+    </SpatialScrollProvider>
   );
 };

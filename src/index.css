@@ -14,9 +14,18 @@
     --accent-peach: #ffa586;
     --accent-crimson: #b51a2b;
     --accent-burgundy: #541a2e;
+    
+    /* Motion System Timing Tiers */
+    --dur-micro: 160ms;
+    --dur-standard: 320ms;
+    --dur-spatial: 550ms;
+    --dur-cinematic: 900ms;
+
+    /* Custom Motion Easings (Emil Design Engineering Framework) */
     --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
     --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
     --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   }
 
   body {
