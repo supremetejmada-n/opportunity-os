@@ -89,17 +89,20 @@ export const SpatialProgressRing: React.FC<SpatialProgressRingProps> = ({ progre
     pointLight.position.set(2, 2, 3);
     scene.add(pointLight);
 
-    // 6. Continuous Animation Loop
+    // 6. Continuous Animation Loop with Robust Timing
     let animationFrameId: number;
-    const clock = new THREE.Clock();
+    let lastTime = performance.now();
+    const startTime = performance.now();
     let lastBuiltArc = currentDisplayedProgress;
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
 
       try {
-        const delta = clock.getDelta();
-        const elapsedTime = clock.getElapsedTime();
+        const now = performance.now();
+        const delta = Math.min((now - lastTime) / 1000, 0.1);
+        lastTime = now;
+        const elapsedTime = (now - startTime) / 1000;
 
         // Smoothly interpolate displayed progress
         currentDisplayedProgress += (targetProgressRef.current - currentDisplayedProgress) * 0.05;
@@ -114,20 +117,20 @@ export const SpatialProgressRing: React.FC<SpatialProgressRingProps> = ({ progre
         }
 
         if (!isReducedMotionRef.current) {
-          group.rotation.y += delta * 0.3;
-          group.rotation.x += delta * 0.12;
-          coreMesh.rotation.y -= delta * 0.45;
+          group.rotation.y += delta * 0.5;
+          group.rotation.x += delta * 0.2;
+          coreMesh.rotation.y -= delta * 0.7;
 
           // Pointer inertia lerp
           const normX = mousePosRef.current ? mousePosRef.current.normalizedX : 0;
           const normY = mousePosRef.current ? mousePosRef.current.normalizedY : 0;
-          const targetRotY = normX * 0.3;
-          const targetRotX = -normY * 0.3;
-          group.rotation.y += (targetRotY - group.rotation.y) * 0.04;
-          group.rotation.x += (targetRotX - group.rotation.x) * 0.04;
+          const targetRotY = normX * 0.35;
+          const targetRotX = -normY * 0.35;
+          group.rotation.y += (targetRotY - group.rotation.y) * 0.05;
+          group.rotation.x += (targetRotX - group.rotation.x) * 0.05;
 
           // Core light pulse
-          progressMat.emissiveIntensity = 1.5 + Math.sin(elapsedTime * 3) * 0.3;
+          progressMat.emissiveIntensity = 1.5 + Math.sin(elapsedTime * 3) * 0.4;
         }
 
         renderer.render(scene, camera);
@@ -177,4 +180,5 @@ export const SpatialProgressRing: React.FC<SpatialProgressRingProps> = ({ progre
     </div>
   );
 };
+
 

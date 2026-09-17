@@ -142,34 +142,37 @@ export const SpatialToolWeb: React.FC<SpatialToolWebProps> = ({ toolNames, activ
     pointLight.position.set(0, 0, 3);
     scene.add(pointLight);
 
-    // 3. Continuous Animation Loop
+    // 3. Continuous Animation Loop with Robust Timing
     let animationFrameId: number;
-    const clock = new THREE.Clock();
+    let lastTime = performance.now();
+    const startTime = performance.now();
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
 
       try {
-        const delta = clock.getDelta();
-        const elapsedTime = clock.getElapsedTime();
+        const now = performance.now();
+        const delta = Math.min((now - lastTime) / 1000, 0.1);
+        lastTime = now;
+        const elapsedTime = (now - startTime) / 1000;
 
         if (!isReducedMotionRef.current) {
-          group.rotation.y += delta * 0.25;
-          centerMesh.rotation.x += delta * 0.5;
-          centerMesh.rotation.z += delta * 0.5;
+          group.rotation.y += delta * 0.4;
+          centerMesh.rotation.x += delta * 0.8;
+          centerMesh.rotation.z += delta * 0.8;
 
           // Pointer inertia lerp
           const normX = mousePosRef.current ? mousePosRef.current.normalizedX : 0;
           const normY = mousePosRef.current ? mousePosRef.current.normalizedY : 0;
-          const targetRotY = normX * 0.35;
-          const targetRotX = -normY * 0.35;
-          group.rotation.y += (targetRotY - group.rotation.y) * 0.04;
-          group.rotation.x += (targetRotX - group.rotation.x) * 0.04;
+          const targetRotY = normX * 0.4;
+          const targetRotX = -normY * 0.4;
+          group.rotation.y += (targetRotY - group.rotation.y) * 0.05;
+          group.rotation.x += (targetRotX - group.rotation.x) * 0.05;
 
           // Dynamic scale & emissive response to activeIndicesRef
           nodes.forEach((node, idx) => {
-            node.position.y = positions[idx].y + Math.sin(elapsedTime * 2 + idx) * 0.08;
-            node.rotation.y += delta * (idx % 2 === 0 ? 0.6 : -0.6);
+            node.position.y = positions[idx].y + Math.sin(elapsedTime * 2 + idx) * 0.1;
+            node.rotation.y += delta * (idx % 2 === 0 ? 1.0 : -1.0);
 
             const isActive = activeIndicesRef.current.length === 0 || activeIndicesRef.current.includes(idx);
             const targetScale = isActive ? 1.15 : 0.7;
@@ -235,4 +238,5 @@ export const SpatialToolWeb: React.FC<SpatialToolWebProps> = ({ toolNames, activ
     </div>
   );
 };
+
 
