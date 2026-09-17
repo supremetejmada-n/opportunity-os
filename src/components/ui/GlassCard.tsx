@@ -48,7 +48,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({
       ref={cardRef}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className={`relative overflow-hidden ${variantStyles[variant]} ${interactiveStyles} ${className}`}
+      className={`relative overflow-hidden ${variantStyles[variant]} ${interactiveStyles}`}
       {...props}
     >
       {/* Specular pointer tracking light highlight */}
@@ -65,7 +65,8 @@ export const GlassCard: React.FC<GlassCardProps> = ({
       {/* Top subtle specular glass edge line */}
       <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none" />
 
-      <div className="relative z-10">{children}</div>
+      <div className={`relative z-10 w-full h-full ${className}`}>{children}</div>
     </div>
   );
 };
+
