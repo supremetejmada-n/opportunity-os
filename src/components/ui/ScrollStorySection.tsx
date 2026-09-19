@@ -12,101 +12,56 @@ interface ScrollStorySectionProps {
   className?: string;
 }
 
-// Compute smooth stage metrics (Opacity, Scale, TranslateX/Y/Z, RotateX/Y, Blur)
+// Compute clean linear stage metrics matching reference video vertical flow
 function getStageMetrics(
   progress: number,
   start: number,
   peakStart: number,
   peakEnd: number,
-  end: number,
-  stageIndex: number
+  end: number
 ) {
   if (progress < start || progress > end) {
     const isPast = progress > end;
     return {
       opacity: 0,
-      scale: isPast ? 0.75 : 0.82,
-      translateY: isPast ? -160 : 160,
-      translateX: isPast ? (stageIndex % 2 === 0 ? -120 : 120) : (stageIndex % 2 === 0 ? 120 : -120),
-      translateZ: isPast ? -250 : -180,
-      rotateX: isPast ? -20 : 20,
-      rotateY: isPast ? (stageIndex % 2 === 0 ? 15 : -15) : (stageIndex % 2 === 0 ? -15 : 15),
-      blur: 14,
+      scale: isPast ? 0.94 : 0.96,
+      translateY: isPast ? -90 : 90,
+      translateZ: isPast ? -60 : -40,
+      blur: 8,
       pointerEvents: 'none' as const,
     };
   }
 
   let weight = 0;
-  let t = 0;
 
   if (progress < peakStart) {
-    t = (progress - start) / (peakStart - start);
-    weight = Math.sin(t * (Math.PI / 2)); // Smooth ease out
+    const t = (progress - start) / (peakStart - start);
+    weight = Math.sin(t * (Math.PI / 2)); // Ease out entry
   } else if (progress <= peakEnd) {
     weight = 1;
-    t = 1;
   } else {
-    t = (end - progress) / (end - peakEnd);
-    weight = Math.sin(t * (Math.PI / 2)); // Smooth ease in
+    const t = (end - progress) / (end - peakEnd);
+    weight = Math.sin(t * (Math.PI / 2)); // Ease in exit
   }
 
   const opacity = Math.min(1, Math.max(0, weight));
-  const scale = 0.82 + opacity * 0.18;
-  const translateY = (1 - opacity) * (progress < peakStart ? 140 : -140);
-  const translateX = (1 - opacity) * (progress < peakStart ? (stageIndex % 2 === 0 ? 100 : -100) : (stageIndex % 2 === 0 ? -100 : 100));
-  const translateZ = (1 - opacity) * -180;
-  const rotateX = (1 - opacity) * (progress < peakStart ? 18 : -18);
-  const rotateY = (1 - opacity) * (stageIndex % 2 === 0 ? 12 : -12);
-  const blur = (1 - opacity) * 12;
+  const scale = 0.95 + opacity * 0.05;
+  const translateY = (1 - opacity) * (progress < peakStart ? 75 : -75);
+  const translateZ = (1 - opacity) * -50;
+  const blur = (1 - opacity) * 6;
   const pointerEvents = opacity > 0.4 ? ('auto' as const) : ('none' as const);
 
-  return { opacity, scale, translateY, translateX, translateZ, rotateX, rotateY, blur, pointerEvents };
+  return { opacity, scale, translateY, translateZ, blur, pointerEvents };
 }
 
-// Spatial 3D Orb Position Interpolation based on Scroll Progress
+// Spatial 3D Orb Position Interpolation (Vertical depth alignment matching reference video)
 function getOrbSpatialTransform(progress: number) {
-  // Stage 1 (0.00 - 0.20): Center Top prominent
-  // Stage 2 (0.20 - 0.40): Left side floating depth
-  // Stage 3 (0.40 - 0.60): Center backdrop powering tool web
-  // Stage 4 (0.60 - 0.80): Right side top illuminating roadmap
-  // Stage 5 (0.80 - 1.00): Center top vector core
-  let x = 0;
-  let y = -20;
-  let z = 0;
-  let scale = 1.35;
+  // Linear vertical and depth motion matching reference video focal graphics
+  const y = (progress - 0.5) * -40;
+  const z = Math.sin(progress * Math.PI) * -60;
+  const scale = 1.1 + Math.sin(progress * Math.PI) * 0.15;
 
-  if (progress <= 0.20) {
-    const t = progress / 0.20;
-    x = t * -280;
-    y = -20 + t * -40;
-    z = t * -120;
-    scale = 1.35 - t * 0.45;
-  } else if (progress <= 0.40) {
-    const t = (progress - 0.20) / 0.20;
-    x = -280 + t * 280;
-    y = -60 + t * -20;
-    z = -120 + t * -100;
-    scale = 0.90 + t * 0.35;
-  } else if (progress <= 0.60) {
-    const t = (progress - 0.40) / 0.20;
-    x = t * 320;
-    y = -80 + t * -20;
-    z = -220 + t * 140;
-    scale = 1.25 - t * 0.35;
-  } else if (progress <= 0.80) {
-    const t = (progress - 0.60) / 0.20;
-    x = 320 - t * 320;
-    y = -100 + t * 70;
-    z = -80 + t * 80;
-    scale = 0.90 + t * 0.20;
-  } else {
-    x = 0;
-    y = -30;
-    z = 0;
-    scale = 1.10;
-  }
-
-  return { x, y, z, scale };
+  return { x: 0, y, z, scale };
 }
 
 export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
@@ -148,26 +103,26 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
     };
   }, []);
 
-  // Compute metrics for all 5 morphing spatial states
-  const m1 = getStageMetrics(scrollProgress, 0.00, 0.00, 0.14, 0.22, 1);
-  const m2 = getStageMetrics(scrollProgress, 0.16, 0.24, 0.34, 0.42, 2);
-  const m3 = getStageMetrics(scrollProgress, 0.36, 0.44, 0.54, 0.62, 3);
-  const m4 = getStageMetrics(scrollProgress, 0.56, 0.64, 0.74, 0.82, 4);
-  const m5 = getStageMetrics(scrollProgress, 0.76, 0.84, 1.00, 1.00, 5);
+  // Compute linear stage metrics for all 5 presentation stages
+  const m1 = getStageMetrics(scrollProgress, 0.00, 0.00, 0.14, 0.22);
+  const m2 = getStageMetrics(scrollProgress, 0.16, 0.24, 0.34, 0.42);
+  const m3 = getStageMetrics(scrollProgress, 0.36, 0.44, 0.54, 0.62);
+  const m4 = getStageMetrics(scrollProgress, 0.56, 0.64, 0.74, 0.82);
+  const m5 = getStageMetrics(scrollProgress, 0.76, 0.84, 1.00, 1.00);
 
   const orbTransform = getOrbSpatialTransform(scrollProgress);
-  const bgGlowOpacity = 0.45 + Math.sin(scrollProgress * Math.PI) * 0.35;
+  const bgGlowOpacity = 0.40 + Math.sin(scrollProgress * Math.PI) * 0.30;
 
   return (
-    <div ref={outerRef} className={`relative w-full h-[500vh] ${className}`}>
+    <div ref={outerRef} className={`relative w-full h-[450vh] ${className}`}>
       {/* PINNED STICKY VIEWPORT STAGE */}
-      <div className="sticky top-0 h-screen w-full overflow-hidden flex flex-col justify-between py-5 px-4 sm:px-8 z-10 select-none bg-navy-950">
+      <div className="sticky top-0 h-screen min-h-[100dvh] w-full overflow-hidden flex flex-col justify-between py-6 px-4 sm:px-8 z-10 select-none bg-navy-950">
         
-        {/* 1. DYNAMIC SPATIAL ATMOSPHERE BACKGROUND (COLOR & LIGHT MORPHING) */}
+        {/* 1. ATMOSPHERIC GRADIENT BACKGROUND MATCHING REFERENCE VIDEO PALETTE */}
         <div 
           className="absolute inset-0 z-0 pointer-events-none transition-colors duration-500"
           style={{
-            background: `radial-gradient(ellipse 90% 70% at 50% 40%, rgba(${
+            background: `radial-gradient(ellipse 90% 70% at 50% 45%, rgba(${
               scrollProgress < 0.25
                 ? '255, 165, 134'
                 : scrollProgress < 0.55
@@ -179,12 +134,12 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
           }}
         />
 
-        {/* 2. SPATIAL 3D ORB LAYER (ALWAYS ROTATING CONTINUOUSLY, POSITIONING IN 3D SPACE) */}
+        {/* 2. SPATIAL 3D ORB LAYER (ALWAYS ROTATING CONTINUOUSLY, CENTRALLY ALIGNED) */}
         <div 
           className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none transition-transform duration-150 ease-out"
           style={{
             transform: `translate3d(${orbTransform.x}px, ${orbTransform.y}px, ${orbTransform.z}px) scale(${orbTransform.scale})`,
-            opacity: 0.92,
+            opacity: 0.90,
           }}
         >
           <SpatialHeroOrb className="w-80 h-80 sm:w-96 sm:h-96" />
@@ -206,17 +161,17 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
           </div>
         </div>
 
-        {/* 4. MAIN FULL-STAGE SPATIAL PERSPECTIVE VIEWPORT (3D CHOREOGRAPHY) */}
+        {/* 4. MAIN STAGE PERSPECTIVE VIEWPORT (VERTICAL FLOW MATCHING REFERENCE VIDEO) */}
         <div 
-          className="relative z-10 flex-1 flex items-center justify-center my-auto w-full max-w-6xl mx-auto min-h-0"
-          style={{ perspective: '1400px', transformStyle: 'preserve-3d' }}
+          className="relative z-10 flex-1 flex items-center justify-center my-auto w-full max-w-5xl mx-auto min-h-0"
+          style={{ perspective: '1200px' }}
         >
           {/* STATE 1 — DISCOVER */}
           <div
             className="absolute inset-0 flex flex-col justify-center items-center p-4 sm:p-6 transition-all duration-300 ease-out"
             style={{
               opacity: m1.opacity,
-              transform: `translate3d(${m1.translateX}px, ${m1.translateY}px, ${m1.translateZ}px) scale(${m1.scale}) rotateX(${m1.rotateX}deg) rotateY(${m1.rotateY}deg)`,
+              transform: `translate3d(0px, ${m1.translateY}px, ${m1.translateZ}px) scale(${m1.scale})`,
               pointerEvents: m1.pointerEvents,
               filter: `blur(${m1.blur}px)`,
             }}
@@ -231,7 +186,7 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
             className="absolute inset-0 flex flex-col justify-center items-center p-4 sm:p-6 transition-all duration-300 ease-out"
             style={{
               opacity: m2.opacity,
-              transform: `translate3d(${m2.translateX}px, ${m2.translateY}px, ${m2.translateZ}px) scale(${m2.scale}) rotateX(${m2.rotateX}deg) rotateY(${m2.rotateY}deg)`,
+              transform: `translate3d(0px, ${m2.translateY}px, ${m2.translateZ}px) scale(${m2.scale})`,
               pointerEvents: m2.pointerEvents,
               filter: `blur(${m2.blur}px)`,
             }}
@@ -246,7 +201,7 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
             className="absolute inset-0 flex flex-col justify-center items-center p-4 sm:p-6 transition-all duration-300 ease-out"
             style={{
               opacity: m3.opacity,
-              transform: `translate3d(${m3.translateX}px, ${m3.translateY}px, ${m3.translateZ}px) scale(${m3.scale}) rotateX(${m3.rotateX}deg) rotateY(${m3.rotateY}deg)`,
+              transform: `translate3d(0px, ${m3.translateY}px, ${m3.translateZ}px) scale(${m3.scale})`,
               pointerEvents: m3.pointerEvents,
               filter: `blur(${m3.blur}px)`,
             }}
@@ -261,7 +216,7 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
             className="absolute inset-0 flex flex-col justify-center items-center p-4 sm:p-6 transition-all duration-300 ease-out"
             style={{
               opacity: m4.opacity,
-              transform: `translate3d(${m4.translateX}px, ${m4.translateY}px, ${m4.translateZ}px) scale(${m4.scale}) rotateX(${m4.rotateX}deg) rotateY(${m4.rotateY}deg)`,
+              transform: `translate3d(0px, ${m4.translateY}px, ${m4.translateZ}px) scale(${m4.scale})`,
               pointerEvents: m4.pointerEvents,
               filter: `blur(${m4.blur}px)`,
             }}
@@ -276,7 +231,7 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
             className="absolute inset-0 flex flex-col justify-center items-center p-4 sm:p-6 transition-all duration-300 ease-out"
             style={{
               opacity: m5.opacity,
-              transform: `translate3d(${m5.translateX}px, ${m5.translateY}px, ${m5.translateZ}px) scale(${m5.scale}) rotateX(${m5.rotateX}deg) rotateY(${m5.rotateY}deg)`,
+              transform: `translate3d(0px, ${m5.translateY}px, ${m5.translateZ}px) scale(${m5.scale})`,
               pointerEvents: m5.pointerEvents,
               filter: `blur(${m5.blur}px)`,
             }}
@@ -287,7 +242,7 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
           </div>
         </div>
 
-        {/* 5. BOTTOM HINT & INSTRUCTION STRIP */}
+        {/* 5. BOTTOM HINT STRIP */}
         <div className="relative z-20 text-center py-1">
           <p className="text-[11px] font-mono text-slate-400 tracking-wider">
             {scrollProgress >= 0.95
