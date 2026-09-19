@@ -181,9 +181,9 @@ export const App: React.FC = () => {
         )}
 
         {/* Main Viewport Container */}
-        <main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
+        <main className="flex-1 w-full overflow-x-hidden">
           {loading ? (
-            <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-3">
+            <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-3 max-w-7xl mx-auto px-4 py-6">
               <div className="h-8 w-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
               <p className="text-xs font-semibold text-slate-400">Loading Personal AI Opportunity Engine...</p>
             </div>
@@ -199,7 +199,7 @@ export const App: React.FC = () => {
               </button>
             </div>
           ) : (
-            <div className="transition-opacity duration-300 ease-out">
+            <div className="transition-opacity duration-300 ease-out w-full">
               {activeTab === 'home' && (
                 <HomeScreen
                   profile={profileData?.profile || null}
@@ -213,57 +213,67 @@ export const App: React.FC = () => {
               )}
 
               {activeTab === 'profile' && (
-                <ProfileScreen
-                  profile={profileData?.profile || null}
-                  skills={profileData?.skills || []}
-                  tools={profileData?.tools || []}
-                  goals={profileData?.goals || []}
-                  interests={profileData?.interests || []}
-                  projects={profileData?.projects || []}
-                  onUpdateProfile={handleUpdateProfile}
-                  onAddSkill={handleAddSkill}
-                  onUpdateSkill={handleUpdateSkill}
-                  onDeleteSkill={handleDeleteSkill}
-                  onAddTool={handleAddTool}
-                  onUpdateTool={handleUpdateTool}
-                  onDeleteTool={handleDeleteTool}
-                  onAddGoal={handleAddGoal}
-                  onDeleteGoal={handleDeleteGoal}
-                  onAddInterest={handleAddInterest}
-                  onDeleteInterest={handleDeleteInterest}
-                  onAddProject={handleAddProject}
-                  onDeleteProject={handleDeleteProject}
-                />
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                  <ProfileScreen
+                    profile={profileData?.profile || null}
+                    skills={profileData?.skills || []}
+                    tools={profileData?.tools || []}
+                    goals={profileData?.goals || []}
+                    interests={profileData?.interests || []}
+                    projects={profileData?.projects || []}
+                    onUpdateProfile={handleUpdateProfile}
+                    onAddSkill={handleAddSkill}
+                    onUpdateSkill={handleUpdateSkill}
+                    onDeleteSkill={handleDeleteSkill}
+                    onAddTool={handleAddTool}
+                    onUpdateTool={handleUpdateTool}
+                    onDeleteTool={handleDeleteTool}
+                    onAddGoal={handleAddGoal}
+                    onDeleteGoal={handleDeleteGoal}
+                    onAddInterest={handleAddInterest}
+                    onDeleteInterest={handleDeleteInterest}
+                    onAddProject={handleAddProject}
+                    onDeleteProject={handleDeleteProject}
+                  />
+                </div>
               )}
 
               {activeTab === 'discover' && (
-                <DiscoverScreen onScanClick={handleScanClick} isScanning={isScanning} />
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                  <DiscoverScreen onScanClick={handleScanClick} isScanning={isScanning} />
+                </div>
               )}
 
               {activeTab === 'opportunities' && (
-                <OpportunitiesScreen
-                  onStartPlan={() => {
-                    setActiveTab('progress');
-                    loadProfile();
-                  }}
-                />
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                  <OpportunitiesScreen
+                    onStartPlan={() => {
+                      setActiveTab('progress');
+                      loadProfile();
+                    }}
+                  />
+                </div>
               )}
 
               {activeTab === 'combine' && (
-                <CombineScreen
-                  tools={profileData?.tools || []}
-                  onStartPlan={() => {
-                    setActiveTab('progress');
-                    loadProfile();
-                  }}
-                />
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                  <CombineScreen
+                    tools={profileData?.tools || []}
+                    onStartPlan={() => {
+                      setActiveTab('progress');
+                      loadProfile();
+                    }}
+                  />
+                </div>
               )}
 
               {activeTab === 'progress' && (
-                <ProgressScreen
-                  metrics={metrics}
-                  onRefreshMetrics={loadProfile}
-                />
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                  <ProgressScreen
+                    metrics={metrics}
+                    onRefreshMetrics={loadProfile}
+                  />
+                </div>
               )}
             </div>
           )}
