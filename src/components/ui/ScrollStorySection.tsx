@@ -12,7 +12,7 @@ interface ScrollStorySectionProps {
   className?: string;
 }
 
-// Compute clean linear stage metrics matching reference video vertical flow
+// Compute clean linear stage metrics for intermediate states (States 1 - 4)
 function getStageMetrics(
   progress: number,
   start: number,
@@ -25,7 +25,7 @@ function getStageMetrics(
     return {
       opacity: 0,
       scale: isPast ? 0.94 : 0.96,
-      translateY: isPast ? -70 : 70,
+      translateY: isPast ? -60 : 60,
       translateZ: isPast ? -40 : -30,
       blur: 6,
       pointerEvents: 'none' as const,
@@ -52,6 +52,43 @@ function getStageMetrics(
   const pointerEvents = opacity > 0.4 ? ('auto' as const) : ('none' as const);
 
   return { opacity, scale, translateY, translateZ, blur, pointerEvents };
+}
+
+// Compute final stage metrics (State 5): STAYS FULLY VISIBLE (opacity = 1) until sticky stage unpins!
+function getFinalStageMetrics(progress: number, start: number, peakStart: number) {
+  if (progress < start) {
+    return {
+      opacity: 0,
+      scale: 0.96,
+      translateY: 60,
+      translateZ: -30,
+      blur: 6,
+      pointerEvents: 'none' as const,
+    };
+  }
+
+  if (progress < peakStart) {
+    const t = (progress - start) / (peakStart - start);
+    const opacity = Math.min(1, Math.max(0, Math.sin(t * (Math.PI / 2))));
+    return {
+      opacity,
+      scale: 0.96 + opacity * 0.04,
+      translateY: (1 - opacity) * 60,
+      translateZ: (1 - opacity) * -35,
+      blur: (1 - opacity) * 5,
+      pointerEvents: opacity > 0.4 ? ('auto' as const) : ('none' as const),
+    };
+  }
+
+  // Once State 5 reaches peak, it STAYS 100% VISIBLE & ACTIVE — ZERO BLANK SCREEN!
+  return {
+    opacity: 1,
+    scale: 1,
+    translateY: 0,
+    translateZ: 0,
+    blur: 0,
+    pointerEvents: 'auto' as const,
+  };
 }
 
 // Spatial 3D Orb Position Interpolation (Central vertical depth alignment matching reference video)
@@ -102,18 +139,19 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
     };
   }, []);
 
-  // Compute linear stage metrics evenly mapped over the 220vh track
+  // Compute linear stage metrics evenly mapped over the compact 180vh track
   const m1 = getStageMetrics(scrollProgress, 0.00, 0.00, 0.14, 0.22);
   const m2 = getStageMetrics(scrollProgress, 0.16, 0.24, 0.34, 0.42);
   const m3 = getStageMetrics(scrollProgress, 0.36, 0.44, 0.54, 0.62);
   const m4 = getStageMetrics(scrollProgress, 0.56, 0.64, 0.74, 0.82);
-  const m5 = getStageMetrics(scrollProgress, 0.76, 0.84, 1.00, 1.00);
+  // State 5: STAYS FULLY VISIBLE (opacity = 1) from 0.82 through 1.00 — ZERO BLANK VIEWPORT!
+  const m5 = getFinalStageMetrics(scrollProgress, 0.76, 0.84);
 
   const orbTransform = getOrbSpatialTransform(scrollProgress);
   const bgGlowOpacity = 0.40 + Math.sin(scrollProgress * Math.PI) * 0.30;
 
   return (
-    <div ref={outerRef} className={`relative w-full h-[220vh] ${className}`}>
+    <div ref={outerRef} className={`relative w-full h-[180vh] ${className}`}>
       {/* PINNED STICKY VIEWPORT STAGE */}
       <div className="sticky top-0 h-screen min-h-[100dvh] w-full overflow-hidden flex flex-col justify-between py-6 px-4 sm:px-8 z-10 select-none bg-navy-950">
         
@@ -225,7 +263,7 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
             </div>
           </div>
 
-          {/* STATE 5 — LEARN */}
+          {/* STATE 5 — LEARN (STAYS FULLY VISIBLE UNTIL UNPINNING — ZERO BLANK SCREEN!) */}
           <div
             className="absolute inset-0 flex flex-col justify-center items-center p-4 sm:p-6 transition-all duration-300 ease-out"
             style={{
@@ -244,8 +282,8 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
         {/* 5. BOTTOM HINT STRIP */}
         <div className="relative z-20 text-center py-1">
           <p className="text-[11px] font-mono text-slate-400 tracking-wider">
-            {scrollProgress >= 0.95
-              ? 'Release to continue exploring Opportunity OS ↓'
+            {scrollProgress >= 0.90
+              ? 'Scroll to view Worth Knowing →'
               : 'Scroll to scrub spatial product story ↓'}
           </p>
         </div>
