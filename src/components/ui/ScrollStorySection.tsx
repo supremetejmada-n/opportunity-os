@@ -25,9 +25,9 @@ function getStageMetrics(
     return {
       opacity: 0,
       scale: isPast ? 0.94 : 0.96,
-      translateY: isPast ? -90 : 90,
-      translateZ: isPast ? -60 : -40,
-      blur: 8,
+      translateY: isPast ? -70 : 70,
+      translateZ: isPast ? -40 : -30,
+      blur: 6,
       pointerEvents: 'none' as const,
     };
   }
@@ -36,30 +36,29 @@ function getStageMetrics(
 
   if (progress < peakStart) {
     const t = (progress - start) / (peakStart - start);
-    weight = Math.sin(t * (Math.PI / 2)); // Ease out entry
+    weight = Math.sin(t * (Math.PI / 2)); // Smooth ease out entry
   } else if (progress <= peakEnd) {
     weight = 1;
   } else {
     const t = (end - progress) / (end - peakEnd);
-    weight = Math.sin(t * (Math.PI / 2)); // Ease in exit
+    weight = Math.sin(t * (Math.PI / 2)); // Smooth ease in exit
   }
 
   const opacity = Math.min(1, Math.max(0, weight));
-  const scale = 0.95 + opacity * 0.05;
-  const translateY = (1 - opacity) * (progress < peakStart ? 75 : -75);
-  const translateZ = (1 - opacity) * -50;
-  const blur = (1 - opacity) * 6;
+  const scale = 0.96 + opacity * 0.04;
+  const translateY = (1 - opacity) * (progress < peakStart ? 60 : -60);
+  const translateZ = (1 - opacity) * -35;
+  const blur = (1 - opacity) * 5;
   const pointerEvents = opacity > 0.4 ? ('auto' as const) : ('none' as const);
 
   return { opacity, scale, translateY, translateZ, blur, pointerEvents };
 }
 
-// Spatial 3D Orb Position Interpolation (Vertical depth alignment matching reference video)
+// Spatial 3D Orb Position Interpolation (Central vertical depth alignment matching reference video)
 function getOrbSpatialTransform(progress: number) {
-  // Linear vertical and depth motion matching reference video focal graphics
-  const y = (progress - 0.5) * -40;
-  const z = Math.sin(progress * Math.PI) * -60;
-  const scale = 1.1 + Math.sin(progress * Math.PI) * 0.15;
+  const y = (progress - 0.5) * -30;
+  const z = Math.sin(progress * Math.PI) * -40;
+  const scale = 1.1 + Math.sin(progress * Math.PI) * 0.12;
 
   return { x: 0, y, z, scale };
 }
@@ -103,7 +102,7 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
     };
   }, []);
 
-  // Compute linear stage metrics for all 5 presentation stages
+  // Compute linear stage metrics evenly mapped over the 220vh track
   const m1 = getStageMetrics(scrollProgress, 0.00, 0.00, 0.14, 0.22);
   const m2 = getStageMetrics(scrollProgress, 0.16, 0.24, 0.34, 0.42);
   const m3 = getStageMetrics(scrollProgress, 0.36, 0.44, 0.54, 0.62);
@@ -114,7 +113,7 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
   const bgGlowOpacity = 0.40 + Math.sin(scrollProgress * Math.PI) * 0.30;
 
   return (
-    <div ref={outerRef} className={`relative w-full h-[450vh] ${className}`}>
+    <div ref={outerRef} className={`relative w-full h-[220vh] ${className}`}>
       {/* PINNED STICKY VIEWPORT STAGE */}
       <div className="sticky top-0 h-screen min-h-[100dvh] w-full overflow-hidden flex flex-col justify-between py-6 px-4 sm:px-8 z-10 select-none bg-navy-950">
         
