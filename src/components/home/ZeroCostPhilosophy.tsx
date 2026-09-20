@@ -1,6 +1,7 @@
 import React from 'react';
 import { GlassCard } from '../ui/GlassCard.js';
 import { ShieldCheck, Compass, Code, DollarSign } from 'lucide-react';
+import { ScrollReveal, ScrollRevealStagger, ScrollRevealItem } from '../ui/ScrollReveal.js';
 
 export const ZeroCostPhilosophy: React.FC = () => {
   const steps = [
@@ -11,7 +12,7 @@ export const ZeroCostPhilosophy: React.FC = () => {
   ];
 
   return (
-    <section className="w-full max-w-[1800px] mx-auto px-4 sm:px-8 lg:px-12 py-12 sm:py-16 text-left">
+    <ScrollReveal className="w-full max-w-[1800px] mx-auto px-4 sm:px-8 lg:px-12 py-12 sm:py-16 text-left">
       <GlassCard variant="primary" className="p-8 sm:p-12 border-emerald-500/30 bg-navy-950/85 relative overflow-hidden space-y-8">
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent pointer-events-none" />
 
@@ -28,15 +29,17 @@ export const ZeroCostPhilosophy: React.FC = () => {
         </div>
 
         {/* 4-Step Chain */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <ScrollRevealStagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {steps.map((item, idx) => (
-            <div key={idx} className="bg-navy-900/80 p-5 rounded-2xl border border-white/10 space-y-2">
-              <span className="text-xs font-mono font-bold text-emerald-400 block">{item.title}</span>
-              <p className="text-xs text-slate-300 leading-relaxed font-sans">{item.desc}</p>
-            </div>
+            <ScrollRevealItem key={idx}>
+              <div className="bg-navy-900/80 p-5 rounded-2xl border border-white/10 space-y-2 h-full">
+                <span className="text-xs font-mono font-bold text-emerald-400 block">{item.title}</span>
+                <p className="text-xs text-slate-300 leading-relaxed font-sans">{item.desc}</p>
+              </div>
+            </ScrollRevealItem>
           ))}
-        </div>
+        </ScrollRevealStagger>
       </GlassCard>
-    </section>
+    </ScrollReveal>
   );
 };

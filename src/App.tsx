@@ -7,6 +7,9 @@ import { OpportunitiesScreen } from './components/opportunities/OpportunitiesScr
 import { CombineScreen } from './components/combiner/CombineScreen.js';
 import { ProgressScreen } from './components/progress/ProgressScreen.js';
 import { SpatialScrollProvider } from './components/ui/SpatialScrollProvider.js';
+import { LenisProvider } from './components/ui/LenisProvider.js';
+import { ParallaxBackdrop } from './components/layout/ParallaxBackdrop.js';
+import { PresentationFrame } from './components/layout/PresentationFrame.js';
 import { api, FullProfileData } from './services/api.js';
 import { UserProfile, UserSkill, UserTool, UserGoal, UserInterest, UserProject, ProgressMetrics } from './types/index.js';
 import { AlertCircle, RefreshCw } from 'lucide-react';
@@ -161,129 +164,134 @@ export const App: React.FC = () => {
   };
 
   return (
-    <SpatialScrollProvider>
-      <div className="min-h-screen bg-transparent text-slate-100 flex flex-col font-sans">
-        {/* EXACTLY ONE Navigation Bar */}
-        <Navbar
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          profile={profileData?.profile || null}
-          onScanClick={handleScanClick}
-          isScanning={isScanning}
-        />
+    <LenisProvider>
+      <SpatialScrollProvider>
+        <div className="relative min-h-screen bg-navy-950 text-slate-100 flex flex-col font-sans">
+          {/* Parallax Ghost Text Backdrop drifting at 0.3x rate */}
+          <ParallaxBackdrop />
 
-        {/* Notification Toast Banner */}
-        {scanNotice && (
-          <div className="bg-indigo-600/90 text-white text-xs px-4 py-2 text-center font-semibold flex items-center justify-center gap-2 border-b border-indigo-500/50">
-            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-            <span>{scanNotice}</span>
-          </div>
-        )}
+          {/* EXACTLY ONE Navigation Bar with z-50 sticky blur */}
+          <Navbar
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            profile={profileData?.profile || null}
+            onScanClick={handleScanClick}
+            isScanning={isScanning}
+          />
 
-        {/* Main Viewport Container */}
-        <main className="flex-1 w-full">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-3 max-w-7xl mx-auto px-4 py-6">
-              <div className="h-8 w-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
-              <p className="text-xs font-semibold text-slate-400">Loading Personal AI Opportunity Engine...</p>
+          {/* Notification Toast Banner */}
+          {scanNotice && (
+            <div className="relative z-40 bg-indigo-600/90 text-white text-xs px-4 py-2 text-center font-semibold flex items-center justify-center gap-2 border-b border-indigo-500/50">
+              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+              <span>{scanNotice}</span>
             </div>
-          ) : error ? (
-            <div className="panel-card p-8 border border-red-500/30 text-center max-w-md mx-auto my-12 space-y-4">
-              <AlertCircle className="h-10 w-10 text-red-400 mx-auto" />
-              <div className="space-y-1">
-                <h3 className="text-base font-bold text-slate-100">Connection Failed</h3>
-                <p className="text-xs text-slate-400">{error}</p>
+          )}
+
+          {/* Main Viewport Container */}
+          <main className="relative z-10 flex-1 w-full">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-3 max-w-7xl mx-auto px-4 py-6">
+                <div className="h-8 w-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
+                <p className="text-xs font-semibold text-slate-400">Loading Personal AI Opportunity Engine...</p>
               </div>
-              <button onClick={loadProfile} className="btn-primary text-xs">
-                Retry Connection
-              </button>
-            </div>
-          ) : (
-            <div className="transition-opacity duration-300 ease-out w-full">
-              {activeTab === 'home' && (
-                <HomeScreen
-                  profile={profileData?.profile || null}
-                  skills={profileData?.skills || []}
-                  tools={profileData?.tools || []}
-                  goals={profileData?.goals || []}
-                  setActiveTab={setActiveTab}
-                  onScanClick={handleScanClick}
-                  isScanning={isScanning}
-                />
-              )}
-
-              {activeTab === 'profile' && (
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                  <ProfileScreen
+            ) : error ? (
+              <div className="panel-card p-8 border border-red-500/30 text-center max-w-md mx-auto my-12 space-y-4">
+                <AlertCircle className="h-10 w-10 text-red-400 mx-auto" />
+                <div className="space-y-1">
+                  <h3 className="text-base font-bold text-slate-100">Connection Failed</h3>
+                  <p className="text-xs text-slate-400">{error}</p>
+                </div>
+                <button onClick={loadProfile} className="btn-primary text-xs">
+                  Retry Connection
+                </button>
+              </div>
+            ) : (
+              <div className="transition-opacity duration-300 ease-out w-full">
+                {activeTab === 'home' && (
+                  <HomeScreen
                     profile={profileData?.profile || null}
                     skills={profileData?.skills || []}
                     tools={profileData?.tools || []}
                     goals={profileData?.goals || []}
-                    interests={profileData?.interests || []}
-                    projects={profileData?.projects || []}
-                    onUpdateProfile={handleUpdateProfile}
-                    onAddSkill={handleAddSkill}
-                    onUpdateSkill={handleUpdateSkill}
-                    onDeleteSkill={handleDeleteSkill}
-                    onAddTool={handleAddTool}
-                    onUpdateTool={handleUpdateTool}
-                    onDeleteTool={handleDeleteTool}
-                    onAddGoal={handleAddGoal}
-                    onDeleteGoal={handleDeleteGoal}
-                    onAddInterest={handleAddInterest}
-                    onDeleteInterest={handleDeleteInterest}
-                    onAddProject={handleAddProject}
-                    onDeleteProject={handleDeleteProject}
+                    setActiveTab={setActiveTab}
+                    onScanClick={handleScanClick}
+                    isScanning={isScanning}
                   />
-                </div>
-              )}
+                )}
 
-              {activeTab === 'discover' && (
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                  <DiscoverScreen onScanClick={handleScanClick} isScanning={isScanning} />
-                </div>
-              )}
+                {activeTab === 'profile' && (
+                  <PresentationFrame>
+                    <ProfileScreen
+                      profile={profileData?.profile || null}
+                      skills={profileData?.skills || []}
+                      tools={profileData?.tools || []}
+                      goals={profileData?.goals || []}
+                      interests={profileData?.interests || []}
+                      projects={profileData?.projects || []}
+                      onUpdateProfile={handleUpdateProfile}
+                      onAddSkill={handleAddSkill}
+                      onUpdateSkill={handleUpdateSkill}
+                      onDeleteSkill={handleDeleteSkill}
+                      onAddTool={handleAddTool}
+                      onUpdateTool={handleUpdateTool}
+                      onDeleteTool={handleDeleteTool}
+                      onAddGoal={handleAddGoal}
+                      onDeleteGoal={handleDeleteGoal}
+                      onAddInterest={handleAddInterest}
+                      onDeleteInterest={handleDeleteInterest}
+                      onAddProject={handleAddProject}
+                      onDeleteProject={handleDeleteProject}
+                    />
+                  </PresentationFrame>
+                )}
 
-              {activeTab === 'opportunities' && (
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                  <OpportunitiesScreen
-                    onStartPlan={() => {
-                      setActiveTab('progress');
-                      loadProfile();
-                    }}
-                  />
-                </div>
-              )}
+                {activeTab === 'discover' && (
+                  <PresentationFrame>
+                    <DiscoverScreen onScanClick={handleScanClick} isScanning={isScanning} />
+                  </PresentationFrame>
+                )}
 
-              {activeTab === 'combine' && (
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                  <CombineScreen
-                    tools={profileData?.tools || []}
-                    onStartPlan={() => {
-                      setActiveTab('progress');
-                      loadProfile();
-                    }}
-                  />
-                </div>
-              )}
+                {activeTab === 'opportunities' && (
+                  <PresentationFrame>
+                    <OpportunitiesScreen
+                      onStartPlan={() => {
+                        setActiveTab('progress');
+                        loadProfile();
+                      }}
+                    />
+                  </PresentationFrame>
+                )}
 
-              {activeTab === 'progress' && (
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                  <ProgressScreen
-                    metrics={metrics}
-                    onRefreshMetrics={loadProfile}
-                  />
-                </div>
-              )}
-            </div>
-          )}
-        </main>
+                {activeTab === 'combine' && (
+                  <PresentationFrame>
+                    <CombineScreen
+                      tools={profileData?.tools || []}
+                      onStartPlan={() => {
+                        setActiveTab('progress');
+                        loadProfile();
+                      }}
+                    />
+                  </PresentationFrame>
+                )}
 
-        {/* Footer */}
-        <footer className="border-t border-slate-800/40 bg-navy-950/40 backdrop-blur-md py-5 text-center text-xs text-slate-500">
-          <p>Personal AI Opportunity Engine • Simple interface. Deep intelligence. Zero clutter.</p>
-        </footer>
-      </div>
-    </SpatialScrollProvider>
+                {activeTab === 'progress' && (
+                  <PresentationFrame>
+                    <ProgressScreen
+                      metrics={metrics}
+                      onRefreshMetrics={loadProfile}
+                    />
+                  </PresentationFrame>
+                )}
+              </div>
+            )}
+          </main>
+
+          {/* Footer */}
+          <footer className="relative z-10 border-t border-slate-800/40 bg-navy-950/60 backdrop-blur-md py-5 text-center text-xs text-slate-500">
+            <p>Personal AI Opportunity Engine • Simple interface. Deep intelligence. Zero clutter.</p>
+          </footer>
+        </div>
+      </SpatialScrollProvider>
+    </LenisProvider>
   );
 };

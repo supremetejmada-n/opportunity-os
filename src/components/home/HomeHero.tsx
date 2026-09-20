@@ -2,6 +2,7 @@ import React from 'react';
 import { Sparkles, ArrowRight, Zap, Wrench, Target, ShieldCheck } from 'lucide-react';
 import { MagneticButton } from '../ui/MagneticButton.js';
 import { UserProfile, UserSkill, UserTool, UserGoal } from '../../types/index.js';
+import { ScrollReveal, ScrollRevealStagger, ScrollRevealItem } from '../ui/ScrollReveal.js';
 
 interface HomeHeroProps {
   userName: string;
@@ -29,10 +30,10 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
   ).length;
 
   return (
-    <section className="relative w-full max-w-[1800px] mx-auto px-4 sm:px-8 lg:px-12 pt-4 pb-12 sm:pb-16 text-left">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+    <ScrollReveal className="relative w-full max-w-[1800px] mx-auto px-4 sm:px-8 lg:px-12 pt-4 pb-12 sm:pb-16 text-left">
+      <ScrollRevealStagger className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
         {/* Left Column: Headline & Plain English Narrative */}
-        <div className="lg:col-span-7 space-y-6">
+        <ScrollRevealItem className="lg:col-span-7 space-y-6">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-peach-500/15 border border-peach-500/30 text-peach-400 text-xs font-mono font-bold tracking-wide uppercase">
             <Sparkles className="h-3.5 w-3.5 text-peach-400 animate-pulse" />
             <span>Personal AI Opportunity Engine</span>
@@ -67,10 +68,10 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
               <span>{isScanning ? 'Scanning...' : 'Run Quick Scan'}</span>
             </button>
           </div>
-        </div>
+        </ScrollRevealItem>
 
         {/* Right Column: Clean Vector Summary Surface */}
-        <div className="lg:col-span-5 bg-navy-950/80 p-6 sm:p-7 rounded-3xl border border-white/15 backdrop-blur-2xl space-y-5 shadow-2xl shadow-black/60 relative overflow-hidden">
+        <ScrollRevealItem className="lg:col-span-5 bg-navy-950/80 p-6 sm:p-7 rounded-3xl border border-white/15 backdrop-blur-2xl space-y-5 shadow-2xl shadow-black/60 relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-peach-500/40 to-transparent" />
           
           <div className="flex items-center justify-between border-b border-white/10 pb-3">
@@ -112,8 +113,8 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
               <p className="text-lg font-bold text-emerald-400 font-mono">₹{profile?.preferred_budget ?? 0}</p>
             </div>
           </div>
-        </div>
-      </div>
-    </section>
+        </ScrollRevealItem>
+      </ScrollRevealStagger>
+    </ScrollReveal>
   );
 };

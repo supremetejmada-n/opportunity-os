@@ -2,6 +2,7 @@ import React from 'react';
 import { GlassCard } from '../ui/GlassCard.js';
 import { MagneticButton } from '../ui/MagneticButton.js';
 import { ArrowRight, Sparkles } from 'lucide-react';
+import { ScrollReveal } from '../ui/ScrollReveal.js';
 
 interface HomeClosingCTAProps {
   onEnterClick: () => void;
@@ -9,7 +10,7 @@ interface HomeClosingCTAProps {
 
 export const HomeClosingCTA: React.FC<HomeClosingCTAProps> = ({ onEnterClick }) => {
   return (
-    <section className="w-full max-w-[1800px] mx-auto px-4 sm:px-8 lg:px-12 py-16 sm:py-24 text-center">
+    <ScrollReveal className="w-full max-w-[1800px] mx-auto px-4 sm:px-8 lg:px-12 py-16 sm:py-24 text-center">
       <GlassCard variant="floating" className="p-10 sm:p-16 border-white/15 bg-navy-950/90 relative overflow-hidden space-y-6 shadow-2xl">
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-peach-500/50 to-transparent pointer-events-none" />
 
@@ -37,6 +38,6 @@ export const HomeClosingCTA: React.FC<HomeClosingCTAProps> = ({ onEnterClick }) 
           </MagneticButton>
         </div>
       </GlassCard>
-    </section>
+    </ScrollReveal>
   );
 };

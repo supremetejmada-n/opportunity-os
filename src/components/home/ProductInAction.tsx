@@ -3,6 +3,7 @@ import { GlassCard } from '../ui/GlassCard.js';
 import { NavTab } from '../layout/Navbar.js';
 import { Compass, Sparkles, Layers, TrendingUp, ArrowRight, CheckCircle2, Zap } from 'lucide-react';
 import { MagneticButton } from '../ui/MagneticButton.js';
+import { ScrollReveal, ScrollRevealStagger, ScrollRevealItem } from '../ui/ScrollReveal.js';
 
 interface ProductInActionProps {
   onNavigateTab: (tab: NavTab) => void;
@@ -98,7 +99,7 @@ export const ProductInAction: React.FC<ProductInActionProps> = ({ onNavigateTab 
   return (
     <section className="w-full max-w-[1800px] mx-auto px-4 sm:px-8 lg:px-12 py-12 sm:py-16 space-y-16 text-left">
       {/* SECTION 6 — THE PRODUCT IN ACTION */}
-      <div className="space-y-8">
+      <ScrollReveal className="space-y-8">
         <div className="space-y-3">
           <span className="px-3.5 py-1 rounded-full bg-peach-500/15 border border-peach-500/30 text-peach-400 text-xs font-mono font-bold tracking-wider uppercase">
             THE PRODUCT IN ACTION
@@ -181,10 +182,10 @@ export const ProductInAction: React.FC<ProductInActionProps> = ({ onNavigateTab 
             </div>
           </div>
         </GlassCard>
-      </div>
+      </ScrollReveal>
 
       {/* SECTION 7 — WHO IS THIS FOR? */}
-      <div className="space-y-8 pt-6">
+      <ScrollReveal className="space-y-8 pt-6">
         <div className="space-y-3">
           <span className="px-3.5 py-1 rounded-full bg-peach-500/15 border border-peach-500/30 text-peach-400 text-xs font-mono font-bold tracking-wider uppercase">
             WHO IT IS FOR
@@ -194,15 +195,17 @@ export const ProductInAction: React.FC<ProductInActionProps> = ({ onNavigateTab 
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <ScrollRevealStagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {personas.map((p, idx) => (
-            <GlassCard key={idx} variant="secondary" interactive className="p-6 space-y-3 border-white/10">
-              <h3 className="text-base font-bold text-slate-100">{p.title}</h3>
-              <p className="text-xs text-slate-300 leading-relaxed font-sans">{p.desc}</p>
-            </GlassCard>
+            <ScrollRevealItem key={idx}>
+              <GlassCard variant="secondary" interactive className="p-6 space-y-3 border-white/10 h-full">
+                <h3 className="text-base font-bold text-slate-100">{p.title}</h3>
+                <p className="text-xs text-slate-300 leading-relaxed font-sans">{p.desc}</p>
+              </GlassCard>
+            </ScrollRevealItem>
           ))}
-        </div>
-      </div>
+        </ScrollRevealStagger>
+      </ScrollReveal>
     </section>
   );
 };

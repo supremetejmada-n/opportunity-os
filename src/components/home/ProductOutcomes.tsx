@@ -1,6 +1,7 @@
 import React from 'react';
 import { GlassCard } from '../ui/GlassCard.js';
 import { Compass, Target, Layers, Play, TrendingUp } from 'lucide-react';
+import { ScrollReveal, ScrollRevealStagger, ScrollRevealItem } from '../ui/ScrollReveal.js';
 
 export const ProductOutcomes: React.FC = () => {
   const outcomes = [
@@ -37,7 +38,7 @@ export const ProductOutcomes: React.FC = () => {
   ];
 
   return (
-    <section className="w-full max-w-[1800px] mx-auto px-4 sm:px-8 lg:px-12 py-12 sm:py-16 space-y-10 text-left">
+    <ScrollReveal className="w-full max-w-[1800px] mx-auto px-4 sm:px-8 lg:px-12 py-12 sm:py-16 space-y-10 text-left">
       <div className="space-y-3">
         <span className="px-3.5 py-1 rounded-full bg-peach-500/15 border border-peach-500/30 text-peach-400 text-xs font-mono font-bold tracking-wider uppercase">
           PRODUCT OUTCOMES
@@ -50,31 +51,32 @@ export const ProductOutcomes: React.FC = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
+      <ScrollRevealStagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
         {outcomes.map((item, idx) => {
           const Icon = item.icon;
           return (
-            <GlassCard
-              key={idx}
-              variant="secondary"
-              interactive
-              className="p-6 flex flex-col justify-between gap-5 border-white/10 hover:border-peach-500/40 transition-all"
-            >
-              <div className="space-y-3">
-                <div className="w-10 h-10 rounded-xl bg-navy-900 border border-white/10 flex items-center justify-center">
-                  <Icon className={`h-5 w-5 ${item.color}`} />
+            <ScrollRevealItem key={idx}>
+              <GlassCard
+                variant="secondary"
+                interactive
+                className="p-6 flex flex-col justify-between gap-5 border-white/10 hover:border-peach-500/40 transition-all h-full"
+              >
+                <div className="space-y-3">
+                  <div className="w-10 h-10 rounded-xl bg-navy-900 border border-white/10 flex items-center justify-center">
+                    <Icon className={`h-5 w-5 ${item.color}`} />
+                  </div>
+                  <h3 className="text-base font-bold text-slate-100 tracking-tight">
+                    {item.title}
+                  </h3>
+                  <p className="text-xs text-slate-300 leading-relaxed font-sans">
+                    {item.desc}
+                  </p>
                 </div>
-                <h3 className="text-base font-bold text-slate-100 tracking-tight">
-                  {item.title}
-                </h3>
-                <p className="text-xs text-slate-300 leading-relaxed font-sans">
-                  {item.desc}
-                </p>
-              </div>
-            </GlassCard>
+              </GlassCard>
+            </ScrollRevealItem>
           );
         })}
-      </div>
-    </section>
+      </ScrollRevealStagger>
+    </ScrollReveal>
   );
 };

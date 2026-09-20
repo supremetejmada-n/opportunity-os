@@ -1,10 +1,11 @@
 import React from 'react';
 import { GlassCard } from '../ui/GlassCard.js';
 import { Sparkles, Quote, Code, Heart, Compass } from 'lucide-react';
+import { ScrollReveal, ScrollRevealStagger, ScrollRevealItem } from '../ui/ScrollReveal.js';
 
 export const CreatorStory: React.FC = () => {
   return (
-    <section className="w-full max-w-[1800px] mx-auto px-4 sm:px-8 lg:px-12 py-16 sm:py-24 text-left">
+    <ScrollReveal className="w-full max-w-[1800px] mx-auto px-4 sm:px-8 lg:px-12 py-16 sm:py-24 text-left">
       <GlassCard variant="primary" className="p-8 sm:p-14 border-peach-500/30 bg-navy-950/90 relative overflow-hidden space-y-10 shadow-2xl shadow-peach-500/10">
         {/* Top Specular Glass Edge Highlight */}
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-peach-500/50 to-transparent pointer-events-none" />
@@ -25,9 +26,9 @@ export const CreatorStory: React.FC = () => {
         </div>
 
         {/* Main 12-Column Founder Composition */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+        <ScrollRevealStagger className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
           {/* Left Column: Authentic Real Creator Photo Frame */}
-          <div className="lg:col-span-5 relative group">
+          <ScrollRevealItem className="lg:col-span-5 relative group">
             {/* Soft Ambient Warm Glow Behind Photo */}
             <div className="absolute -inset-2 rounded-3xl bg-gradient-to-tr from-peach-500/20 via-burgundy-900/30 to-emerald-500/20 blur-xl opacity-75 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
@@ -53,10 +54,10 @@ export const CreatorStory: React.FC = () => {
                 </span>
               </div>
             </div>
-          </div>
+          </ScrollRevealItem>
 
           {/* Right Column: Authentic Founder Story & Mission */}
-          <div className="lg:col-span-7 space-y-6">
+          <ScrollRevealItem className="lg:col-span-7 space-y-6">
             <div className="space-y-3">
               <Quote className="h-10 w-10 text-peach-500/40" />
               <h2 className="font-display text-3xl sm:text-5xl font-extrabold text-slate-100 tracking-tight leading-[1.15]">
@@ -87,9 +88,9 @@ export const CreatorStory: React.FC = () => {
                 <span>Built for Builders</span>
               </div>
             </div>
-          </div>
-        </div>
+          </ScrollRevealItem>
+        </ScrollRevealStagger>
       </GlassCard>
-    </section>
+    </ScrollReveal>
   );
 };
