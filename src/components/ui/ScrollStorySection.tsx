@@ -117,7 +117,7 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
   return (
     <div ref={outerRef} className={`relative w-full h-[160vh] ${className}`}>
       {/* PINNED STICKY VIEWPORT STAGE */}
-      <div className="sticky top-0 h-screen min-h-[100dvh] w-full overflow-hidden flex flex-col justify-between py-5 px-4 sm:px-8 z-10 select-none bg-navy-950">
+      <div className="sticky top-0 h-screen min-h-[100dvh] w-full overflow-hidden flex flex-col justify-between py-5 px-4 sm:px-8 lg:px-12 z-10 select-none bg-navy-950">
         
         {/* 1. ATMOSPHERIC GRADIENT BACKGROUND MATCHING REFERENCE VIDEO PALETTE */}
         <div 
@@ -147,7 +147,7 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
         </div>
 
         {/* 3. TOP NAVIGATION INDICATOR & TIMELINE STRIP */}
-        <div className="relative z-20 flex items-center justify-between w-full max-w-6xl mx-auto">
+        <div className="relative z-20 flex items-center justify-between w-full max-w-[1800px] mx-auto">
           <div className="flex items-center gap-2">
             <span className="px-3.5 py-1 rounded-full bg-peach-500/15 border border-peach-500/35 text-peach-400 text-xs font-mono font-bold uppercase tracking-wider">
               Product Story
@@ -162,8 +162,8 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
           </div>
         </div>
 
-        {/* 4. MAIN STAGE VIEWPORT (WIDE DESKTOP CANVAS max-w-6xl) */}
-        <div className="relative z-10 flex-1 flex items-center justify-center w-full max-w-6xl mx-auto my-auto min-h-0">
+        {/* 4. MAIN STAGE VIEWPORT (FULL-WIDTH DESKTOP CANVAS max-w-[1800px]) */}
+        <div className="relative z-10 flex-1 flex items-center justify-center w-full max-w-[1800px] mx-auto my-auto min-h-0">
           
           {/* STATE 1 — DISCOVER */}
           <div
@@ -175,7 +175,7 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
               filter: `blur(${m1.blur}px)`,
             }}
           >
-            <div className="w-full max-w-6xl p-6 sm:p-8 rounded-3xl border border-white/20 bg-navy-950/85 backdrop-blur-2xl shadow-2xl">
+            <div className="w-full max-w-[1800px] p-6 sm:p-8 lg:p-10 rounded-3xl border border-white/20 bg-navy-950/85 backdrop-blur-2xl shadow-2xl">
               {state1Content}
             </div>
           </div>
@@ -190,7 +190,7 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
               filter: `blur(${m2.blur}px)`,
             }}
           >
-            <div className="w-full max-w-6xl p-6 sm:p-8 rounded-3xl border border-emerald-500/30 bg-navy-950/85 backdrop-blur-2xl shadow-2xl shadow-emerald-500/10">
+            <div className="w-full max-w-[1800px] p-6 sm:p-8 lg:p-10 rounded-3xl border border-emerald-500/30 bg-navy-950/85 backdrop-blur-2xl shadow-2xl shadow-emerald-500/10">
               {state2Content}
             </div>
           </div>
@@ -205,7 +205,7 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
               filter: `blur(${m3.blur}px)`,
             }}
           >
-            <div className="w-full max-w-6xl p-6 sm:p-8 rounded-3xl border border-crimson-500/30 bg-navy-950/85 backdrop-blur-2xl shadow-2xl shadow-crimson-500/10">
+            <div className="w-full max-w-[1800px] p-6 sm:p-8 lg:p-10 rounded-3xl border border-crimson-500/30 bg-navy-950/85 backdrop-blur-2xl shadow-2xl shadow-crimson-500/10">
               {state3Content}
             </div>
           </div>
@@ -220,7 +220,7 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
               filter: `blur(${m4.blur}px)`,
             }}
           >
-            <div className="w-full max-w-6xl p-6 sm:p-8 rounded-3xl border border-amber-500/30 bg-navy-950/85 backdrop-blur-2xl shadow-2xl shadow-amber-500/10">
+            <div className="w-full max-w-[1800px] p-6 sm:p-8 lg:p-10 rounded-3xl border border-amber-500/30 bg-navy-950/85 backdrop-blur-2xl shadow-2xl shadow-amber-500/10">
               {state4Content}
             </div>
           </div>
@@ -235,7 +235,7 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
               filter: `blur(${m5.blur}px)`,
             }}
           >
-            <div className="w-full max-w-6xl p-6 sm:p-8 rounded-3xl border border-purple-500/30 bg-navy-950/85 backdrop-blur-2xl shadow-2xl shadow-purple-500/10">
+            <div className="w-full max-w-[1800px] p-6 sm:p-8 lg:p-10 rounded-3xl border border-purple-500/30 bg-navy-950/85 backdrop-blur-2xl shadow-2xl shadow-purple-500/10">
               {state5Content}
             </div>
           </div>

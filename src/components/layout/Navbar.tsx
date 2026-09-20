@@ -49,8 +49,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   const displayName = profile?.name ? profile.name.split(' ')[0] : 'Advisor';
 
   return (
-    <header className="sticky top-0 z-40 w-full px-4 sm:px-6 pt-4 pb-3 mb-2 bg-gradient-to-b from-navy-950 via-navy-950/85 to-transparent">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-6 rounded-2xl border border-white/10 bg-navy-950/80 backdrop-blur-xl shadow-2xl shadow-black/80 relative overflow-hidden">
+    <header className="sticky top-0 z-40 w-full px-4 sm:px-8 lg:px-12 pt-4 pb-3 mb-2 bg-gradient-to-b from-navy-950 via-navy-950/85 to-transparent">
+      <div className="mx-auto flex h-16 w-full max-w-[1800px] items-center justify-between px-5 sm:px-8 rounded-2xl border border-white/10 bg-navy-950/80 backdrop-blur-xl shadow-2xl shadow-black/80 relative overflow-hidden">
         {/* Specular glass reflection line top in warm peach */}
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-peach-500/40 to-transparent pointer-events-none" />
         
@@ -141,7 +141,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
-        <nav className="md:hidden mt-2 mx-auto max-w-6xl border border-slate-800/80 bg-slate-950/95 backdrop-blur-md rounded-xl p-2 space-y-1 shadow-2xl">
+        <nav className="md:hidden mt-2 mx-auto w-full max-w-[1800px] border border-slate-800/80 bg-slate-950/95 backdrop-blur-md rounded-xl p-2 space-y-1 shadow-2xl">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;

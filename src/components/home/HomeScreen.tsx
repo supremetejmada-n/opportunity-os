@@ -327,63 +327,75 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       />
 
       {/* 2 & 3. BOTTOM SECTIONS (RELEASED CLEANLY BELOW PINNED STORY) */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-8 w-full">
-        {/* WORTH KNOWING */}
-        <section className="space-y-3.5 pt-2">
-          <h2 className="text-xs font-mono font-bold text-slate-300 uppercase tracking-widest">Worth Knowing</h2>
+      <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-8 lg:px-12 space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch w-full">
+          {/* WORTH KNOWING (7 COLS ON DESKTOP) */}
+          <section className="lg:col-span-7 space-y-3 flex flex-col justify-between">
+            <h2 className="text-xs font-mono font-bold text-slate-300 uppercase tracking-widest">Worth Knowing</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <GlassCard variant="secondary" interactive className="p-5 sm:p-6 flex items-start gap-4 sm:gap-5">
-              <div className="w-11 h-11 rounded-xl bg-burgundy-900/80 border border-crimson-500/30 text-peach-500 flex items-center justify-center shrink-0 shadow-inner">
-                <Compass className="h-5 w-5" />
-              </div>
-              <div className="space-y-1.5 flex-1 min-w-0 text-left">
-                <h3 className="text-sm sm:text-base font-bold text-slate-100 tracking-tight">Zero-Cost Execution Focus</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+              <GlassCard variant="secondary" interactive className="p-5 sm:p-6 flex flex-col justify-between gap-4">
+                <div className="space-y-3">
+                  <div className="w-11 h-11 rounded-xl bg-burgundy-900/80 border border-crimson-500/30 text-peach-500 flex items-center justify-center shrink-0 shadow-inner">
+                    <Compass className="h-5 w-5" />
+                  </div>
+                  <div className="space-y-1.5 text-left">
+                    <h3 className="text-sm sm:text-base font-bold text-slate-100 tracking-tight">Zero-Cost Execution Focus</h3>
+                    <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-sans">
+                      Recommendations prioritize workflows combining 2–4 tools you already own or can access for free.
+                    </p>
+                  </div>
+                </div>
+              </GlassCard>
+
+              <GlassCard variant="secondary" interactive className="p-5 sm:p-6 flex flex-col justify-between gap-4">
+                <div className="space-y-3">
+                  <div className="w-11 h-11 rounded-xl bg-emerald-950/80 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0 shadow-inner">
+                    <Zap className="h-5 w-5" />
+                  </div>
+                  <div className="space-y-1.5 text-left">
+                    <h3 className="text-sm sm:text-base font-bold text-slate-100 tracking-tight">Adaptive Personalization</h3>
+                    <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-sans">
+                      As you rate recommendations or log progress, the system learns your preferred project types automatically.
+                    </p>
+                  </div>
+                </div>
+              </GlassCard>
+            </div>
+          </section>
+
+          {/* YOUR NEXT MOVE (5 COLS ON DESKTOP) */}
+          <section className="lg:col-span-5 space-y-3 flex flex-col justify-between">
+            <h2 className="text-xs font-mono font-bold text-slate-300 uppercase tracking-widest">Next Action</h2>
+            
+            <GlassCard variant="floating" interactive className="p-6 sm:p-7 flex-1 flex flex-col justify-between gap-5 text-left">
+              <div className="space-y-2">
+                <span className="text-[10px] font-mono font-bold text-peach-500 uppercase tracking-widest block">
+                  YOUR NEXT MOVE
+                </span>
+                <h3 className="text-base sm:text-xl font-bold text-slate-100 tracking-tight">
+                  {bestOpp ? 'Review your action plan' : 'Review your profile skills & tools'}
+                </h3>
                 <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-sans">
-                  Recommendations prioritize workflows combining 2–4 tools you already own or can access for free.
+                  {bestOpp 
+                    ? 'Start the step-by-step roadmap to build your first demo and connect with early buyers.' 
+                    : 'Keep your tools and goals updated to receive the best matches.'}
                 </p>
               </div>
-            </GlassCard>
 
-            <GlassCard variant="secondary" interactive className="p-5 sm:p-6 flex items-start gap-4 sm:gap-5">
-              <div className="w-11 h-11 rounded-xl bg-emerald-950/80 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0 shadow-inner">
-                <Zap className="h-5 w-5" />
+              <div className="pt-2">
+                <MagneticButton
+                  onClick={() => setActiveTab(bestOpp ? 'opportunities' : 'profile')}
+                  variant="primary"
+                  className="text-xs w-full sm:w-auto py-3 px-6 shadow-lg shadow-peach-500/20 font-bold flex items-center justify-center gap-2"
+                >
+                  <span>{bestOpp ? 'See the plan' : 'Edit profile'}</span>
+                  <ArrowRight className="h-4 w-4" />
+                </MagneticButton>
               </div>
-              <div className="space-y-1.5 flex-1 min-w-0 text-left">
-                <h3 className="text-sm sm:text-base font-bold text-slate-100 tracking-tight">Adaptive Personalization</h3>
-                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-sans">
-                  As you rate recommendations or log progress, the system learns your preferred project types automatically.
-                </p>
-              </div>
             </GlassCard>
-          </div>
-        </section>
-
-        {/* YOUR NEXT MOVE */}
-        <GlassCard variant="floating" interactive className="p-6 sm:p-7 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
-          <div className="space-y-1.5 max-w-2xl text-left">
-            <span className="text-[10px] font-mono font-bold text-peach-500 uppercase tracking-widest block">
-              YOUR NEXT MOVE
-            </span>
-            <h3 className="text-base sm:text-xl font-bold text-slate-100 tracking-tight">
-              {bestOpp ? 'Review your action plan' : 'Review your profile skills & tools'}
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-sans">
-              {bestOpp 
-                ? 'Start the step-by-step roadmap to build your first demo.' 
-                : 'Keep your tools and goals updated to receive the best matches.'}
-            </p>
-          </div>
-
-          <MagneticButton
-            onClick={() => setActiveTab(bestOpp ? 'opportunities' : 'profile')}
-            variant="primary"
-            className="text-xs shrink-0 py-3 px-6 shadow-lg shadow-peach-500/20 font-bold mt-1 sm:mt-0"
-          >
-            <span>{bestOpp ? 'See the plan' : 'Edit profile'}</span>
-            <ArrowRight className="h-4 w-4" />
-          </MagneticButton>
-        </GlassCard>
+          </section>
+        </div>
       </div>
     </div>
   );
