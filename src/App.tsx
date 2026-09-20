@@ -167,7 +167,7 @@ export const App: React.FC = () => {
   return (
     <LenisProvider>
       <SpatialScrollProvider>
-        <div className="relative min-h-screen bg-[#070a0f] text-slate-100 flex flex-col font-sans overflow-x-hidden">
+        <div className="relative min-h-screen bg-[#070a0f] text-slate-100 flex flex-col font-sans overflow-x-clip">
           {/* Pillar 1: Persistent SVG Micro-Texture Overlay */}
           <RetinaNoiseTexture />
 

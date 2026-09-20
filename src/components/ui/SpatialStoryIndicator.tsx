@@ -24,10 +24,10 @@ export const SpatialStoryIndicator: React.FC<SpatialStoryIndicatorProps> = ({
   // 0.58 - 0.78 -> 3
   // 0.78 - 1.00 -> 4
   let activeIdx = 0;
-  if (progress >= 0.78) activeIdx = 4;
-  else if (progress >= 0.58) activeIdx = 3;
-  else if (progress >= 0.38) activeIdx = 2;
-  else if (progress >= 0.18) activeIdx = 1;
+  if (progress >= 0.80) activeIdx = 4;
+  else if (progress >= 0.60) activeIdx = 3;
+  else if (progress >= 0.40) activeIdx = 2;
+  else if (progress >= 0.20) activeIdx = 1;
 
   return (
     <div

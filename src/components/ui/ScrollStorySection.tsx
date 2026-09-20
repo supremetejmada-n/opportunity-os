@@ -12,51 +12,51 @@ interface ScrollStorySectionProps {
 }
 
 // Compute smooth continuous cross-fade metrics for states.
-// Guarantees at least one state has high opacity at ALL times — ZERO BLANK VIEWPORT GAP.
+// Guarantees crisp non-overlapping step cards with ZERO text ghosting and ZERO blank screen gap.
 function getStateMetrics(progress: number, stateIndex: number) {
-  // 5 states evenly mapped over [0.0, 1.0]
-  // State 1: center 0.10, active range [0.00, 0.25]
-  // State 2: center 0.30, active range [0.15, 0.45]
-  // State 3: center 0.50, active range [0.35, 0.65]
-  // State 4: center 0.70, active range [0.55, 0.85]
-  // State 5: center 0.90, active range [0.75, 1.00+]
-  
   const centers = [0.10, 0.30, 0.50, 0.70, 0.90];
+  const p = Math.max(0, Math.min(1, progress));
   const center = centers[stateIndex];
-  const distance = Math.abs(progress - center);
-  
+  const distance = Math.abs(p - center);
+
+  const solidRadius = 0.07;
+  const fadeRadius = 0.13;
+
   // State 5 stays 100% visible once reached until section unpins
-  if (stateIndex === 4 && progress >= center) {
+  if (stateIndex === 4 && p >= center) {
     return {
       opacity: 1,
       scale: 1,
       translateY: 0,
       blur: 0,
+      zIndex: 50,
       pointerEvents: 'auto' as const,
     };
   }
 
-  // Smooth Gaussian / Cosine cross-fade bell curve (width = 0.22)
-  const range = 0.22;
-  if (distance > range) {
-    const isPast = progress > center;
-    return {
-      opacity: 0,
-      scale: isPast ? 0.96 : 0.98,
-      translateY: isPast ? -25 : 25,
-      blur: 4,
-      pointerEvents: 'none' as const,
-    };
+  let opacity = 0;
+  let direction: 'before' | 'center' | 'after' = 'center';
+
+  if (distance <= solidRadius) {
+    opacity = 1;
+    direction = 'center';
+  } else if (distance < fadeRadius) {
+    const t = (distance - solidRadius) / (fadeRadius - solidRadius);
+    opacity = Math.cos(t * (Math.PI / 2));
+    direction = p > center ? 'after' : 'before';
+  } else {
+    opacity = 0;
+    direction = p > center ? 'after' : 'before';
   }
 
-  const norm = distance / range; // 0 at center, 1 at boundary
-  const opacity = Math.max(0, Math.min(1, Math.cos(norm * (Math.PI / 2))));
-  const scale = 0.97 + opacity * 0.03;
-  const translateY = (1 - opacity) * (progress > center ? -25 : 25);
-  const blur = (1 - opacity) * 3;
-  const pointerEvents = opacity > 0.4 ? ('auto' as const) : ('none' as const);
+  opacity = Math.max(0, Math.min(1, opacity));
+  const scale = 0.98 + opacity * 0.02;
+  const translateY = (1 - opacity) * (direction === 'after' ? -12 : 12);
+  const blur = (1 - opacity) * 2;
+  const zIndex = Math.round(opacity * 20);
+  const pointerEvents = opacity > 0.5 ? ('auto' as const) : ('none' as const);
 
-  return { opacity, scale, translateY, blur, pointerEvents };
+  return { opacity, scale, translateY, blur, zIndex, pointerEvents };
 }
 
 // Spatial 3D Orb Position Interpolation (Centrally aligned glowing backdrop)
@@ -115,7 +115,7 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
   const bgGlowOpacity = 0.35 + Math.sin(scrollProgress * Math.PI) * 0.25;
 
   return (
-    <div ref={outerRef} className={`relative w-full h-[160vh] ${className}`}>
+    <div ref={outerRef} className={`relative w-full h-[250vh] ${className}`}>
       {/* PINNED STICKY VIEWPORT STAGE */}
       <div className="sticky top-0 h-screen min-h-[100dvh] w-full overflow-hidden flex flex-col justify-between py-5 px-4 sm:px-8 lg:px-12 z-10 select-none bg-navy-950">
         
@@ -167,75 +167,85 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
           
           {/* STATE 1 — DISCOVER */}
           <div
-            className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6 transition-all duration-300 ease-out"
+            className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6"
             style={{
               opacity: m1.opacity,
               transform: `translate3d(0px, ${m1.translateY}px, 0px) scale(${m1.scale})`,
               pointerEvents: m1.pointerEvents,
-              filter: `blur(${m1.blur}px)`,
+              zIndex: m1.zIndex,
+              filter: m1.blur > 0.1 ? `blur(${m1.blur}px)` : 'none',
+              willChange: 'opacity, transform',
             }}
           >
-            <div className="w-full max-w-[1800px] p-6 sm:p-8 lg:p-10 rounded-3xl border border-white/20 bg-navy-950/85 backdrop-blur-2xl shadow-2xl">
+            <div className="w-full max-w-[1800px] p-6 sm:p-8 lg:p-10 rounded-3xl border border-white/20 bg-[#070a0f]/95 backdrop-blur-2xl shadow-2xl">
               {state1Content}
             </div>
           </div>
 
           {/* STATE 2 — UNDERSTAND */}
           <div
-            className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6 transition-all duration-300 ease-out"
+            className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6"
             style={{
               opacity: m2.opacity,
               transform: `translate3d(0px, ${m2.translateY}px, 0px) scale(${m2.scale})`,
               pointerEvents: m2.pointerEvents,
-              filter: `blur(${m2.blur}px)`,
+              zIndex: m2.zIndex,
+              filter: m2.blur > 0.1 ? `blur(${m2.blur}px)` : 'none',
+              willChange: 'opacity, transform',
             }}
           >
-            <div className="w-full max-w-[1800px] p-6 sm:p-8 lg:p-10 rounded-3xl border border-emerald-500/30 bg-navy-950/85 backdrop-blur-2xl shadow-2xl shadow-emerald-500/10">
+            <div className="w-full max-w-[1800px] p-6 sm:p-8 lg:p-10 rounded-3xl border border-emerald-500/30 bg-[#070a0f]/95 backdrop-blur-2xl shadow-2xl shadow-emerald-500/10">
               {state2Content}
             </div>
           </div>
 
           {/* STATE 3 — COMBINE */}
           <div
-            className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6 transition-all duration-300 ease-out"
+            className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6"
             style={{
               opacity: m3.opacity,
               transform: `translate3d(0px, ${m3.translateY}px, 0px) scale(${m3.scale})`,
               pointerEvents: m3.pointerEvents,
-              filter: `blur(${m3.blur}px)`,
+              zIndex: m3.zIndex,
+              filter: m3.blur > 0.1 ? `blur(${m3.blur}px)` : 'none',
+              willChange: 'opacity, transform',
             }}
           >
-            <div className="w-full max-w-[1800px] p-6 sm:p-8 lg:p-10 rounded-3xl border border-crimson-500/30 bg-navy-950/85 backdrop-blur-2xl shadow-2xl shadow-crimson-500/10">
+            <div className="w-full max-w-[1800px] p-6 sm:p-8 lg:p-10 rounded-3xl border border-crimson-500/30 bg-[#070a0f]/95 backdrop-blur-2xl shadow-2xl shadow-crimson-500/10">
               {state3Content}
             </div>
           </div>
 
           {/* STATE 4 — ACT */}
           <div
-            className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6 transition-all duration-300 ease-out"
+            className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6"
             style={{
               opacity: m4.opacity,
               transform: `translate3d(0px, ${m4.translateY}px, 0px) scale(${m4.scale})`,
               pointerEvents: m4.pointerEvents,
-              filter: `blur(${m4.blur}px)`,
+              zIndex: m4.zIndex,
+              filter: m4.blur > 0.1 ? `blur(${m4.blur}px)` : 'none',
+              willChange: 'opacity, transform',
             }}
           >
-            <div className="w-full max-w-[1800px] p-6 sm:p-8 lg:p-10 rounded-3xl border border-amber-500/30 bg-navy-950/85 backdrop-blur-2xl shadow-2xl shadow-amber-500/10">
+            <div className="w-full max-w-[1800px] p-6 sm:p-8 lg:p-10 rounded-3xl border border-amber-500/30 bg-[#070a0f]/95 backdrop-blur-2xl shadow-2xl shadow-amber-500/10">
               {state4Content}
             </div>
           </div>
 
           {/* STATE 5 — LEARN (STAYS FULLY VISIBLE UNTIL UNPINNING — ZERO BLANK SCREEN!) */}
           <div
-            className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6 transition-all duration-300 ease-out"
+            className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6"
             style={{
               opacity: m5.opacity,
               transform: `translate3d(0px, ${m5.translateY}px, 0px) scale(${m5.scale})`,
               pointerEvents: m5.pointerEvents,
-              filter: `blur(${m5.blur}px)`,
+              zIndex: m5.zIndex,
+              filter: m5.blur > 0.1 ? `blur(${m5.blur}px)` : 'none',
+              willChange: 'opacity, transform',
             }}
           >
-            <div className="w-full max-w-[1800px] p-6 sm:p-8 lg:p-10 rounded-3xl border border-purple-500/30 bg-navy-950/85 backdrop-blur-2xl shadow-2xl shadow-purple-500/10">
+            <div className="w-full max-w-[1800px] p-6 sm:p-8 lg:p-10 rounded-3xl border border-purple-500/30 bg-[#070a0f]/95 backdrop-blur-2xl shadow-2xl shadow-purple-500/10">
               {state5Content}
             </div>
           </div>
