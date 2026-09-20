@@ -8,33 +8,46 @@
   :root {
     --font-display: 'Okine', 'MADE Okine Sans', 'Unbounded', 'Syne', 'Red Hat Display', sans-serif;
     --font-body: 'Arint', 'Sora', 'Outfit', 'Lexend', system-ui, -apple-system, sans-serif;
-    --bg-env: #161e2f;
-    --bg-surface: #242f49;
-    --bg-slate: #384358;
-    --accent-peach: #ffa586;
-    --accent-crimson: #b51a2b;
-    --accent-burgundy: #541a2e;
+
+    /* Apple Liquid Glass Palette & Token System */
+    --glass-l1-bg: #080c14;
+    --glass-l2-bg: rgba(255, 255, 255, 0.04);
+    --glass-l2-border: rgba(255, 255, 255, 0.12);
+    --glass-l2-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.15);
     
-    /* Motion System Timing Tiers */
+    --glass-l3-bg: rgba(255, 255, 255, 0.025);
+    --glass-l3-border: rgba(255, 255, 255, 0.08);
+
+    --glass-l4-bg: rgba(255, 255, 255, 0.06);
+    --glass-l4-border: rgba(255, 255, 255, 0.16);
+
+    --glass-l5-bg: rgba(14, 20, 32, 0.88);
+    --glass-l5-border: rgba(255, 255, 255, 0.18);
+
+    --accent-peach: #f97316;
+    --accent-indigo: #6366f1;
+    --accent-cyan: #06b6d4;
+
+    /* Timing Tiers */
     --dur-micro: 160ms;
     --dur-standard: 320ms;
     --dur-spatial: 550ms;
     --dur-cinematic: 900ms;
 
-    /* Custom Motion Easings (Emil Design Engineering Framework) */
-    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    /* Easings */
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
     --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
     --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-    --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   }
 
+  /* Level 1: Atmospheric Background Layer with Diffused Ambient Light */
   body {
-    background-color: #101623;
+    background-color: #080c14;
     background-image: 
-      radial-gradient(ellipse 80% 50% at 30% -10%, rgba(255, 165, 134, 0.22) 0%, transparent 60%),
-      radial-gradient(ellipse 60% 60% at 85% 65%, rgba(181, 26, 43, 0.18) 0%, transparent 65%),
-      radial-gradient(ellipse 90% 70% at 50% 110%, rgba(84, 26, 46, 0.45) 0%, transparent 70%),
-      radial-gradient(circle at 50% 45%, rgba(36, 47, 73, 0.7) 0%, transparent 85%);
+      radial-gradient(ellipse 90% 60% at 20% -10%, rgba(99, 102, 241, 0.18) 0%, transparent 60%),
+      radial-gradient(ellipse 70% 70% at 85% 25%, rgba(249, 115, 22, 0.15) 0%, transparent 65%),
+      radial-gradient(ellipse 80% 80% at 50% 85%, rgba(14, 165, 233, 0.12) 0%, transparent 70%),
+      radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.8) 0%, transparent 100%);
     background-attachment: fixed;
     color: #f8fafc;
     font-family: var(--font-body);
@@ -68,96 +81,76 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #101623;
+  background: #080c14;
 }
 ::-webkit-scrollbar-thumb {
-  background: #384358;
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #ffa586;
+  background: rgba(249, 115, 22, 0.6);
 }
 
-/* Atmospheric Ambient Light Motion */
-@keyframes ambientDrift {
-  0%, 100% {
-    opacity: 0.85;
-    transform: scale(1) translateY(0);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.08) translateY(-10px);
-  }
-}
-
-.animate-ambient-light {
-  animation: ambientDrift 12s ease-in-out infinite alternate;
-}
-
-/* Emil Kowalski Atmospheric Glass System — Rich Translucent Dark Navy + Environmental Warm Light */
-
-/* 1. Primary Hero Glass (Highest Transparency + Bleed-through Light) */
+/* Level 2 — Primary Hero & Major Glass Panels */
 .glass-panel-primary {
-  background: linear-gradient(135deg, rgba(22, 30, 47, 0.55) 0%, rgba(16, 22, 35, 0.65) 100%);
-  backdrop-filter: blur(20px) saturate(170%);
-  -webkit-backdrop-filter: blur(20px) saturate(170%);
-  border: 1px solid rgba(255, 165, 134, 0.25);
-  border-top: 1px solid rgba(255, 165, 134, 0.45);
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 1.25rem;
   box-shadow: 
-    0 25px 60px -15px rgba(10, 14, 24, 0.9),
-    0 0 40px -10px rgba(84, 26, 46, 0.5),
-    inset 0 1px 0 0 rgba(255, 165, 134, 0.3);
-  transition: transform 200ms var(--ease-out), border-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
+    0 12px 40px rgba(0, 0, 0, 0.4),
+    0 2px 10px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transition: all 250ms var(--ease-out);
 }
 
-/* 2. Secondary Content Glass (Medium Transparency + Soft Depth) */
+/* Level 3 — Secondary Content Glass */
 .glass-panel-secondary {
-  background: linear-gradient(135deg, rgba(36, 47, 73, 0.4) 0%, rgba(22, 30, 47, 0.5) 100%);
-  backdrop-filter: blur(16px) saturate(150%);
-  -webkit-backdrop-filter: blur(16px) saturate(150%);
-  border: 1px solid rgba(56, 67, 88, 0.45);
-  border-top: 1px solid rgba(255, 165, 134, 0.2);
+  background: rgba(255, 255, 255, 0.025);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 1rem;
   box-shadow: 
-    0 15px 35px -10px rgba(10, 14, 24, 0.75),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
-  transition: transform 200ms var(--ease-out), border-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
+    0 6px 20px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 220ms var(--ease-out);
 }
 
-/* 3. Floating Glass (Vivid Edge Highlight + High Luminance Bleed) */
+/* Level 4 — Floating Controls & Interactive Cards */
 .glass-panel-floating {
-  background: linear-gradient(135deg, rgba(36, 47, 73, 0.5) 0%, rgba(84, 26, 46, 0.3) 100%);
-  backdrop-filter: blur(14px) saturate(180%);
-  -webkit-backdrop-filter: blur(14px) saturate(180%);
-  border: 1px solid rgba(255, 165, 134, 0.4);
-  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(18px) saturate(180%);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.875rem;
   box-shadow: 
-    0 12px 30px -6px rgba(84, 26, 46, 0.5),
-    0 0 25px -5px rgba(255, 165, 134, 0.2);
+    0 8px 24px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
-/* Atmospheric Interactive Cards (Environmental Light Reflection on Hover) */
 .interactive-card {
-  background: linear-gradient(135deg, rgba(36, 47, 73, 0.35) 0%, rgba(22, 30, 47, 0.45) 100%);
-  backdrop-filter: blur(14px) saturate(150%);
-  -webkit-backdrop-filter: blur(14px) saturate(150%);
-  border: 1px solid rgba(56, 67, 88, 0.45);
-  border-top: 1px solid rgba(255, 165, 134, 0.15);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 1rem;
-  box-shadow: 0 10px 30px -8px rgba(10, 14, 24, 0.7);
-  transition: transform 200ms var(--ease-out), border-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
+  box-shadow: 
+    0 8px 24px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transition: transform 220ms var(--ease-out), background-color 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .interactive-card:hover {
-    transform: translateY(-4px);
-    border-color: rgba(255, 165, 134, 0.55);
-    border-top-color: rgba(255, 165, 134, 0.8);
+    transform: translateY(-3px) scale(1.005);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(249, 115, 22, 0.4);
     box-shadow: 
-      0 20px 45px -10px rgba(255, 165, 134, 0.25),
-      0 0 30px -5px rgba(181, 26, 43, 0.2),
-      inset 0 1px 0 0 rgba(255, 165, 134, 0.35);
+      0 16px 40px rgba(0, 0, 0, 0.45),
+      0 0 25px rgba(249, 115, 22, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25);
   }
 }
 
@@ -165,16 +158,18 @@
   transform: scale(0.985);
 }
 
-/* Luminous Warm Peach Primary Button (Concentrated Light Source) */
+/* Primary Glass Button */
 .btn-primary {
-  background: linear-gradient(135deg, #ffa586 0%, #f09271 100%);
-  color: #161e2f;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: #ffffff;
   font-weight: 700;
   font-size: 0.875rem;
-  padding: 0.5rem 1.25rem;
-  border-radius: 0.625rem;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 0 4px 20px -2px rgba(255, 165, 134, 0.55), 0 0 15px -3px rgba(181, 26, 43, 0.3);
+  padding: 0.625rem 1.375rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 
+    0 4px 20px rgba(249, 115, 22, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
   transition: transform 160ms var(--ease-out), background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
   display: inline-flex;
   align-items: center;
@@ -186,9 +181,11 @@
 
 @media (hover: hover) and (pointer: fine) {
   .btn-primary:hover {
-    background: linear-gradient(135deg, #ffb399 0%, #ffa586 100%);
-    border-color: rgba(255, 255, 255, 0.6);
-    box-shadow: 0 6px 28px -2px rgba(255, 165, 134, 0.75), 0 0 20px -2px rgba(181, 26, 43, 0.4);
+    background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 
+      0 6px 28px rgba(249, 115, 22, 0.6),
+      inset 0 1px 0 rgba(255, 255, 255, 0.5);
   }
 }
 
@@ -196,18 +193,20 @@
   transform: scale(0.97);
 }
 
-/* Secondary Translucent Navy CTA */
+/* Secondary Glass Button */
 .btn-secondary {
-  background-color: rgba(36, 47, 73, 0.6);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background-color: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
   color: #f1f5f9;
   font-weight: 600;
   font-size: 0.875rem;
-  padding: 0.5rem 1.25rem;
-  border-radius: 0.625rem;
-  border: 1px solid rgba(56, 67, 88, 0.6);
-  border-top: 1px solid rgba(255, 165, 134, 0.2);
+  padding: 0.625rem 1.375rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 
+    0 4px 15px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
   transition: transform 160ms var(--ease-out), background-color 160ms ease, color 160ms ease, border-color 160ms ease;
   display: inline-flex;
   align-items: center;
@@ -219,10 +218,12 @@
 
 @media (hover: hover) and (pointer: fine) {
   .btn-secondary:hover {
-    background-color: rgba(56, 67, 88, 0.8);
+    background-color: rgba(255, 255, 255, 0.1);
     color: #ffffff;
-    border-color: rgba(255, 165, 134, 0.4);
-    box-shadow: 0 4px 15px -3px rgba(255, 165, 134, 0.2);
+    border-color: rgba(255, 255, 255, 0.25);
+    box-shadow: 
+      0 6px 20px rgba(0, 0, 0, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25);
   }
 }
 
@@ -230,10 +231,10 @@
   transform: scale(0.97);
 }
 
-/* Ghost CTA */
+/* Ghost Button */
 .btn-ghost {
   background-color: transparent;
-  color: #9da8bc;
+  color: #94a3b8;
   font-weight: 500;
   font-size: 0.875rem;
   padding: 0.4rem 0.875rem;
@@ -250,8 +251,8 @@
 
 @media (hover: hover) and (pointer: fine) {
   .btn-ghost:hover {
-    color: #ffa586;
-    background-color: rgba(36, 47, 73, 0.5);
+    color: #f97316;
+    background-color: rgba(255, 255, 255, 0.06);
   }
 }
 
@@ -259,57 +260,13 @@
   transform: scale(0.97);
 }
 
-/* Badges & Luminous Tags */
-.badge-tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.25rem 0.625rem;
-  border-radius: 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  line-height: 1;
-}
-
-.badge-indigo,
-.badge-peach {
-  background-color: rgba(255, 165, 134, 0.15);
-  color: #ffa586;
-  border: 1px solid rgba(255, 165, 134, 0.4);
-  box-shadow: 0 0 12px -2px rgba(255, 165, 134, 0.25);
-}
-
-.badge-crimson {
-  background-color: rgba(181, 26, 43, 0.2);
-  color: #f87171;
-  border: 1px solid rgba(181, 26, 43, 0.45);
-  box-shadow: 0 0 12px -2px rgba(181, 26, 43, 0.3);
-}
-
-.badge-emerald {
-  background-color: rgba(16, 185, 129, 0.15);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.35);
-}
-
-.badge-amber {
-  background-color: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.35);
-}
-
-.badge-slate {
-  background-color: rgba(56, 67, 88, 0.3);
-  color: #cbd5e1;
-  border: 1px solid rgba(56, 67, 88, 0.5);
-}
-
-/* Modals with Deep Smoked Glass & Crimson/Burgundy Shadow Atmosphere */
+/* Level 5 — Modals & Dialogs (Smoked Glass) */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(10, 14, 24, 0.88);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background-color: rgba(8, 12, 20, 0.82);
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
   z-index: 50;
   display: flex;
   align-items: center;
@@ -319,20 +276,18 @@
 }
 
 .modal-content {
-  background: linear-gradient(135deg, rgba(22, 30, 47, 0.95) 0%, rgba(16, 22, 35, 0.98) 100%);
-  backdrop-filter: blur(28px) saturate(200%);
-  -webkit-backdrop-filter: blur(28px) saturate(200%);
-  border: 1px solid rgba(56, 67, 88, 0.6);
-  border-top: 1px solid rgba(255, 165, 134, 0.4);
-  border-radius: 1.25rem;
+  background: rgba(14, 20, 32, 0.88);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 1.5rem;
   width: 100%;
   max-width: 44rem;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 
-    0 35px 90px -15px rgba(10, 14, 24, 0.95),
-    0 0 60px -10px rgba(84, 26, 46, 0.7),
-    0 0 30px -5px rgba(255, 165, 134, 0.2);
+    0 32px 80px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
   animation: modalScaleIn 200ms var(--ease-out) forwards;
 }
 
@@ -352,10 +307,6 @@
   }
 }
 
-.animate-fade-in {
-  animation: fadeIn 220ms var(--ease-out) forwards;
-}
-
 /* Reduced Motion Override */
 @media (prefers-reduced-motion: reduce) {
   .interactive-card,
@@ -363,8 +314,7 @@
   .btn-secondary,
   .btn-ghost,
   .modal-content,
-  .modal-overlay,
-  .animate-ambient-light {
+  .modal-overlay {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
     transform: none !important;

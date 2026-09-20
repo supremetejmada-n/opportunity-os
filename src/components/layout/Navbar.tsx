@@ -49,10 +49,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   const displayName = profile?.name ? profile.name.split(' ')[0] : 'Advisor';
 
   return (
-    <header className="sticky top-0 z-50 w-full px-4 sm:px-8 lg:px-12 pt-4 pb-3 mb-2 bg-navy-950/85 backdrop-blur-md transition-all duration-300">
-      <div className="mx-auto flex h-16 w-full max-w-[1800px] items-center justify-between px-5 sm:px-8 rounded-2xl border border-white/10 bg-navy-950/80 backdrop-blur-xl shadow-2xl shadow-black/80 relative overflow-hidden">
-        {/* Specular glass reflection line top in warm peach */}
-        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-peach-500/40 to-transparent pointer-events-none" />
+    <header className="sticky top-0 z-50 w-full px-4 sm:px-8 lg:px-12 pt-4 pb-3 mb-2 transition-all duration-300">
+      <div className="mx-auto flex h-16 w-full max-w-[1800px] items-center justify-between px-5 sm:px-8 rounded-2xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-xl shadow-2xl shadow-black/80 relative overflow-hidden [box-shadow:0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.12)]">
+        {/* Specular inset top highlight line */}
+        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
         
         {/* Brand Title */}
         <button 
@@ -75,8 +75,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </button>
 
-        {/* Desktop Navigation Pill Strip */}
-        <nav className="hidden md:flex items-center gap-2.5 bg-navy-900/90 p-1.5 rounded-xl border border-slate-800">
+        {/* Desktop Navigation Translucent Glass Pill Strip */}
+        <nav className="hidden md:flex items-center gap-2 bg-white/[0.03] p-1.5 rounded-xl border border-white/[0.08] backdrop-blur-md">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -84,13 +84,13 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
-                className={`flex items-center gap-2.5 px-4 py-2 rounded-lg text-xs font-sans transition-all active:scale-[0.97] ${
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-sans transition-all active:scale-[0.97] ${
                   isActive
-                    ? 'bg-peach-500 text-navy-950 font-bold shadow-md shadow-peach-500/30 border border-white/30'
-                    : 'text-slate-400 font-semibold hover:text-slate-100 hover:bg-slate-800/50'
+                    ? 'bg-white/15 text-slate-100 font-bold shadow-lg shadow-white/5 border border-white/20 backdrop-blur-md'
+                    : 'text-slate-300 font-medium hover:text-white hover:bg-white/[0.06]'
                 }`}
               >
-                <Icon className={`h-3.5 w-3.5 ${isActive ? 'text-navy-950' : 'text-slate-400'}`} />
+                <Icon className={`h-3.5 w-3.5 ${isActive ? 'text-peach-400' : 'text-slate-400'}`} />
                 <span>{item.label}</span>
               </button>
             );
