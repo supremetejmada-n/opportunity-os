@@ -24,13 +24,14 @@ export const ScrollReveal: React.FC<ScrollRevealProps> = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 40, scale: 0.98 }}
-      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      initial={{ opacity: 0, y: 50, scale: 0.95 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1.0 }}
       viewport={{ once, amount }}
       transition={{
-        duration: 0.7,
+        type: 'spring' as const,
+        stiffness: 260,
+        damping: 20,
         delay,
-        ease: [0.22, 1, 0.36, 1] as const,
       }}
       className={className}
     >
@@ -88,14 +89,15 @@ export const ScrollRevealItem: React.FC<{ children: React.ReactNode; className?:
   className = '',
 }) => {
   const itemVariants = {
-    hidden: { opacity: 0, y: 40, scale: 0.98 },
+    hidden: { opacity: 0, y: 50, scale: 0.95 },
     show: {
       opacity: 1,
       y: 0,
-      scale: 1,
+      scale: 1.0,
       transition: {
-        duration: 0.7,
-        ease: [0.22, 1, 0.36, 1] as const,
+        type: 'spring' as const,
+        stiffness: 260,
+        damping: 20,
       },
     },
   };
