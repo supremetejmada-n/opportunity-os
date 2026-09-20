@@ -38,12 +38,10 @@ export const ScrollReveal: React.FC<ScrollRevealProps> = ({
     restDelta: 0.001,
   });
 
-  // Entry scrubbed transforms (0.0 to 0.4)
+  // Entry scrubbed GPU transforms (0.0 to 0.4)
   const rotateX = useTransform(smoothProgress, [0, 0.4], [12, 0]);
   const scale = useTransform(smoothProgress, [0, 0.4], [0.94, 1.0]);
   const opacity = useTransform(smoothProgress, [0, 0.3], [0, 1]);
-  const blurVal = useTransform(smoothProgress, [0, 0.4], [8, 0]);
-  const blur = useTransform(blurVal, (v) => (v > 0.1 ? `blur(${v}px)` : 'none'));
 
   if (shouldReduceMotion) {
     return <div className={className}>{children}</div>;
@@ -52,13 +50,13 @@ export const ScrollReveal: React.FC<ScrollRevealProps> = ({
   return (
     <div ref={containerRef} className={className} style={{ perspective: '1200px' }}>
       <motion.div
+        className="transform-gpu"
         style={{
           rotateX,
           scale,
           opacity,
-          filter: blur,
           transformStyle: 'preserve-3d',
-          willChange: 'transform, opacity, filter',
+          willChange: 'transform, opacity',
         }}
       >
         {children}
@@ -165,8 +163,6 @@ export const ScrollRevealItem: React.FC<{
   const rotateX = useTransform(progress, [0, 0.4], [12, 0]);
   const scale = useTransform(progress, [0, 0.4], [0.94, 1.0]);
   const opacity = useTransform(progress, [0, 0.3], [0, 1]);
-  const blurVal = useTransform(progress, [0, 0.4], [8, 0]);
-  const blur = useTransform(blurVal, (v) => (v > 0.1 ? `blur(${v}px)` : 'none'));
 
   if (shouldReduceMotion) {
     return <div className={className}>{children}</div>;
@@ -175,14 +171,14 @@ export const ScrollRevealItem: React.FC<{
   return (
     <div ref={fallbackRef} className={className} style={{ perspective: '1200px' }}>
       <motion.div
+        className="transform-gpu"
         style={{
           y,
           rotateX,
           scale,
           opacity,
-          filter: blur,
           transformStyle: 'preserve-3d',
-          willChange: 'transform, opacity, filter',
+          willChange: 'transform, opacity',
         }}
       >
         {children}

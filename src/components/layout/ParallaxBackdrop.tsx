@@ -1,18 +1,20 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 interface ParallaxBackdropProps {
   className?: string;
 }
 
 export const ParallaxBackdrop: React.FC<ParallaxBackdropProps> = ({ className = '' }) => {
-  const [scrollY, setScrollY] = useState(0);
+  const innerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let rafId: number;
     const handleScroll = () => {
       cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(() => {
-        setScrollY(window.scrollY);
+        if (!innerRef.current) return;
+        const translateY = window.scrollY * 0.3;
+        innerRef.current.style.transform = `translate3d(0, ${-translateY}px, 0)`;
       });
     };
 
@@ -25,14 +27,16 @@ export const ParallaxBackdrop: React.FC<ParallaxBackdropProps> = ({ className = 
     };
   }, []);
 
-  const translateY = scrollY * 0.3;
-
   return (
-    <div className={`fixed inset-0 pointer-events-none select-none z-0 overflow-hidden ${className}`}>
+    <div 
+      className={`fixed inset-0 pointer-events-none select-none z-0 overflow-hidden ${className}`}
+      style={{ contain: 'strict' }}
+    >
       <div
-        className="w-full h-full flex flex-col justify-between items-center py-20 transition-transform duration-100 ease-out"
+        ref={innerRef}
+        className="w-full h-full flex flex-col justify-between items-center py-20 will-change-transform"
         style={{
-          transform: `translate3d(0, ${-translateY}px, 0)`,
+          transform: 'translate3d(0, 0px, 0)',
         }}
       >
         <span className="font-display font-black text-6xl sm:text-8xl lg:text-[11rem] text-slate-400/[0.04] tracking-widest uppercase whitespace-nowrap">

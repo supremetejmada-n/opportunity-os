@@ -186,14 +186,13 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
           
           {/* STATE 1 — DISCOVER */}
           <div
-            className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6"
+            className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6 transform-gpu"
             style={{
               opacity: m1.opacity,
               transform: `translate3d(0px, ${m1.translateY}px, 0px) scale(${m1.scale}) rotateX(${m1.rotateX}deg)`,
               pointerEvents: m1.pointerEvents,
               zIndex: m1.zIndex,
-              filter: m1.blur > 0.1 ? `blur(${m1.blur}px)` : 'none',
-              willChange: 'opacity, transform, filter',
+              willChange: 'opacity, transform',
               transformStyle: 'preserve-3d',
             }}
           >
@@ -204,14 +203,13 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
 
           {/* STATE 2 — UNDERSTAND */}
           <div
-            className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6"
+            className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6 transform-gpu"
             style={{
               opacity: m2.opacity,
               transform: `translate3d(0px, ${m2.translateY}px, 0px) scale(${m2.scale}) rotateX(${m2.rotateX}deg)`,
               pointerEvents: m2.pointerEvents,
               zIndex: m2.zIndex,
-              filter: m2.blur > 0.1 ? `blur(${m2.blur}px)` : 'none',
-              willChange: 'opacity, transform, filter',
+              willChange: 'opacity, transform',
               transformStyle: 'preserve-3d',
             }}
           >
@@ -222,14 +220,13 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
 
           {/* STATE 3 — COMBINE */}
           <div
-            className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6"
+            className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6 transform-gpu"
             style={{
               opacity: m3.opacity,
               transform: `translate3d(0px, ${m3.translateY}px, 0px) scale(${m3.scale}) rotateX(${m3.rotateX}deg)`,
               pointerEvents: m3.pointerEvents,
               zIndex: m3.zIndex,
-              filter: m3.blur > 0.1 ? `blur(${m3.blur}px)` : 'none',
-              willChange: 'opacity, transform, filter',
+              willChange: 'opacity, transform',
               transformStyle: 'preserve-3d',
             }}
           >
@@ -240,14 +237,13 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
 
           {/* STATE 4 — ACT */}
           <div
-            className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6"
+            className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6 transform-gpu"
             style={{
               opacity: m4.opacity,
               transform: `translate3d(0px, ${m4.translateY}px, 0px) scale(${m4.scale}) rotateX(${m4.rotateX}deg)`,
               pointerEvents: m4.pointerEvents,
               zIndex: m4.zIndex,
-              filter: m4.blur > 0.1 ? `blur(${m4.blur}px)` : 'none',
-              willChange: 'opacity, transform, filter',
+              willChange: 'opacity, transform',
               transformStyle: 'preserve-3d',
             }}
           >
@@ -258,14 +254,13 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
 
           {/* STATE 5 — LEARN (STAYS FULLY VISIBLE UNTIL UNPINNING — ZERO BLANK SCREEN!) */}
           <div
-            className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6"
+            className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6 transform-gpu"
             style={{
               opacity: m5.opacity,
               transform: `translate3d(0px, ${m5.translateY}px, 0px) scale(${m5.scale}) rotateX(${m5.rotateX}deg)`,
               pointerEvents: m5.pointerEvents,
               zIndex: m5.zIndex,
-              filter: m5.blur > 0.1 ? `blur(${m5.blur}px)` : 'none',
-              willChange: 'opacity, transform, filter',
+              willChange: 'opacity, transform',
               transformStyle: 'preserve-3d',
             }}
           >

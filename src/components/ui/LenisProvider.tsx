@@ -27,10 +27,11 @@ export const LenisProvider: React.FC<LenisProviderProps> = ({ children }) => {
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // Smooth exponential ease
-      lerp: 0.08,
+      lerp: 0.1,
       smoothWheel: true,
+      syncTouch: false,
       wheelMultiplier: 1.0,
-      touchMultiplier: 1.5,
+      touchMultiplier: 1.0,
     });
 
     lenisRef.current = lenis;
