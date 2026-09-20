@@ -10,6 +10,7 @@ import { SpatialScrollProvider } from './components/ui/SpatialScrollProvider.js'
 import { LenisProvider } from './components/ui/LenisProvider.js';
 import { ParallaxBackdrop } from './components/layout/ParallaxBackdrop.js';
 import { PresentationFrame } from './components/layout/PresentationFrame.js';
+import { RetinaNoiseTexture } from './components/ui/RetinaNoiseTexture.js';
 import { api, FullProfileData } from './services/api.js';
 import { UserProfile, UserSkill, UserTool, UserGoal, UserInterest, UserProject, ProgressMetrics } from './types/index.js';
 import { AlertCircle, RefreshCw } from 'lucide-react';
@@ -166,11 +167,14 @@ export const App: React.FC = () => {
   return (
     <LenisProvider>
       <SpatialScrollProvider>
-        <div className="relative min-h-screen bg-navy-950 text-slate-100 flex flex-col font-sans">
+        <div className="relative min-h-screen bg-[#070a0f] text-slate-100 flex flex-col font-sans overflow-x-hidden">
+          {/* Pillar 1: Persistent SVG Micro-Texture Overlay */}
+          <RetinaNoiseTexture />
+
           {/* Parallax Ghost Text Backdrop drifting at 0.3x rate */}
           <ParallaxBackdrop />
 
-          {/* EXACTLY ONE Navigation Bar with z-50 sticky blur */}
+          {/* Pillar 8: Floating Detached Navigation Dock */}
           <Navbar
             activeTab={activeTab}
             setActiveTab={setActiveTab}

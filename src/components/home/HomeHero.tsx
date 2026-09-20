@@ -37,13 +37,13 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
       <ScrollRevealStagger className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center w-full my-auto">
         {/* Left Column: Headline & Plain English Narrative */}
         <ScrollRevealItem className="lg:col-span-7 space-y-6">
-          <AnimatedBadge glow className="bg-peach-500/15 border-peach-500/30 text-peach-400">
+          <AnimatedBadge glow className="bg-white/10 border-white/15 text-peach-400 font-mono text-xs">
             <Sparkles className="h-3.5 w-3.5 text-peach-400 animate-pulse" />
             <span>Personal AI Opportunity Engine</span>
           </AnimatedBadge>
 
           <div className="space-y-4">
-            <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.08] bg-gradient-to-r from-slate-100 via-slate-200 to-peach-400 bg-clip-text text-transparent">
+            <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-[-0.03em] leading-[1.06] bg-gradient-to-r from-slate-100 via-slate-200 to-peach-400 bg-clip-text text-transparent">
               Find something worth building.
             </h1>
             <p className="font-sans text-base sm:text-xl text-slate-300 leading-relaxed max-w-2xl font-normal">
