@@ -181,7 +181,7 @@ export const App: React.FC = () => {
         )}
 
         {/* Main Viewport Container */}
-        <main className="flex-1 w-full overflow-x-hidden">
+        <main className="flex-1 w-full">
           {loading ? (
             <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-3 max-w-7xl mx-auto px-4 py-6">
               <div className="h-8 w-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
