@@ -29,7 +29,7 @@ export const ParallaxBackdrop: React.FC<ParallaxBackdropProps> = ({ className = 
 
   return (
     <div 
-      className={`fixed inset-0 pointer-events-none select-none z-0 overflow-hidden ${className}`}
+      className={`fixed inset-0 pointer-events-none select-none z-0 overflow-hidden [mask-image:linear-gradient(to_bottom,black_75%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_75%,transparent_100%)] ${className}`}
       style={{ contain: 'strict' }}
     >
       <div

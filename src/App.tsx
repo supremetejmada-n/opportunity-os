@@ -168,6 +168,12 @@ export const App: React.FC = () => {
     <LenisProvider>
       <SpatialScrollProvider>
         <div className="relative min-h-screen bg-[#070a0f] text-slate-100 flex flex-col font-sans overflow-x-clip">
+          {/* Global Unified Atmospheric Caustics Canvas */}
+          <div 
+            className="fixed inset-0 z-0 pointer-events-none select-none bg-[radial-gradient(ellipse_100%_70%_at_50%_-10%,rgba(255,165,134,0.10),transparent_70%)]" 
+            style={{ contain: 'strict' }} 
+          />
+
           {/* Pillar 1: Persistent SVG Micro-Texture Overlay */}
           <RetinaNoiseTexture />
 
@@ -291,7 +297,7 @@ export const App: React.FC = () => {
           </main>
 
           {/* Footer */}
-          <footer className="relative z-10 border-t border-slate-800/40 bg-navy-950/60 backdrop-blur-md py-5 text-center text-xs text-slate-500">
+          <footer className="relative z-10 border-t border-slate-800/40 bg-transparent backdrop-blur-md py-5 text-center text-xs text-slate-500">
             <p>Personal AI Opportunity Engine • Simple interface. Deep intelligence. Zero clutter.</p>
           </footer>
         </div>
