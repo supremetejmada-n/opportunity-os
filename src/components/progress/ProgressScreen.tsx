@@ -32,6 +32,11 @@ import {
 import { api } from '../../services/api.js';
 import { GlassCard } from '../ui/GlassCard.js';
 import { SpatialProgressRing } from '../ui/SpatialProgressRing.js';
+import { CardShimmerWrapper } from '../ui/card-shimmer-wrapper.js';
+import { AnimatedMetric } from '../widgets/animated-metric.js';
+import { AnimatedBarChart } from '../widgets/animated-bar-chart.js';
+import { AnimatedSparkline } from '../widgets/animated-sparkline.js';
+import { AnimatedBadge } from '../widgets/animated-badge.js';
 
 interface ProgressScreenProps {
   metrics: ProgressMetrics;
@@ -320,7 +325,9 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
       {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
         <div>
-          <span className="text-[10px] font-sans font-semibold text-peach-500 uppercase tracking-wider">Execution Tracker</span>
+          <AnimatedBadge glow className="bg-peach-500/15 border-peach-500/30 text-peach-400 mb-1">
+            Execution Tracker
+          </AnimatedBadge>
           <h1 className="font-display text-2xl sm:text-3xl font-bold uppercase tracking-wider text-slate-100 flex items-center gap-2 pt-0.5">
             <TrendingUp className="h-5 w-5 text-peach-500" />
             YOUR PLAN
@@ -341,15 +348,47 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ metrics, onRefre
         {metricCards.map((m, i) => {
           const Icon = m.icon;
           return (
-            <GlassCard key={i} variant="secondary" className="p-3.5 space-y-1">
+            <CardShimmerWrapper key={i} className="p-3.5 space-y-1 bg-navy-950/70">
               <div className="flex items-center justify-between text-slate-400 text-[11px]">
                 <span className="truncate">{m.label}</span>
                 <Icon className="h-3.5 w-3.5 text-slate-500 shrink-0" />
               </div>
-              <p className="text-lg font-bold text-slate-100 font-mono">{m.value}</p>
-            </GlassCard>
+              <p className="text-lg font-bold text-slate-100 font-mono">
+                <AnimatedMetric value={m.value} />
+              </p>
+            </CardShimmerWrapper>
           );
         })}
+      </div>
+
+      {/* Visual Analytics & Staggered Chart Strip */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardShimmerWrapper className="p-4">
+          <AnimatedBarChart
+            title="Monthly Execution Expenses & Savings"
+            subtitle="Staggered upward growth feed"
+            height={130}
+            data={[
+              { label: 'Infrastructure', value: 0, formattedValue: '₹0' },
+              { label: 'DB / Storage', value: 0, formattedValue: '₹0' },
+              { label: 'LLM Tier', value: 0, formattedValue: '₹0 (Free)' },
+              { label: 'Hosting', value: 0, formattedValue: '₹0 (Vite)' },
+              { label: 'Value Generated', value: 25000, formattedValue: '₹25,000' },
+            ]}
+          />
+        </CardShimmerWrapper>
+
+        <CardShimmerWrapper className="p-4 flex flex-col justify-between">
+          <AnimatedSparkline
+            title="Outreach & Prospect Engagement Path"
+            value="72,350 Signals"
+            change="+29.4%"
+            data={[12, 24, 38, 42, 65, 80, 95, 110, 135]}
+            strokeColor="#10b981"
+            gradientId="progress-outreach-sparkline"
+            height={100}
+          />
+        </CardShimmerWrapper>
       </div>
 
       {/* Humanized Preferences Summary */}
