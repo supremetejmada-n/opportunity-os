@@ -129,20 +129,28 @@ export const Navbar: React.FC<NavbarProps> = ({
             <kbd className="hidden lg:inline-block px-1.5 py-0.5 text-[10px] font-mono bg-navy-950/40 rounded border border-white/20 text-slate-800 font-bold">⌘K</kbd>
           </button>
 
-          {/* Profile Quick Pill */}
+          {/* Executive Builder Identity Nav Token */}
           <button
             onClick={() => handleNavClick('profile')}
-            className={`flex items-center gap-2 rounded-full p-1 pl-2.5 pr-1 border transition-all active:scale-[0.97] ${
+            className={`relative flex items-center gap-2 rounded-full p-1 pl-3 pr-1 border transition-all duration-300 ease-out active:scale-95 group cursor-pointer ${
               activeTab === 'profile'
-                ? 'border-white/30 bg-white/10'
-                : 'border-white/10 bg-white/[0.03] hover:border-white/20'
+                ? 'border-peach-500/60 bg-peach-500/15 text-white shadow-[0_0_20px_rgba(255,165,134,0.35)] scale-[1.03]'
+                : 'border-white/20 bg-white/[0.05] hover:border-peach-500/40 hover:bg-white/10 hover:shadow-[0_0_18px_rgba(255,165,134,0.25)] hover:scale-[1.03]'
             }`}
+            title="Open Builder Identity Dossier"
           >
-            <span className="text-xs font-medium text-slate-300 hidden sm:inline">
+            {/* Live Pulsing Radar Dot */}
+            <span className="relative flex h-2 w-2" title="Identity Vector Active">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+
+            <span className="text-xs font-semibold tracking-wide text-slate-200 group-hover:text-white hidden sm:inline">
               {displayName}
             </span>
-            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-white text-[10px] font-bold border border-white/20">
-              <User className="h-3 w-3" />
+
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-tr from-peach-500/30 via-indigo-600/30 to-emerald-500/30 text-white text-[10px] font-bold border border-white/25 group-hover:border-peach-500/60 transition-all duration-300 shadow-sm">
+              <User className="h-3 w-3 text-peach-300" />
             </div>
           </button>
 

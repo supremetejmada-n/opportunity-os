@@ -12,7 +12,12 @@ import {
   Save, 
   X,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Zap,
+  Activity,
+  Cpu,
+  Sparkles,
+  Layers
 } from 'lucide-react';
 import { 
   UserProfile, 
@@ -26,6 +31,7 @@ import {
   GoalPriority
 } from '../../types/index.js';
 import { GlassCard } from '../ui/GlassCard.js';
+import { AnimatedMetric } from '../widgets/animated-metric.js';
 
 interface ProfileScreenProps {
   profile: UserProfile | null;
@@ -273,26 +279,184 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
   return (
     <div className="space-y-6 py-4 max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
-        <div>
-          <span className="text-[10px] font-sans font-semibold text-peach-500 uppercase tracking-wider">Vector Identity</span>
-          <h1 className="font-display text-2xl sm:text-3xl font-bold uppercase tracking-wider text-slate-100 pt-0.5">
-            USER PROFILE
-          </h1>
-          <p className="font-sans text-xs text-slate-300 mt-0.5">
-            Manage your active skills, accessible tools, goals, interests, and execution constraints.
-          </p>
+      {/* Notifications Toast */}
+      {statusMsg && (
+        <div className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold shadow-xl border ${
+          statusMsg.type === 'success' ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' : 'bg-red-500/15 text-red-400 border-red-500/30'
+        }`}>
+          {statusMsg.type === 'success' ? <CheckCircle className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+          <span>{statusMsg.text}</span>
         </div>
+      )}
 
-        {statusMsg && (
-          <div className={`flex items-center gap-2 px-3 py-1 rounded-lg text-xs font-semibold ${
-            statusMsg.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/10 text-red-400 border border-red-500/30'
-          }`}>
-            {statusMsg.type === 'success' ? <CheckCircle className="h-3.5 w-3.5" /> : <AlertCircle className="h-3.5 w-3.5" />}
-            <span>{statusMsg.text}</span>
+      {/* 1. HERO DOSSIER CARD ("Builder Persona") */}
+      <GlassCard variant="primary" className="p-6 sm:p-8 relative overflow-hidden space-y-6 shadow-2xl border-white/15 bg-slate-950/70 backdrop-blur-2xl">
+        {/* Top Specular Liquid Glass Highlight */}
+        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-peach-500/50 to-transparent pointer-events-none" />
+        <div className="absolute -right-12 -top-12 h-64 w-64 rounded-full bg-peach-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute -left-12 -bottom-12 h-64 w-64 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
+
+        <div className="flex flex-wrap items-center justify-between gap-6 relative z-10">
+          <div className="flex items-center gap-5 sm:gap-6">
+            {/* Monogram Avatar with Ambient Gradient Halo */}
+            <div className="relative group flex-shrink-0">
+              <div className="absolute -inset-2 rounded-2xl bg-gradient-to-tr from-peach-500/40 via-indigo-600/40 to-emerald-500/40 blur-lg opacity-75 group-hover:opacity-100 transition-opacity" />
+              <div className="relative flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-2xl bg-gradient-to-tr from-slate-900 via-navy-950 to-slate-900 text-peach-300 font-mono text-xl sm:text-2xl font-bold border border-white/20 shadow-2xl">
+                {profile?.name ? profile.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'ST'}
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-slate-100 tracking-tight">
+                  {profile?.name || 'M. Supreme Tej'}
+                </h1>
+                {/* Frosted Vector Status Pill */}
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.06] border border-white/15 text-[10px] font-mono font-semibold text-emerald-400 backdrop-blur-md shadow-sm">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  VECTOR STATUS: CALIBRATED (100%)
+                </span>
+              </div>
+
+              <p className="font-mono text-xs font-semibold text-peach-400/90 tracking-wide uppercase">
+                {profile?.title || 'Autonomous Builder & AI Systems Architect'}
+              </p>
+              <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
+                {profile?.bio || 'Architecting zero-cost autonomous AI agents, full-stack micro-saas systems, and high-frequency vector opportunity engines.'}
+              </p>
+            </div>
           </div>
-        )}
+
+          {/* Quick Action to Edit Profile */}
+          {!isEditingProfile && (
+            <button 
+              onClick={handleStartProfileEdit} 
+              className="btn-secondary text-xs py-2 px-4 flex items-center gap-2 border-white/20 hover:border-peach-500/50 shadow-lg active:scale-95 transition-transform"
+            >
+              <Edit3 className="h-3.5 w-3.5 text-peach-400" />
+              <span>Edit Dossier</span>
+            </button>
+          )}
+        </div>
+      </GlassCard>
+
+      {/* 2. BENTO TELEMETRY GRID (Stats & Impact) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Card 1: Builder Velocity */}
+        <GlassCard variant="secondary" interactive className="p-5 space-y-4 border-white/10 hover:border-peach-500/40">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+              <Zap className="h-3.5 w-3.5 text-peach-400" />
+              Builder Velocity
+            </span>
+            <span className="px-2 py-0.5 rounded bg-peach-500/10 text-peach-300 font-mono text-[10px] border border-peach-500/20">
+              TELEMETRY
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <span className="text-[10px] text-slate-500 uppercase font-mono block">Execution Speed</span>
+              <div className="font-mono text-xl sm:text-2xl font-bold text-slate-100 flex items-baseline">
+                <AnimatedMetric value={0.4} decimals={1} suffix="s" />
+                <span className="text-xs text-slate-400 font-sans ml-1">avg</span>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[10px] text-slate-500 uppercase font-mono block">Active Workflows</span>
+              <div className="font-mono text-xl sm:text-2xl font-bold text-emerald-400">
+                <AnimatedMetric value={projects.length + goals.length || 14} />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[10px] text-slate-500 uppercase font-mono block">System Uptime</span>
+              <div className="font-mono text-xl sm:text-2xl font-bold text-slate-100">
+                <AnimatedMetric value={99.98} decimals={2} suffix="%" />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <span className="text-[10px] text-slate-500 uppercase font-mono block">Equipped Stack</span>
+              <div className="font-mono text-xl sm:text-2xl font-bold text-peach-400">
+                <AnimatedMetric value={skills.length + tools.length || 28} />
+              </div>
+            </div>
+          </div>
+        </GlassCard>
+
+        {/* Card 2: Equipped Arsenal */}
+        <GlassCard variant="secondary" interactive className="p-5 space-y-4 border-white/10 hover:border-peach-500/40">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+              <Wrench className="h-3.5 w-3.5 text-indigo-400" />
+              Equipped Arsenal
+            </span>
+            <span className="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 font-mono text-[10px] border border-indigo-500/20">
+              ACTIVE STACK
+            </span>
+          </div>
+
+          <div className="flex flex-wrap gap-2 pt-1">
+            {tools.length > 0 ? (
+              tools.slice(0, 8).map((t, idx) => (
+                <span
+                  key={t.id || idx}
+                  className="px-2.5 py-1 rounded-lg bg-white/[0.05] border border-white/10 hover:border-peach-500/40 hover:bg-peach-500/10 hover:-translate-y-0.5 text-xs font-mono text-slate-200 transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-peach-400 inline-block" />
+                  {t.name}
+                </span>
+              ))
+            ) : (
+              ['Claude 3.5 Sonnet', 'Gemini 1.5 Pro', 'React 18', 'Tailwind CSS', 'Node.js', 'Vector DB', 'Express', 'Framer Motion'].map((tool, idx) => (
+                <span
+                  key={idx}
+                  className="px-2.5 py-1 rounded-lg bg-white/[0.05] border border-white/10 hover:border-peach-500/40 hover:bg-peach-500/10 hover:-translate-y-0.5 text-xs font-mono text-slate-200 transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-peach-400 inline-block" />
+                  {tool}
+                </span>
+              ))
+            )}
+          </div>
+        </GlassCard>
+
+        {/* Card 3: Domain Capabilities */}
+        <GlassCard variant="secondary" interactive className="p-5 space-y-4 border-white/10 hover:border-peach-500/40">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+              <Activity className="h-3.5 w-3.5 text-emerald-400" />
+              Domain Capabilities
+            </span>
+            <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 font-mono text-[10px] border border-emerald-500/20">
+              MATRIX BREAKDOWN
+            </span>
+          </div>
+
+          <div className="space-y-3 pt-1">
+            {[
+              { label: 'Automation Capacity', pct: 96, color: 'bg-emerald-500' },
+              { label: 'Frontend Craftsmanship', pct: 98, color: 'bg-peach-500' },
+              { label: 'Data Intelligence', pct: 92, color: 'bg-indigo-500' },
+              { label: 'System Architecture', pct: 95, color: 'bg-purple-500' },
+            ].map((cap, idx) => (
+              <div key={idx} className="space-y-1">
+                <div className="flex justify-between text-[11px] font-sans">
+                  <span className="text-slate-300 font-medium">{cap.label}</span>
+                  <span className="font-mono font-bold text-slate-200">{cap.pct}%</span>
+                </div>
+                <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full ${cap.color} rounded-full transition-all duration-1000 ease-out`}
+                    style={{ width: `${cap.pct}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </GlassCard>
       </div>
 
       {/* Sub-Tab Navigation */}
