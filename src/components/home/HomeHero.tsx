@@ -33,8 +33,8 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
   ).length;
 
   return (
-    <ScrollReveal className="relative w-full max-w-[1800px] mx-auto px-4 sm:px-8 lg:px-12 pt-4 pb-12 sm:pb-16 text-left">
-      <ScrollRevealStagger className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+    <ScrollReveal className="relative w-full max-w-[1800px] mx-auto px-4 sm:px-8 lg:px-12 min-h-[calc(100vh-6.5rem)] flex flex-col justify-center py-6 sm:py-8 lg:py-10 text-left">
+      <ScrollRevealStagger className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center w-full my-auto">
         {/* Left Column: Headline & Plain English Narrative */}
         <ScrollRevealItem className="lg:col-span-7 space-y-6">
           <AnimatedBadge glow className="bg-peach-500/15 border-peach-500/30 text-peach-400">
