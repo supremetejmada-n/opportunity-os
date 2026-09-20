@@ -11,16 +11,15 @@ interface ScrollStorySectionProps {
   className?: string;
 }
 
-// Compute smooth continuous cross-fade metrics for states.
-// Guarantees crisp non-overlapping step cards with ZERO text ghosting and ZERO blank screen gap.
+// Compute continuous 3D spatial floating metrics tied directly to scroll progress.
+// Exiting cards float upward (-40px), scale down (0.96), blur (6px), and fade.
+// Entering cards rise from below (+50px), scale into focus (0.96 -> 1.0), unblur (6px -> 0), and tilt slightly (4deg rotateX).
 function getStateMetrics(progress: number, stateIndex: number) {
   const centers = [0.10, 0.30, 0.50, 0.70, 0.90];
   const p = Math.max(0, Math.min(1, progress));
   const center = centers[stateIndex];
-  const distance = Math.abs(p - center);
-
-  const solidRadius = 0.07;
-  const fadeRadius = 0.13;
+  const stepInterval = 0.20;
+  const delta = p - center;
 
   // State 5 stays 100% visible once reached until section unpins
   if (stateIndex === 4 && p >= center) {
@@ -28,41 +27,58 @@ function getStateMetrics(progress: number, stateIndex: number) {
       opacity: 1,
       scale: 1,
       translateY: 0,
+      rotateX: 0,
       blur: 0,
       zIndex: 50,
       pointerEvents: 'auto' as const,
     };
   }
 
-  let opacity = 0;
-  let direction: 'before' | 'center' | 'after' = 'center';
+  // Normalized progress relative to current step center (-1 to +1)
+  const normDelta = Math.max(-1, Math.min(1, delta / stepInterval));
 
-  if (distance <= solidRadius) {
-    opacity = 1;
-    direction = 'center';
-  } else if (distance < fadeRadius) {
-    const t = (distance - solidRadius) / (fadeRadius - solidRadius);
-    opacity = Math.cos(t * (Math.PI / 2));
-    direction = p > center ? 'after' : 'before';
-  } else {
-    opacity = 0;
-    direction = p > center ? 'after' : 'before';
+  // Continuous smooth opacity curve
+  const opacity = Math.max(0, Math.cos(normDelta * (Math.PI / 2)));
+
+  let translateY = 0;
+  let rotateX = 0;
+  let scale = 1;
+  let blur = 0;
+
+  if (normDelta > 0) {
+    // Exiting step (floating upward)
+    const factor = Math.sin(normDelta * (Math.PI / 2)); // 0 -> 1
+    translateY = -40 * factor;
+    rotateX = -3 * factor; // -3deg tilt on exit
+    scale = 1 - 0.04 * factor; // 1.0 -> 0.96
+    blur = 6 * factor; // 0 -> 6px
+  } else if (normDelta < 0) {
+    // Entering step (rising from below)
+    const factor = Math.sin(-normDelta * (Math.PI / 2)); // 0 -> 1
+    translateY = 50 * factor;
+    rotateX = 4 * factor; // +4deg tilt on entry
+    scale = 1 - 0.04 * factor; // 0.96 -> 1.0
+    blur = 6 * factor; // 6px -> 0
   }
 
-  opacity = Math.max(0, Math.min(1, opacity));
-  const scale = 0.98 + opacity * 0.02;
-  const translateY = (1 - opacity) * (direction === 'after' ? -12 : 12);
-  const blur = (1 - opacity) * 2;
   const zIndex = Math.round(opacity * 20);
-  const pointerEvents = opacity > 0.5 ? ('auto' as const) : ('none' as const);
+  const pointerEvents = opacity > 0.4 ? ('auto' as const) : ('none' as const);
 
-  return { opacity, scale, translateY, blur, zIndex, pointerEvents };
+  return {
+    opacity,
+    scale,
+    translateY,
+    rotateX,
+    blur,
+    zIndex,
+    pointerEvents,
+  };
 }
 
 // Spatial 3D Orb Position Interpolation (Centrally aligned glowing backdrop)
 function getOrbSpatialTransform(progress: number) {
-  const y = (progress - 0.5) * -20;
-  const scale = 1.05 + Math.sin(progress * Math.PI) * 0.10;
+  const y = (progress - 0.5) * -25;
+  const scale = 1.05 + Math.sin(progress * Math.PI) * 0.12;
   return { x: 0, y, scale };
 }
 
@@ -162,22 +178,26 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
           </div>
         </div>
 
-        {/* 4. MAIN STAGE VIEWPORT (FULL-WIDTH DESKTOP CANVAS max-w-[1800px]) */}
-        <div className="relative z-10 flex-1 flex items-center justify-center w-full max-w-[1800px] mx-auto my-auto min-h-0">
+        {/* 4. MAIN STAGE VIEWPORT WITH 3D PERSPECTIVE (FULL-WIDTH DESKTOP CANVAS max-w-[1800px]) */}
+        <div 
+          className="relative z-10 flex-1 flex items-center justify-center w-full max-w-[1800px] mx-auto my-auto min-h-0"
+          style={{ perspective: '1200px' }}
+        >
           
           {/* STATE 1 — DISCOVER */}
           <div
             className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6"
             style={{
               opacity: m1.opacity,
-              transform: `translate3d(0px, ${m1.translateY}px, 0px) scale(${m1.scale})`,
+              transform: `translate3d(0px, ${m1.translateY}px, 0px) scale(${m1.scale}) rotateX(${m1.rotateX}deg)`,
               pointerEvents: m1.pointerEvents,
               zIndex: m1.zIndex,
               filter: m1.blur > 0.1 ? `blur(${m1.blur}px)` : 'none',
-              willChange: 'opacity, transform',
+              willChange: 'opacity, transform, filter',
+              transformStyle: 'preserve-3d',
             }}
           >
-            <div className="w-full max-w-[1800px] p-6 sm:p-8 lg:p-10 rounded-3xl border border-white/20 bg-[#070a0f]/95 backdrop-blur-2xl shadow-2xl">
+            <div className="w-full max-w-[1800px] p-6 sm:p-8 lg:p-10 rounded-3xl border border-white/20 bg-[#070a0f]/95 backdrop-blur-2xl shadow-2xl shadow-peach-500/5">
               {state1Content}
             </div>
           </div>
@@ -187,11 +207,12 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
             className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6"
             style={{
               opacity: m2.opacity,
-              transform: `translate3d(0px, ${m2.translateY}px, 0px) scale(${m2.scale})`,
+              transform: `translate3d(0px, ${m2.translateY}px, 0px) scale(${m2.scale}) rotateX(${m2.rotateX}deg)`,
               pointerEvents: m2.pointerEvents,
               zIndex: m2.zIndex,
               filter: m2.blur > 0.1 ? `blur(${m2.blur}px)` : 'none',
-              willChange: 'opacity, transform',
+              willChange: 'opacity, transform, filter',
+              transformStyle: 'preserve-3d',
             }}
           >
             <div className="w-full max-w-[1800px] p-6 sm:p-8 lg:p-10 rounded-3xl border border-emerald-500/30 bg-[#070a0f]/95 backdrop-blur-2xl shadow-2xl shadow-emerald-500/10">
@@ -204,11 +225,12 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
             className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6"
             style={{
               opacity: m3.opacity,
-              transform: `translate3d(0px, ${m3.translateY}px, 0px) scale(${m3.scale})`,
+              transform: `translate3d(0px, ${m3.translateY}px, 0px) scale(${m3.scale}) rotateX(${m3.rotateX}deg)`,
               pointerEvents: m3.pointerEvents,
               zIndex: m3.zIndex,
               filter: m3.blur > 0.1 ? `blur(${m3.blur}px)` : 'none',
-              willChange: 'opacity, transform',
+              willChange: 'opacity, transform, filter',
+              transformStyle: 'preserve-3d',
             }}
           >
             <div className="w-full max-w-[1800px] p-6 sm:p-8 lg:p-10 rounded-3xl border border-crimson-500/30 bg-[#070a0f]/95 backdrop-blur-2xl shadow-2xl shadow-crimson-500/10">
@@ -221,11 +243,12 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
             className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6"
             style={{
               opacity: m4.opacity,
-              transform: `translate3d(0px, ${m4.translateY}px, 0px) scale(${m4.scale})`,
+              transform: `translate3d(0px, ${m4.translateY}px, 0px) scale(${m4.scale}) rotateX(${m4.rotateX}deg)`,
               pointerEvents: m4.pointerEvents,
               zIndex: m4.zIndex,
               filter: m4.blur > 0.1 ? `blur(${m4.blur}px)` : 'none',
-              willChange: 'opacity, transform',
+              willChange: 'opacity, transform, filter',
+              transformStyle: 'preserve-3d',
             }}
           >
             <div className="w-full max-w-[1800px] p-6 sm:p-8 lg:p-10 rounded-3xl border border-amber-500/30 bg-[#070a0f]/95 backdrop-blur-2xl shadow-2xl shadow-amber-500/10">
@@ -238,11 +261,12 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
             className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6"
             style={{
               opacity: m5.opacity,
-              transform: `translate3d(0px, ${m5.translateY}px, 0px) scale(${m5.scale})`,
+              transform: `translate3d(0px, ${m5.translateY}px, 0px) scale(${m5.scale}) rotateX(${m5.rotateX}deg)`,
               pointerEvents: m5.pointerEvents,
               zIndex: m5.zIndex,
               filter: m5.blur > 0.1 ? `blur(${m5.blur}px)` : 'none',
-              willChange: 'opacity, transform',
+              willChange: 'opacity, transform, filter',
+              transformStyle: 'preserve-3d',
             }}
           >
             <div className="w-full max-w-[1800px] p-6 sm:p-8 lg:p-10 rounded-3xl border border-purple-500/30 bg-[#070a0f]/95 backdrop-blur-2xl shadow-2xl shadow-purple-500/10">
@@ -264,4 +288,5 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
     </div>
   );
 };
+
 
