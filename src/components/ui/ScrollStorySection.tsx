@@ -115,9 +115,9 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
   const bgGlowOpacity = 0.35 + Math.sin(scrollProgress * Math.PI) * 0.25;
 
   return (
-    <div ref={outerRef} className={`relative w-full h-[220vh] ${className}`}>
+    <div ref={outerRef} className={`relative w-full h-[160vh] ${className}`}>
       {/* PINNED STICKY VIEWPORT STAGE */}
-      <div className="sticky top-0 h-screen min-h-[100dvh] w-full overflow-hidden flex flex-col justify-between py-6 px-4 sm:px-8 z-10 select-none bg-navy-950">
+      <div className="sticky top-0 h-screen min-h-[100dvh] w-full overflow-hidden flex flex-col justify-between py-5 px-4 sm:px-8 z-10 select-none bg-navy-950">
         
         {/* 1. ATMOSPHERIC GRADIENT BACKGROUND MATCHING REFERENCE VIDEO PALETTE */}
         <div 
@@ -162,12 +162,12 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
           </div>
         </div>
 
-        {/* 4. MAIN STAGE VIEWPORT */}
-        <div className="relative z-10 flex-1 flex items-center justify-center w-full max-w-5xl mx-auto my-auto min-h-0">
+        {/* 4. MAIN STAGE VIEWPORT (WIDE DESKTOP CANVAS max-w-6xl) */}
+        <div className="relative z-10 flex-1 flex items-center justify-center w-full max-w-6xl mx-auto my-auto min-h-0">
           
           {/* STATE 1 — DISCOVER */}
           <div
-            className="absolute inset-0 flex flex-col justify-center items-center p-4 sm:p-6 transition-all duration-300 ease-out"
+            className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6 transition-all duration-300 ease-out"
             style={{
               opacity: m1.opacity,
               transform: `translate3d(0px, ${m1.translateY}px, 0px) scale(${m1.scale})`,
@@ -175,14 +175,14 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
               filter: `blur(${m1.blur}px)`,
             }}
           >
-            <div className="w-full max-w-4xl p-6 sm:p-10 rounded-3xl border border-white/20 bg-navy-950/85 backdrop-blur-2xl shadow-2xl">
+            <div className="w-full max-w-6xl p-6 sm:p-8 rounded-3xl border border-white/20 bg-navy-950/85 backdrop-blur-2xl shadow-2xl">
               {state1Content}
             </div>
           </div>
 
           {/* STATE 2 — UNDERSTAND */}
           <div
-            className="absolute inset-0 flex flex-col justify-center items-center p-4 sm:p-6 transition-all duration-300 ease-out"
+            className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6 transition-all duration-300 ease-out"
             style={{
               opacity: m2.opacity,
               transform: `translate3d(0px, ${m2.translateY}px, 0px) scale(${m2.scale})`,
@@ -190,14 +190,14 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
               filter: `blur(${m2.blur}px)`,
             }}
           >
-            <div className="w-full max-w-4xl p-6 sm:p-10 rounded-3xl border border-emerald-500/30 bg-navy-950/85 backdrop-blur-2xl shadow-2xl shadow-emerald-500/10">
+            <div className="w-full max-w-6xl p-6 sm:p-8 rounded-3xl border border-emerald-500/30 bg-navy-950/85 backdrop-blur-2xl shadow-2xl shadow-emerald-500/10">
               {state2Content}
             </div>
           </div>
 
           {/* STATE 3 — COMBINE */}
           <div
-            className="absolute inset-0 flex flex-col justify-center items-center p-4 sm:p-6 transition-all duration-300 ease-out"
+            className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6 transition-all duration-300 ease-out"
             style={{
               opacity: m3.opacity,
               transform: `translate3d(0px, ${m3.translateY}px, 0px) scale(${m3.scale})`,
@@ -205,14 +205,14 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
               filter: `blur(${m3.blur}px)`,
             }}
           >
-            <div className="w-full max-w-4xl p-6 sm:p-10 rounded-3xl border border-crimson-500/30 bg-navy-950/85 backdrop-blur-2xl shadow-2xl shadow-crimson-500/10">
+            <div className="w-full max-w-6xl p-6 sm:p-8 rounded-3xl border border-crimson-500/30 bg-navy-950/85 backdrop-blur-2xl shadow-2xl shadow-crimson-500/10">
               {state3Content}
             </div>
           </div>
 
           {/* STATE 4 — ACT */}
           <div
-            className="absolute inset-0 flex flex-col justify-center items-center p-4 sm:p-6 transition-all duration-300 ease-out"
+            className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6 transition-all duration-300 ease-out"
             style={{
               opacity: m4.opacity,
               transform: `translate3d(0px, ${m4.translateY}px, 0px) scale(${m4.scale})`,
@@ -220,14 +220,14 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
               filter: `blur(${m4.blur}px)`,
             }}
           >
-            <div className="w-full max-w-4xl p-6 sm:p-10 rounded-3xl border border-amber-500/30 bg-navy-950/85 backdrop-blur-2xl shadow-2xl shadow-amber-500/10">
+            <div className="w-full max-w-6xl p-6 sm:p-8 rounded-3xl border border-amber-500/30 bg-navy-950/85 backdrop-blur-2xl shadow-2xl shadow-amber-500/10">
               {state4Content}
             </div>
           </div>
 
           {/* STATE 5 — LEARN (STAYS FULLY VISIBLE UNTIL UNPINNING — ZERO BLANK SCREEN!) */}
           <div
-            className="absolute inset-0 flex flex-col justify-center items-center p-4 sm:p-6 transition-all duration-300 ease-out"
+            className="absolute inset-0 flex flex-col justify-center items-center p-3 sm:p-6 transition-all duration-300 ease-out"
             style={{
               opacity: m5.opacity,
               transform: `translate3d(0px, ${m5.translateY}px, 0px) scale(${m5.scale})`,
@@ -235,7 +235,7 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
               filter: `blur(${m5.blur}px)`,
             }}
           >
-            <div className="w-full max-w-4xl p-6 sm:p-10 rounded-3xl border border-purple-500/30 bg-navy-950/85 backdrop-blur-2xl shadow-2xl shadow-purple-500/10">
+            <div className="w-full max-w-6xl p-6 sm:p-8 rounded-3xl border border-purple-500/30 bg-navy-950/85 backdrop-blur-2xl shadow-2xl shadow-purple-500/10">
               {state5Content}
             </div>
           </div>
