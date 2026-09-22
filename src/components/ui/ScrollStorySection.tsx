@@ -22,7 +22,7 @@ function getStateMetrics(progress: number, stateIndex: number) {
   const delta = p - center;
 
   // State 5 stays 100% visible once reached until section unpins
-  if (stateIndex === 4 && p >= center) {
+  if (stateIndex === 4 && p >= 0.80) {
     return {
       opacity: 1,
       scale: 1,
@@ -131,7 +131,7 @@ export const ScrollStorySection: React.FC<ScrollStorySectionProps> = ({
   const bgGlowOpacity = 0.35 + Math.sin(scrollProgress * Math.PI) * 0.25;
 
   return (
-    <div ref={outerRef} className={`relative w-full h-[250vh] ${className}`}>
+    <div ref={outerRef} className={`relative w-full h-[350vh] ${className}`}>
       {/* PINNED STICKY VIEWPORT STAGE */}
       <div className="sticky top-0 h-screen min-h-[100dvh] w-full overflow-hidden flex flex-col justify-between py-5 px-4 sm:px-8 lg:px-12 z-10 select-none bg-navy-950">
         
