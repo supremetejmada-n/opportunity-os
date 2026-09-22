@@ -217,111 +217,82 @@ export const App: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <div className="relative w-full min-h-[60vh]">
-                {[
-                  {
-                    id: 'home' as NavTab,
-                    component: (
-                      <HomeScreen
-                        profile={profileData?.profile || null}
-                        skills={profileData?.skills || []}
-                        tools={profileData?.tools || []}
-                        goals={profileData?.goals || []}
-                        setActiveTab={setActiveTab}
-                        onScanClick={handleScanClick}
-                        isScanning={isScanning}
-                      />
-                    ),
-                  },
-                  {
-                    id: 'profile' as NavTab,
-                    component: (
-                      <PresentationFrame>
-                        <ProfileScreen
-                          profile={profileData?.profile || null}
-                          skills={profileData?.skills || []}
-                          tools={profileData?.tools || []}
-                          goals={profileData?.goals || []}
-                          interests={profileData?.interests || []}
-                          projects={profileData?.projects || []}
-                          onUpdateProfile={handleUpdateProfile}
-                          onAddSkill={handleAddSkill}
-                          onUpdateSkill={handleUpdateSkill}
-                          onDeleteSkill={handleDeleteSkill}
-                          onAddTool={handleAddTool}
-                          onUpdateTool={handleUpdateTool}
-                          onDeleteTool={handleDeleteTool}
-                          onAddGoal={handleAddGoal}
-                          onDeleteGoal={handleDeleteGoal}
-                          onAddInterest={handleAddInterest}
-                          onDeleteInterest={handleDeleteInterest}
-                          onAddProject={handleAddProject}
-                          onDeleteProject={handleDeleteProject}
-                        />
-                      </PresentationFrame>
-                    ),
-                  },
-                  {
-                    id: 'discover' as NavTab,
-                    component: (
-                      <PresentationFrame>
-                        <DiscoverScreen onScanClick={handleScanClick} isScanning={isScanning} />
-                      </PresentationFrame>
-                    ),
-                  },
-                  {
-                    id: 'opportunities' as NavTab,
-                    component: (
-                      <PresentationFrame>
-                        <OpportunitiesScreen
-                          onStartPlan={() => {
-                            setActiveTab('progress');
-                            loadProfile();
-                          }}
-                        />
-                      </PresentationFrame>
-                    ),
-                  },
-                  {
-                    id: 'combine' as NavTab,
-                    component: (
-                      <PresentationFrame>
-                        <CombineScreen
-                          tools={profileData?.tools || []}
-                          onStartPlan={() => {
-                            setActiveTab('progress');
-                            loadProfile();
-                          }}
-                        />
-                      </PresentationFrame>
-                    ),
-                  },
-                  {
-                    id: 'progress' as NavTab,
-                    component: (
-                      <PresentationFrame>
-                        <ProgressScreen
-                          metrics={metrics}
-                          onRefreshMetrics={loadProfile}
-                        />
-                      </PresentationFrame>
-                    ),
-                  },
-                ].map((tab) => {
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <div
-                      key={tab.id}
-                      className={`transition-opacity duration-150 transform-gpu w-full ${
-                        isActive
-                          ? 'opacity-100 relative pointer-events-auto z-10'
-                          : 'opacity-0 absolute inset-0 pointer-events-none -z-10 hidden'
-                      }`}
-                    >
-                      {tab.component}
-                    </div>
-                  );
-                })}
+              <div className="w-full min-h-[60vh]">
+                {activeTab === 'home' && (
+                  <HomeScreen
+                    profile={profileData?.profile || null}
+                    skills={profileData?.skills || []}
+                    tools={profileData?.tools || []}
+                    goals={profileData?.goals || []}
+                    setActiveTab={setActiveTab}
+                    onScanClick={handleScanClick}
+                    isScanning={isScanning}
+                  />
+                )}
+
+                {activeTab === 'profile' && (
+                  <PresentationFrame>
+                    <ProfileScreen
+                      profile={profileData?.profile || null}
+                      skills={profileData?.skills || []}
+                      tools={profileData?.tools || []}
+                      goals={profileData?.goals || []}
+                      interests={profileData?.interests || []}
+                      projects={profileData?.projects || []}
+                      onUpdateProfile={handleUpdateProfile}
+                      onAddSkill={handleAddSkill}
+                      onUpdateSkill={handleUpdateSkill}
+                      onDeleteSkill={handleDeleteSkill}
+                      onAddTool={handleAddTool}
+                      onUpdateTool={handleUpdateTool}
+                      onDeleteTool={handleDeleteTool}
+                      onAddGoal={handleAddGoal}
+                      onDeleteGoal={handleDeleteGoal}
+                      onAddInterest={handleAddInterest}
+                      onDeleteInterest={handleDeleteInterest}
+                      onAddProject={handleAddProject}
+                      onDeleteProject={handleDeleteProject}
+                    />
+                  </PresentationFrame>
+                )}
+
+                {activeTab === 'discover' && (
+                  <PresentationFrame>
+                    <DiscoverScreen onScanClick={handleScanClick} isScanning={isScanning} />
+                  </PresentationFrame>
+                )}
+
+                {activeTab === 'opportunities' && (
+                  <PresentationFrame>
+                    <OpportunitiesScreen
+                      onStartPlan={() => {
+                        setActiveTab('progress');
+                        loadProfile();
+                      }}
+                    />
+                  </PresentationFrame>
+                )}
+
+                {activeTab === 'combine' && (
+                  <PresentationFrame>
+                    <CombineScreen
+                      tools={profileData?.tools || []}
+                      onStartPlan={() => {
+                        setActiveTab('progress');
+                        loadProfile();
+                      }}
+                    />
+                  </PresentationFrame>
+                )}
+
+                {activeTab === 'progress' && (
+                  <PresentationFrame>
+                    <ProgressScreen
+                      metrics={metrics}
+                      onRefreshMetrics={loadProfile}
+                    />
+                  </PresentationFrame>
+                )}
               </div>
             )}
           </main>
