@@ -5,6 +5,11 @@
 @tailwind utilities;
 
 @layer base {
+  html, body {
+    scrollbar-gutter: stable both-edges;
+    overflow-y: scroll;
+  }
+
   :root {
     --font-display: 'Okine', 'MADE Okine Sans', 'Unbounded', 'Syne', 'Red Hat Display', sans-serif;
     --font-body: 'Arint', 'Sora', 'Outfit', 'Lexend', system-ui, -apple-system, sans-serif;

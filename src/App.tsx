@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Navbar, NavTab } from './components/layout/Navbar.js';
 import { HomeScreen } from './components/home/HomeScreen.js';
 import { ProfileScreen } from './components/profile/ProfileScreen.js';
@@ -216,83 +217,92 @@ export const App: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <div className="transition-opacity duration-300 ease-out w-full">
-                {activeTab === 'home' && (
-                  <HomeScreen
-                    profile={profileData?.profile || null}
-                    skills={profileData?.skills || []}
-                    tools={profileData?.tools || []}
-                    goals={profileData?.goals || []}
-                    setActiveTab={setActiveTab}
-                    onScanClick={handleScanClick}
-                    isScanning={isScanning}
-                  />
-                )}
-
-                {activeTab === 'profile' && (
-                  <PresentationFrame>
-                    <ProfileScreen
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeTab}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                  className="transform-gpu will-change-transform w-full"
+                >
+                  {activeTab === 'home' && (
+                    <HomeScreen
                       profile={profileData?.profile || null}
                       skills={profileData?.skills || []}
                       tools={profileData?.tools || []}
                       goals={profileData?.goals || []}
-                      interests={profileData?.interests || []}
-                      projects={profileData?.projects || []}
-                      onUpdateProfile={handleUpdateProfile}
-                      onAddSkill={handleAddSkill}
-                      onUpdateSkill={handleUpdateSkill}
-                      onDeleteSkill={handleDeleteSkill}
-                      onAddTool={handleAddTool}
-                      onUpdateTool={handleUpdateTool}
-                      onDeleteTool={handleDeleteTool}
-                      onAddGoal={handleAddGoal}
-                      onDeleteGoal={handleDeleteGoal}
-                      onAddInterest={handleAddInterest}
-                      onDeleteInterest={handleDeleteInterest}
-                      onAddProject={handleAddProject}
-                      onDeleteProject={handleDeleteProject}
+                      setActiveTab={setActiveTab}
+                      onScanClick={handleScanClick}
+                      isScanning={isScanning}
                     />
-                  </PresentationFrame>
-                )}
+                  )}
 
-                {activeTab === 'discover' && (
-                  <PresentationFrame>
-                    <DiscoverScreen onScanClick={handleScanClick} isScanning={isScanning} />
-                  </PresentationFrame>
-                )}
+                  {activeTab === 'profile' && (
+                    <PresentationFrame>
+                      <ProfileScreen
+                        profile={profileData?.profile || null}
+                        skills={profileData?.skills || []}
+                        tools={profileData?.tools || []}
+                        goals={profileData?.goals || []}
+                        interests={profileData?.interests || []}
+                        projects={profileData?.projects || []}
+                        onUpdateProfile={handleUpdateProfile}
+                        onAddSkill={handleAddSkill}
+                        onUpdateSkill={handleUpdateSkill}
+                        onDeleteSkill={handleDeleteSkill}
+                        onAddTool={handleAddTool}
+                        onUpdateTool={handleUpdateTool}
+                        onDeleteTool={handleDeleteTool}
+                        onAddGoal={handleAddGoal}
+                        onDeleteGoal={handleDeleteGoal}
+                        onAddInterest={handleAddInterest}
+                        onDeleteInterest={handleDeleteInterest}
+                        onAddProject={handleAddProject}
+                        onDeleteProject={handleDeleteProject}
+                      />
+                    </PresentationFrame>
+                  )}
 
-                {activeTab === 'opportunities' && (
-                  <PresentationFrame>
-                    <OpportunitiesScreen
-                      onStartPlan={() => {
-                        setActiveTab('progress');
-                        loadProfile();
-                      }}
-                    />
-                  </PresentationFrame>
-                )}
+                  {activeTab === 'discover' && (
+                    <PresentationFrame>
+                      <DiscoverScreen onScanClick={handleScanClick} isScanning={isScanning} />
+                    </PresentationFrame>
+                  )}
 
-                {activeTab === 'combine' && (
-                  <PresentationFrame>
-                    <CombineScreen
-                      tools={profileData?.tools || []}
-                      onStartPlan={() => {
-                        setActiveTab('progress');
-                        loadProfile();
-                      }}
-                    />
-                  </PresentationFrame>
-                )}
+                  {activeTab === 'opportunities' && (
+                    <PresentationFrame>
+                      <OpportunitiesScreen
+                        onStartPlan={() => {
+                          setActiveTab('progress');
+                          loadProfile();
+                        }}
+                      />
+                    </PresentationFrame>
+                  )}
 
-                {activeTab === 'progress' && (
-                  <PresentationFrame>
-                    <ProgressScreen
-                      metrics={metrics}
-                      onRefreshMetrics={loadProfile}
-                    />
-                  </PresentationFrame>
-                )}
-              </div>
+                  {activeTab === 'combine' && (
+                    <PresentationFrame>
+                      <CombineScreen
+                        tools={profileData?.tools || []}
+                        onStartPlan={() => {
+                          setActiveTab('progress');
+                          loadProfile();
+                        }}
+                      />
+                    </PresentationFrame>
+                  )}
+
+                  {activeTab === 'progress' && (
+                    <PresentationFrame>
+                      <ProgressScreen
+                        metrics={metrics}
+                        onRefreshMetrics={loadProfile}
+                      />
+                    </PresentationFrame>
+                  )}
+                </motion.div>
+              </AnimatePresence>
             )}
           </main>
 

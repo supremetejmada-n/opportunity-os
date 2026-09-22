@@ -65,9 +65,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   const displayName = profile?.name ? profile.name.split(' ')[0] : 'Advisor';
 
   return (
-    <header className="sticky top-0 z-50 w-full px-4 sm:px-6 pt-3 pb-2 transition-all duration-300">
+    <header className="sticky top-4 z-50 w-full max-w-[1200px] mx-auto px-4 sm:px-6 pt-1 pb-2 transition-all duration-300 transform-gpu [transform:translateZ(0)]">
       {/* Pillar 8: Floating Detached Navigation Dock */}
-      <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4 sm:px-6 rounded-full border border-white/10 bg-slate-950/70 backdrop-blur-xl shadow-2xl relative overflow-hidden [box-shadow:0_12px_40px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.14)]">
+      <div className="mx-auto flex h-14 w-full items-center justify-between px-4 sm:px-6 rounded-full border border-white/10 bg-slate-950/70 backdrop-blur-xl shadow-2xl relative overflow-hidden [box-shadow:0_12px_40px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.14)]">
         {/* Specular inset top highlight line */}
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
         
@@ -104,9 +104,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               >
                 {isActive && (
                   <motion.div
-                    layoutId="activeTabPill"
-                    transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                    className="absolute inset-0 rounded-full bg-white/15 border border-white/20 backdrop-blur-md shadow-lg shadow-white/5"
+                    layoutId="activeNavPill"
+                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                    className="absolute inset-0 rounded-full bg-white/10 border border-white/15 backdrop-blur-md shadow-lg shadow-white/5"
                   />
                 )}
                 <Icon className={`h-3.5 w-3.5 z-10 ${isActive ? 'text-white' : 'text-slate-400'}`} />
