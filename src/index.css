@@ -8,6 +8,11 @@
   html, body {
     scrollbar-gutter: stable both-edges;
     overflow-y: scroll;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-variant-numeric: tabular-nums lining-nums;
+    font-feature-settings: "tnum" 1, "lnum" 1;
   }
 
   :root {
@@ -95,7 +100,17 @@
   background: rgba(255, 255, 255, 0.25);
 }
 
-/* Pillar 2: Multi-Stop Specular Glass Hierarchy */
+/* Pillar 2: Multi-Stop Specular Glass Hierarchy & GPU Isolation */
+
+.panel-card,
+.glass-panel-primary,
+.glass-panel-secondary,
+.glass-panel-floating,
+.interactive-card {
+  contain: layout style;
+  transform: translateZ(0);
+  will-change: transform;
+}
 
 /* Level 2 — Primary Hero & Major Glass Panels */
 .glass-panel-primary {
@@ -144,12 +159,13 @@
   box-shadow: 
     0 10px 30px -5px rgba(0, 0, 0, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  transition: transform 220ms var(--ease-linear-spring), background-color 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+  touch-action: manipulation;
+  transition: transform 160ms var(--ease-linear-spring), background-color 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .interactive-card:hover {
-    transform: translateY(-2px) scale(1.004);
+    transform: translateY(-2px) scale(1.004) translateZ(0);
     background: rgba(255, 255, 255, 0.05);
     border-color: rgba(255, 255, 255, 0.18);
     box-shadow: 
@@ -159,10 +175,15 @@
 }
 
 .interactive-card:active {
-  transform: scale(0.988);
+  transform: scale(0.985) translateZ(0);
+  transition: transform 0.08s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Pillar 10: Tactile Button Hierarchy */
+/* Pillar 10: Tactile Button Hierarchy & Instant Input Latency */
+
+button, a, input, select, textarea, [role="button"] {
+  touch-action: manipulation;
+}
 
 /* Primary CTA — High-Contrast Clean White (Linear/Raycast Precision) */
 .btn-primary {
@@ -176,7 +197,8 @@
   box-shadow: 
     0 0 24px rgba(255, 255, 255, 0.18),
     0 4px 16px rgba(0, 0, 0, 0.3);
-  transition: transform 160ms var(--ease-linear-spring), background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  touch-action: manipulation;
+  transition: transform 0.08s cubic-bezier(0.16, 1, 0.3, 1), background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -188,7 +210,7 @@
 @media (hover: hover) and (pointer: fine) {
   .btn-primary:hover {
     background: #f8fafc;
-    transform: scale(1.01);
+    transform: scale(1.01) translateZ(0);
     box-shadow: 
       0 0 30px rgba(255, 255, 255, 0.28),
       0 6px 20px rgba(0, 0, 0, 0.4);
@@ -196,7 +218,7 @@
 }
 
 .btn-primary:active {
-  transform: scale(0.99);
+  transform: scale(0.985) translateZ(0);
 }
 
 /* Secondary CTA — Glass Fill */
@@ -213,7 +235,8 @@
   box-shadow: 
     0 4px 15px rgba(0, 0, 0, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  transition: transform 160ms var(--ease-linear-spring), background-color 160ms ease, color 160ms ease, border-color 160ms ease;
+  touch-action: manipulation;
+  transition: transform 0.08s cubic-bezier(0.16, 1, 0.3, 1), background-color 160ms ease, color 160ms ease, border-color 160ms ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -234,7 +257,7 @@
 }
 
 .btn-secondary:active {
-  transform: scale(0.98);
+  transform: scale(0.985) translateZ(0);
 }
 
 /* Ghost CTA */
@@ -246,7 +269,8 @@
   padding: 0.4rem 0.875rem;
   border-radius: 0.5rem;
   border: 1px solid transparent;
-  transition: transform 160ms var(--ease-linear-spring), color 160ms ease, background-color 160ms ease;
+  touch-action: manipulation;
+  transition: transform 0.08s cubic-bezier(0.16, 1, 0.3, 1), color 160ms ease, background-color 160ms ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -263,7 +287,7 @@
 }
 
 .btn-ghost:active {
-  transform: scale(0.98);
+  transform: scale(0.985) translateZ(0);
 }
 
 /* Level 5 — Modals & Dialogs (Smoked VisionOS Glass) */
