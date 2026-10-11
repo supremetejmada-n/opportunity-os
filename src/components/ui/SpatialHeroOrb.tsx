@@ -195,7 +195,7 @@ export const SpatialHeroOrb: React.FC<SpatialHeroOrbProps> = ({ className = '' }
   return (
     <div className={`relative w-full h-[280px] sm:h-[340px] flex items-center justify-center ${className}`}>
       <div ref={containerRef} className="w-full h-full cursor-grab active:cursor-grabbing relative z-10" />
-      <div className="absolute inset-0 pointer-events-none bg-radial from-peach-500/15 via-burgundy-900/20 to-transparent rounded-full blur-3xl animate-pulse" />
+      <div className="absolute inset-0 pointer-events-none bg-radial from-peach-500/15 via-burgundy-900/20 to-transparent rounded-full blur-3xl opacity-70 transform-gpu" />
     </div>
   );
 };

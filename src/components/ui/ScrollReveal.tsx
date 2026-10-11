@@ -31,16 +31,16 @@ export const ScrollReveal: React.FC<ScrollRevealProps> = ({
     offset: ['start end', 'end start'],
   });
 
-  // Kinetic velocity spring smoothing (stiffness: 100, damping: 30, restDelta: 0.001)
+  // Kinetic velocity spring smoothing (stiffness: 140, damping: 28, restDelta: 0.001)
   const smoothProgress = useSpring(scrollYProgress, {
-    stiffness: 100,
-    damping: 30,
+    stiffness: 140,
+    damping: 28,
     restDelta: 0.001,
   });
 
   // Entry scrubbed GPU transforms (0.0 to 0.4)
-  const rotateX = useTransform(smoothProgress, [0, 0.4], [12, 0]);
-  const scale = useTransform(smoothProgress, [0, 0.4], [0.94, 1.0]);
+  const rotateX = useTransform(smoothProgress, [0, 0.4], [4, 0]);
+  const scale = useTransform(smoothProgress, [0, 0.4], [0.98, 1.0]);
   const opacity = useTransform(smoothProgress, [0, 0.3], [0, 1]);
 
   if (shouldReduceMotion) {
@@ -91,26 +91,6 @@ export const ScrollRevealStagger: React.FC<ScrollRevealStaggerProps> = ({
     restDelta: 0.001,
   });
 
-  // Interactive Cursor Shine (Micro-Tactility on Idle)
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const cards = el.querySelectorAll<HTMLElement>('.glass-card, [class*="GlassCard"], [class*="glass-panel"]');
-      cards.forEach((card) => {
-        const rect = card.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        card.style.setProperty('--mouse-x', `${x}px`);
-        card.style.setProperty('--mouse-y', `${y}px`);
-      });
-    };
-
-    el.addEventListener('mousemove', handleMouseMove, { passive: true });
-    return () => el.removeEventListener('mousemove', handleMouseMove);
-  }, []);
-
   if (shouldReduceMotion) {
     return <div className={className}>{children}</div>;
   }
@@ -151,17 +131,15 @@ export const ScrollRevealItem: React.FC<{
 
   // Differential Y-axis column parallax mapping profiles
   const parallaxProfiles = [
-    [120, -60],
-    [180, -90],
-    [80, -30],
-    [140, -70],
-    [100, -40],
+    [0, -40],
+    [0, -60],
+    [0, -30],
   ];
   const profile = parallaxProfiles[index % parallaxProfiles.length];
 
   const y = useTransform(progress, [0, 1], profile);
-  const rotateX = useTransform(progress, [0, 0.4], [12, 0]);
-  const scale = useTransform(progress, [0, 0.4], [0.94, 1.0]);
+  const rotateX = useTransform(progress, [0, 0.4], [4, 0]);
+  const scale = useTransform(progress, [0, 0.4], [0.98, 1.0]);
   const opacity = useTransform(progress, [0, 0.3], [0, 1]);
 
   if (shouldReduceMotion) {

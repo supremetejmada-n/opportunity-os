@@ -5,8 +5,8 @@ import { ScrollReveal, ScrollRevealStagger, ScrollRevealItem } from '../ui/Scrol
 
 export const CreatorStory: React.FC = () => {
   return (
-    <ScrollReveal className="w-full max-w-[1800px] mx-auto px-4 sm:px-8 lg:px-12 py-16 sm:py-24 text-left">
-      <GlassCard variant="primary" className="p-8 sm:p-14 border-peach-500/30 bg-navy-950/90 relative overflow-hidden space-y-10 shadow-2xl shadow-peach-500/10">
+    <ScrollReveal className="w-full max-w-[1800px] mx-auto px-4 sm:px-8 lg:px-12 py-6 sm:py-8 text-left">
+      <GlassCard variant="primary" className="p-6 sm:p-10 border-peach-500/30 bg-navy-950/90 relative overflow-hidden space-y-6 sm:space-y-8 shadow-2xl shadow-peach-500/10">
         {/* Top Specular Glass Edge Highlight */}
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-peach-500/50 to-transparent pointer-events-none" />
 

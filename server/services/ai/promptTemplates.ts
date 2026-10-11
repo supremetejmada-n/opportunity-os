@@ -65,11 +65,11 @@ export const PROMPT_TEMPLATES = {
    */
   capabilityAnalysis: (discovery: Record<string, any>, userProfile: Record<string, any>) => buildFormattedPrompt({
     taskType: 'analyze',
-    systemInstructions: 'Compare technology capabilities against user skills and tools to identify potential service workflows.',
+    systemInstructions: 'Compare technology capabilities against user skills and tools to identify potential service workflows. CRITICAL REQUIREMENT: The title must be a plain-English, outcome-oriented business service (e.g. "Create 30-Day Instagram Content for Local Gyms"). NEVER include model names, repository names, GitHub slugs, version numbers, parameter counts, quantization names, or technical jargon.',
     userContext: { discovery, userProfile },
     taskDetails: 'Determine what services can be delivered using this technology given the user profile.',
     jsonSchemaFormat: `{
-  "feasibleService": "Service Title",
+  "feasibleService": "Plain English Service Title (e.g. Create Product Photos for Online Sellers)",
   "requiredTools": ["Tool 1", "Tool 2"],
   "missingSkills": ["Skill gap"],
   "estimatedDemoDays": "1-2 days"

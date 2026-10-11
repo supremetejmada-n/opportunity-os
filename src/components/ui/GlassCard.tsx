@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 
 export type GlassVariant = 'primary' | 'secondary' | 'floating' | 'flat';
 
@@ -17,30 +17,70 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   ...props
 }) => {
   const cardRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<number | null>(null);
   const [isHovered, setIsHovered] = useState(false);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    e.currentTarget.style.setProperty('--mouse-x', `${x}px`);
-    e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
-    if (props.onMouseMove) props.onMouseMove(e);
+  useEffect(() => {
+    return () => {
+      if (frameRef.current) {
+        cancelAnimationFrame(frameRef.current);
+      }
+    };
+  }, []);
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === 'touch') return;
+    const el = cardRef.current;
+    if (!el) return;
+
+    const clientX = e.clientX;
+    const clientY = e.clientY;
+
+    if (frameRef.current) return;
+
+    frameRef.current = requestAnimationFrame(() => {
+      frameRef.current = null;
+      if (!cardRef.current) return;
+      const rect = cardRef.current.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+      cardRef.current.style.setProperty('--mouse-x', `${x}px`);
+      cardRef.current.style.setProperty('--mouse-y', `${y}px`);
+      cardRef.current.style.setProperty('--spotlight-opacity', '1');
+    });
+
+    if (props.onPointerMove) props.onPointerMove(e);
   };
 
-  const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handlePointerEnter = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === 'touch') return;
     setIsHovered(true);
-    if (props.onMouseEnter) props.onMouseEnter(e);
+    if (cardRef.current) {
+      const rect = cardRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      cardRef.current.style.setProperty('--mouse-x', `${x}px`);
+      cardRef.current.style.setProperty('--mouse-y', `${y}px`);
+      cardRef.current.style.setProperty('--spotlight-opacity', '1');
+    }
+    if (props.onPointerEnter) props.onPointerEnter(e);
   };
 
-  const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handlePointerLeave = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (frameRef.current) {
+      cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    }
+    if (cardRef.current) {
+      cardRef.current.style.setProperty('--spotlight-opacity', '0');
+    }
     setIsHovered(false);
-    if (props.onMouseLeave) props.onMouseLeave(e);
+    if (props.onPointerLeave) props.onPointerLeave(e);
   };
 
   const variantStyles: Record<GlassVariant, string> = {
-    primary: 'glass-panel-primary',
-    secondary: 'glass-panel-secondary',
+    primary: 'metal-panel-primary',
+    secondary: 'metal-panel-secondary',
     floating: 'glass-panel-floating',
     flat: 'bg-white/[0.03] backdrop-blur-md border border-white/10 rounded-2xl shadow-xl',
   };
@@ -52,18 +92,19 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   return (
     <div
       ref={cardRef}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      data-glass-card="true"
+      onPointerMove={handlePointerMove}
+      onPointerEnter={handlePointerEnter}
+      onPointerLeave={handlePointerLeave}
       className={`relative overflow-hidden group transform-gpu will-change-transform ${variantStyles[variant]} ${interactiveStyles} ${className}`}
       style={{
-        transition: 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease',
-        transform: isHovered ? 'translateY(-5px) scale(1.015)' : 'translateY(0px) scale(1.0)',
-        boxShadow: isHovered ? '0 20px 40px -15px rgba(0, 0, 0, 0.6)' : undefined,
+        transition: 'transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease',
+        transform: isHovered ? 'translateY(-2px) scale(1.008)' : 'translateY(0px) scale(1.0)',
+        boxShadow: isHovered ? '0 16px 36px -12px rgba(0, 0, 0, 0.55)' : undefined,
       }}
       {...props}
     >
-      {/* 3. Radial Border Light (The Spotlight Glow) */}
+      {/* Radial Border Light (Spotlight Glow) */}
       <div
         className="pointer-events-none absolute inset-0 rounded-[inherit] transition-opacity duration-300 z-0"
         style={{
@@ -75,7 +116,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({
       {/* Inset top specular highlight stroke */}
       <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none z-10" />
 
-      <div className="relative z-10 w-full h-full">{children}</div>
+      <div className="relative z-10 w-full h-full flex flex-col justify-between min-w-0">{children}</div>
     </div>
   );
 };

@@ -25,9 +25,9 @@ export const LenisProvider: React.FC<LenisProviderProps> = ({ children }) => {
     }
 
     const lenis = new Lenis({
-      duration: 1.2,
+      duration: 1.0,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // Smooth exponential ease
-      lerp: 0.1,
+      lerp: 0.12,
       smoothWheel: true,
       syncTouch: false,
       wheelMultiplier: 1.0,

@@ -7,7 +7,6 @@
 @layer base {
   html, body {
     scrollbar-gutter: stable both-edges;
-    overflow-y: scroll;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -36,6 +35,9 @@
     --glass-modal-border: rgba(255, 255, 255, 0.16);
 
     --ease-linear-spring: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-primary: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-fast: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-micro: cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 
   /* Pillar 6: Deep Obsidian Base Environment & Live Ambient Light Caustics */
@@ -112,37 +114,55 @@
   will-change: transform;
 }
 
-/* Level 2 — Primary Hero & Major Glass Panels */
-.glass-panel-primary {
-  background: rgba(13, 18, 28, 0.65);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+/* Level 2 — Primary Hero & Major Glass Panels (Liquid Metal Level 1) */
+.glass-panel-primary,
+.metal-panel-primary {
+  background: linear-gradient(135deg, rgba(20, 27, 41, 0.75) 0%, rgba(11, 16, 26, 0.85) 100%);
+  backdrop-filter: blur(16px) saturate(170%);
+  -webkit-backdrop-filter: blur(16px) saturate(170%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 1.5rem;
   box-shadow: 
-    0 20px 40px -15px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    0 24px 50px -15px rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 0 20px rgba(255, 255, 255, 0.03);
   transition: all 250ms var(--ease-linear-spring);
+  position: relative;
 }
 
-/* Level 3 — Secondary Content Glass */
-.glass-panel-secondary {
-  background: rgba(255, 255, 255, 0.025);
-  backdrop-filter: blur(16px) saturate(160%);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+.metal-panel-primary::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.15) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Level 3 — Secondary Content Glass (Brushed Metal Edge) */
+.glass-panel-secondary,
+.metal-panel-secondary {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 1.25rem;
   box-shadow: 
-    0 8px 24px -5px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    0 10px 30px -5px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
   transition: all 220ms var(--ease-linear-spring);
 }
 
 /* Level 4 — Floating Controls & Interactive Elements */
 .glass-panel-floating {
   background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 1rem;
   box-shadow: 
@@ -152,8 +172,8 @@
 
 .interactive-card {
   background: rgba(255, 255, 255, 0.028);
-  backdrop-filter: blur(18px) saturate(160%);
-  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 1.25rem;
   box-shadow: 
@@ -185,47 +205,68 @@ button, a, input, select, textarea, [role="button"] {
   touch-action: manipulation;
 }
 
-/* Primary CTA — High-Contrast Clean White (Linear/Raycast Precision) */
-.btn-primary {
-  background: #ffffff;
-  color: #090d16;
-  font-weight: 600;
+/* Primary CTA — Elevated Polished Chrome Surface */
+.btn-primary,
+.btn-metal-primary {
+  background: linear-gradient(180deg, #ffffff 0%, #e2e8f0 100%);
+  color: #070a0f;
+  font-weight: 700;
   font-size: 0.875rem;
   padding: 0.625rem 1.375rem;
   border-radius: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.9);
   box-shadow: 
-    0 0 24px rgba(255, 255, 255, 0.18),
-    0 4px 16px rgba(0, 0, 0, 0.3);
+    0 0 28px rgba(255, 255, 255, 0.25),
+    0 8px 24px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 #ffffff;
   touch-action: manipulation;
-  transition: transform 0.08s cubic-bezier(0.16, 1, 0.3, 1), background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  transition: transform 140ms var(--ease-fast), background 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   cursor: pointer;
   user-select: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-metal-primary::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.5s ease;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .btn-primary:hover {
-    background: #f8fafc;
-    transform: scale(1.01) translateZ(0);
+  .btn-primary:hover,
+  .btn-metal-primary:hover {
+    background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
+    transform: translateY(-1px) scale(1.01) translateZ(0);
     box-shadow: 
-      0 0 30px rgba(255, 255, 255, 0.28),
-      0 6px 20px rgba(0, 0, 0, 0.4);
+      0 0 35px rgba(255, 255, 255, 0.35),
+      0 10px 28px rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 #ffffff;
+  }
+  .btn-metal-primary:hover::after {
+    left: 150%;
   }
 }
 
-.btn-primary:active {
-  transform: scale(0.985) translateZ(0);
+.btn-primary:active,
+.btn-metal-primary:active {
+  transform: translateY(1px) scale(0.985) translateZ(0);
+  transition: transform 90ms var(--ease-micro);
 }
 
 /* Secondary CTA — Glass Fill */
 .btn-secondary {
   background-color: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px) saturate(150%);
-  -webkit-backdrop-filter: blur(12px) saturate(150%);
   color: #f1f5f9;
   font-weight: 500;
   font-size: 0.875rem;
@@ -295,8 +336,8 @@ button, a, input, select, textarea, [role="button"] {
   position: fixed;
   inset: 0;
   background-color: rgba(7, 10, 15, 0.84);
-  backdrop-filter: blur(28px) saturate(200%);
-  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
   z-index: 50;
   display: flex;
   align-items: center;
@@ -306,9 +347,7 @@ button, a, input, select, textarea, [role="button"] {
 }
 
 .modal-content {
-  background: rgba(13, 18, 28, 0.88);
-  backdrop-filter: blur(36px) saturate(200%);
-  -webkit-backdrop-filter: blur(36px) saturate(200%);
+  background: rgba(13, 18, 28, 0.92);
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 1.75rem;
   width: 100%;
@@ -350,5 +389,8 @@ button, a, input, select, textarea, [role="button"] {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
     transform: none !important;
+  }
+  [data-glass-card] {
+    --spotlight-opacity: 0 !important;
   }
 }

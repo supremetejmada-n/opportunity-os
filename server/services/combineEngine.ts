@@ -1,5 +1,8 @@
 import { dbAll, dbGet, dbRun } from '../db/sqlite.js';
 import { learningEngine } from './learningEngine.js';
+import { getCanonicalOpportunityKey, areTwinServices, reconcileDuplicateOpportunities } from './canonicalIdentity.js';
+import { synthesizeUserFacingService, validateUserFacingTitle, sanitizeTechnicalTitle } from './serviceSynthesis.js';
+import { getUserProfileContext } from './discovery/relevanceGate.js';
 import {
   ToolCombination,
   ToolAccessStatus,
@@ -922,6 +925,240 @@ export function calculateCombinerScore(
 }
 
 // ============================================================================
+// ============================================================================
+// Single-Tool Standalone Service Evaluation
+// ============================================================================
+
+export function evaluateSingleTool(
+  tool: UnifiedTool,
+  userSkills: UserSkill[] = [],
+  profile: UserProfile | null = null
+): ToolCombination {
+  const cleanToolName = sanitizeTechnicalTitle(tool.name);
+  const caps = normalizeCapabilities(tool.capabilities, tool.name, tool.category);
+  const primaryCap = caps.find(c => c !== 'UNKNOWN') || 'UNKNOWN';
+
+  const { isZeroCost, startupCost, hasUnknownCost } = checkCombinationZeroCost([tool]);
+
+  let title = `Create Customer Reply Templates for Local Businesses`;
+  let summary = `Deliver a practical service for local clients using ${cleanToolName}.`;
+  let concreteOutcome = `Direct service package created using ${cleanToolName}.`;
+  let customerType = 'Potential target customer: Local Small Businesses';
+  let targetCustomer = 'Potential target customer: Small business owners and solo entrepreneurs needing dedicated task execution.';
+  let timeToDemo = '2-4 hours';
+  let difficulty: 'Easy' | 'Medium' | 'Hard' = 'Easy';
+  let workflowSteps = [
+    `Set up project templates in ${cleanToolName}.`,
+    `Execute service deliverables according to client specifications.`,
+    `Hand off completed assets and provide initial client review.`
+  ];
+  let monetization = {
+    range: '₹3,000 - ₹10,000 / project ($40 - $120)',
+    pricingModel: 'Hypothetical Fixed Service Package',
+    targetCustomer: 'Potential target customer: Local Merchants & Service Providers',
+    basis: 'Initial service-pricing hypothesis requiring validation. Not verified market rate.',
+    confidence: 'Low' as ConfidenceLevel
+  };
+
+  switch (primaryCap) {
+    case 'GRAPHIC_DESIGN':
+      title = `Design Social Media Graphics for Local Businesses`;
+      summary = `Create custom social media post templates, promotional banners, and graphic assets for local brands using ${cleanToolName}.`;
+      concreteOutcome = '10 custom social media templates, promotional flyers, and ad banners formatted for Instagram/Facebook.';
+      customerType = 'Potential target customer: Local Retailers & Restaurants';
+      targetCustomer = 'Potential target customer: Local shop owners, boutique brands, and restaurants needing visual marketing.';
+      monetization.range = '₹4,000 - ₹12,000 / package ($50 - $150)';
+      break;
+
+    case 'TEXT_GENERATION':
+      title = `Create 30-Day Content & Captions for Local Businesses`;
+      summary = `Draft high-converting marketing copy, sales email sequences, and blog content for local businesses using ${cleanToolName}.`;
+      concreteOutcome = '5 high-converting email sequences, 10 social posts, and product description templates.';
+      customerType = 'Potential target customer: E-Commerce Brands & Local Service Providers';
+      targetCustomer = 'Potential target customer: Online store owners, coaches, and local service providers seeking content copy.';
+      monetization.range = '₹4,000 - ₹15,000 / project ($50 - $180)';
+      break;
+
+    case 'IMAGE_GENERATION':
+      title = `Create Product Photos for Online Sellers`;
+      summary = `Generate high-resolution promotional product imagery and brand visual assets using ${cleanToolName}.`;
+      concreteOutcome = '15 high-resolution AI generated brand visuals and media assets formatted for web and ad campaigns.';
+      customerType = 'Potential target customer: Online Merchants & Ad Agencies';
+      targetCustomer = 'Potential target customer: E-commerce store owners and marketing agencies requiring custom stock/product imagery.';
+      monetization.range = '₹5,000 - ₹18,000 / bundle ($60 - $220)';
+      break;
+
+    case 'VIDEO_EDITING':
+      title = `Edit Short-Form Promotional Reels for Local Businesses`;
+      summary = `Trim, edit, format, and add kinetic captions to short-form vertical reels for creators and brands using ${cleanToolName}.`;
+      concreteOutcome = '5 polished 30-second vertical reels with styled subtitles, transitions, and audio balancing.';
+      customerType = 'Potential target customer: Content Creators & Podcasters';
+      targetCustomer = 'Potential target customer: Solo creators, podcast hosts, and local businesses seeking vertical video reach.';
+      timeToDemo = '4-6 hours';
+      difficulty = 'Medium';
+      monetization.range = '₹6,000 - ₹20,000 / month ($75 - $250)';
+      break;
+
+    case 'DATA_EXTRACTION':
+    case 'DOCUMENT_PROCESSING':
+      title = `Extract & Organize Data in Spreadsheets for Small Businesses`;
+      summary = `Clean raw data, extract structured records, and format client-ready spreadsheets using ${cleanToolName}.`;
+      concreteOutcome = 'A clean, deduplicated database of 500+ formatted contact or inventory records with verified reporting formulas.';
+      customerType = 'Potential target customer: Sales Teams & Small Business Managers';
+      targetCustomer = 'Potential target customer: Commercial sales reps, recruiters, and small business managers.';
+      monetization.range = '₹4,000 - ₹12,000 / project ($50 - $150)';
+      break;
+
+    case 'AUDIO_PROCESSING':
+      title = `Clean Voice Audio & Transcription for Podcasters`;
+      summary = `Transcribe meeting recordings, interviews, and podcasts into clean formatted transcripts with ${cleanToolName}.`;
+      concreteOutcome = 'Timestamped meeting transcripts, executive summaries, and subtitle files derived from raw audio recordings.';
+      customerType = 'Potential target customer: Podcasters & Executives';
+      targetCustomer = 'Potential target customer: Podcast hosts, journalists, and executives requiring written summaries.';
+      monetization.range = '₹3,000 - ₹10,000 / month ($40 - $120)';
+      break;
+
+    case 'LOCAL_INFERENCE':
+      title = `Set Up Confidential Document Search for Local Clinics`;
+      summary = `Configure and deploy private, zero-cloud LLM assistants on local hardware using ${cleanToolName}.`;
+      concreteOutcome = 'A fully configured on-device AI assistant with local interface for confidential document processing.';
+      customerType = 'Potential target customer: Legal & Healthcare Practices';
+      targetCustomer = 'Potential target customer: Law firms, medical clinics, and privacy-sensitive businesses.';
+      timeToDemo = '4-6 hours';
+      difficulty = 'Medium';
+      monetization.range = '₹10,000 - ₹25,000 / setup ($125 - $300)';
+      break;
+
+    case 'WORKFLOW_AUTOMATION':
+      title = `Build Simple Lead Follow-Up Systems for Local Businesses`;
+      summary = `Build automated webhooks, data syncs, and trigger flows across software applications using ${cleanToolName}.`;
+      concreteOutcome = 'An automated lead intake pipeline that syncs form submissions to email notifications and databases.';
+      customerType = 'Potential target customer: Digital Agencies & E-Commerce Merchants';
+      targetCustomer = 'Potential target customer: Small agencies and online merchants seeking automated task handoffs.';
+      timeToDemo = '4-8 hours';
+      difficulty = 'Medium';
+      monetization.range = '₹8,000 - ₹20,000 / setup ($100 - $250)';
+      break;
+
+    case 'CODE_DEVELOPMENT':
+      title = `Build Simple Website Features for Small Businesses`;
+      summary = `Develop targeted automation scripts, API connectors, and utility tools using ${cleanToolName}.`;
+      concreteOutcome = 'A custom executable script for batch data processing, scheduled scraping, or system integration.';
+      customerType = 'Potential target customer: Technical Founders & Niche Businesses';
+      targetCustomer = 'Potential target customer: Small tech startups, researchers, and niche businesses needing custom scripts.';
+      timeToDemo = '4-8 hours';
+      difficulty = 'Medium';
+      monetization.range = '₹8,000 - ₹25,000 / project ($100 - $300)';
+      break;
+
+    case 'DATABASE_STORAGE':
+      title = `Set Up Organized Client Databases for Local Shops`;
+      summary = `Structure custom relational tables, inventory trackers, and client management databases in ${cleanToolName}.`;
+      concreteOutcome = 'A fully configured client database schema with relational linking, view filters, and backup exports.';
+      customerType = 'Potential target customer: Small Business Owners & Consultants';
+      targetCustomer = 'Potential target customer: Consultants, service managers, and shop owners requiring organized client records.';
+      monetization.range = '₹5,000 - ₹15,000 / setup ($60 - $180)';
+      break;
+
+    case 'MESSAGING_NOTIFICATION':
+      title = `Set Up WhatsApp Reply Templates for Local Clinics`;
+      summary = `Set up automated broadcast channels, alert bots, and customer message triggers using ${cleanToolName}.`;
+      concreteOutcome = 'A real-time notification bot delivering categorized alerts to team members or subscriber channels.';
+      customerType = 'Potential target customer: Online Communities & Support Teams';
+      targetCustomer = 'Potential target customer: Community managers, trading groups, and customer support desks.';
+      monetization.range = '₹4,000 - ₹12,000 / channel ($50 - $150)';
+      break;
+
+    default:
+      title = `Create Customer Reply Templates for Local Businesses`;
+      summary = `${cleanToolName} provides specialized capabilities. To unlock multi-tool automation workflows, consider pairing it with a text generator (like Gemini) or design tool (like Canva).`;
+      concreteOutcome = `Direct utility setup and single-tool service delivery using ${cleanToolName}.`;
+      break;
+  }
+
+  const accessStatus = evaluateToolAccess(tool);
+  const matchedStages: CapabilityChainStage[] = [
+    {
+      stageIndex: 1,
+      toolId: tool.id,
+      toolName: tool.name,
+      capability: primaryCap,
+      actionDescription: summary,
+      accessStatus
+    }
+  ];
+
+  // Base score for standalone service (65 to 90)
+  let rawScore = 75;
+  if (isZeroCost) rawScore += 10;
+  const hasSkillMatch = userSkills.some(s => s.name.toLowerCase().includes(primaryCap.toLowerCase()) || s.confidence >= 75);
+  if (hasSkillMatch) rawScore += 5;
+
+  const score = Math.min(100, Math.max(65, rawScore));
+  const breakdown: CombinerScoreBreakdown = {
+    userToolAvailability: 15,
+    capabilitySynergy: 15,
+    personalSkillFit: hasSkillMatch ? 15 : 10,
+    outcomeUsefulness: 15,
+    zeroCostFeasibility: isZeroCost ? 15 : 10,
+    executionSimplicity: 10,
+    timeToDemo: 5,
+    customerMonetizationPotential: 10,
+    reasoning: {
+      userToolAvailability: `User already has access to ${tool.name}.`,
+      capabilitySynergy: `Standalone service execution for ${primaryCap}.`,
+      personalSkillFit: hasSkillMatch ? `Strong skill alignment for ${primaryCap}.` : `Basic familiarity required.`,
+      outcomeUsefulness: `Direct practical client deliverable.`,
+      zeroCostFeasibility: isZeroCost ? `Zero upfront cost.` : `Requires tool subscription.`,
+      executionSimplicity: `Single tool setup.`,
+      timeToDemo: `Fast turnaround time.`,
+      customerMonetizationPotential: `High demand small business service.`
+    }
+  };
+
+  const discoveryTools = tool.source === 'discovery' ? [tool] : [];
+  const origin: OpportunityOrigin = discoveryTools.length > 0 ? 'discovery_derived' : 'profile_hypothesis';
+  const id = `combo_standalone_${tool.id.replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 32)}`;
+
+  const canonical_key = getCanonicalOpportunityKey({
+    title,
+    summary,
+    workflow: workflowSteps,
+    requiredTools: [tool.name],
+    customerType,
+    targetCustomer
+  });
+
+  return {
+    id,
+    canonical_key,
+    title,
+    summary,
+    tool_ids: [tool.id],
+    tool_names: [tool.name],
+    discovery_ids: discoveryTools.map(t => t.id),
+    origin,
+    market_evidence: 'limited / hypothesis',
+    capability_chain: matchedStages,
+    workflow_pattern: `STANDALONE_${primaryCap}`,
+    workflow_steps: workflowSteps,
+    concrete_outcome: concreteOutcome,
+    customer_type: customerType,
+    target_customer: targetCustomer,
+    monetization_hypothesis: monetization,
+    startup_cost: hasUnknownCost ? -1 : startupCost,
+    is_zero_cost: isZeroCost,
+    time_to_demo: timeToDemo,
+    difficulty,
+    score,
+    score_breakdown: breakdown,
+    confidence: isZeroCost ? 'High' : 'Medium',
+    saved: false,
+    created_at: new Date().toISOString()
+  };
+}
+
+// ============================================================================
 // Combination Candidate Generation & Filtering
 // ============================================================================
 
@@ -950,9 +1187,13 @@ export function evaluateCombination(
   userSkills: UserSkill[] = [],
   profile: UserProfile | null = null
 ): ToolCombination | null {
-  // STRICT SIZE CONSTRAINT: 2 to 4 tools
-  if (tools.length < 2 || tools.length > 4) {
+  if (tools.length === 0) {
     return null;
+  }
+
+  // Handle single tool standalone service
+  if (tools.length === 1) {
+    return evaluateSingleTool(tools[0], userSkills, profile);
   }
 
   // Check redundancy
@@ -1013,8 +1254,19 @@ export function evaluateCombination(
   const canonicalToolKey = tools.map(t => t.id).sort().join('-');
   const id = `combo_${patternRule.pattern.toLowerCase()}_${canonicalToolKey.slice(0, 32)}`;
 
+  const canonical_key = getCanonicalOpportunityKey({
+    title: outcome.title,
+    summary: outcome.summary,
+    workflow: outcome.workflowSteps,
+    requiredTools: tools.map(t => t.name),
+    customerType: outcome.customerType,
+    targetCustomer: outcome.targetCustomer,
+    workflowPattern: patternRule.pattern
+  });
+
   return {
     id,
+    canonical_key,
     title: outcome.title,
     summary: outcome.summary,
     tool_ids: tools.map(t => t.id),
@@ -1045,13 +1297,19 @@ export function evaluateCombination(
 // Database Persistence & Engine Pipeline
 // ============================================================================
 
-export async function loadUnifiedTools(selectedToolIds?: string[]): Promise<{
+export async function loadUnifiedTools(selectedToolIds?: string[], userId?: string): Promise<{
   tools: UnifiedTool[];
   skills: UserSkill[];
   profile: UserProfile | null;
 }> {
-  // Load profile tools
-  const profileToolsRaw = await dbAll<UserTool>('SELECT * FROM tools ORDER BY familiarity DESC;');
+  // Load profile tools scoped by user
+  let profileToolsRaw: UserTool[] = [];
+  if (userId) {
+    profileToolsRaw = await dbAll<UserTool>('SELECT * FROM tools WHERE user_id = ? ORDER BY familiarity DESC;', [userId]);
+  } else {
+    profileToolsRaw = await dbAll<UserTool>('SELECT * FROM tools ORDER BY familiarity DESC;');
+  }
+  
   const profileTools: UnifiedTool[] = profileToolsRaw.map(t => ({
     id: t.id,
     name: t.name,
@@ -1062,12 +1320,12 @@ export async function loadUnifiedTools(selectedToolIds?: string[]): Promise<{
     source: 'profile'
   }));
 
-  // Load verified discoveries (sample diverse high-confidence discoveries)
-  const discoveriesLimit = selectedToolIds && selectedToolIds.length > 0 ? 50 : 8;
+  // Load verified & eligible discoveries from database
+  const discoveriesLimit = selectedToolIds && selectedToolIds.length > 0 ? 50 : 30;
   const discoveriesRaw = await dbAll<Discovery>(
     `SELECT * FROM discoveries 
-     WHERE open_source = 1 OR free_tier = 1 OR pricing_status IN ('genuinely_free', 'open_source_self_hostable', 'open_weight') 
-     ORDER BY (CASE WHEN verification_status = 'verified' THEN 1 ELSE 0 END) DESC, first_discovered_at DESC 
+     WHERE (verification_status IS NULL OR verification_status != 'rejected')
+     ORDER BY (CASE WHEN verification_status = 'verified' THEN 1 ELSE 0 END) DESC, COALESCE(first_discovered_at, CURRENT_TIMESTAMP) DESC, rowid DESC 
      LIMIT ?;`,
     [discoveriesLimit]
   );
@@ -1090,27 +1348,73 @@ export async function loadUnifiedTools(selectedToolIds?: string[]): Promise<{
 
   let allTools = [...profileTools, ...discoveryTools];
 
+  // Filter or match if user explicitly specified tool IDs
   if (selectedToolIds && selectedToolIds.length > 0) {
-    const selectedSet = new Set(selectedToolIds);
-    allTools = allTools.filter(t => selectedSet.has(t.id));
+    const selectedSet = new Set(selectedToolIds.map(s => s.toLowerCase()));
+    const matchedTools = allTools.filter(t => 
+      selectedSet.has(t.id.toLowerCase()) || 
+      selectedSet.has(t.name.toLowerCase()) ||
+      Array.from(selectedSet).some(s => t.id.toLowerCase().includes(s) || t.name.toLowerCase().includes(s))
+    );
+    
+    // Add synthesized UnifiedTools for any selected tool ID/name that wasn't found in DB
+    for (const selId of selectedToolIds) {
+      const lower = selId.toLowerCase();
+      const alreadyMatched = matchedTools.some(t => 
+        t.id.toLowerCase() === lower || 
+        t.name.toLowerCase() === lower || 
+        t.id.toLowerCase().includes(lower) || 
+        t.name.toLowerCase().includes(lower)
+      );
+      if (!alreadyMatched) {
+        matchedTools.push({
+          id: `custom_${selId.toLowerCase().replace(/[^a-z0-9]/g, '_')}`,
+          name: selId,
+          category: 'Software Tool',
+          capabilities: [selId.toLowerCase()],
+          accessType: 'Free',
+          costPerMonth: 0,
+          source: 'custom'
+        });
+      }
+    }
+    allTools = matchedTools;
   }
 
   // Load skills & profile
-  const skills = await dbAll<UserSkill>('SELECT * FROM skills;');
-  const profile = await dbGet<UserProfile>('SELECT * FROM profiles LIMIT 1;') || null;
+  let skills: UserSkill[] = [];
+  let profile: UserProfile | null = null;
+  if (userId) {
+    skills = await dbAll<UserSkill>('SELECT * FROM skills WHERE user_id = ?;', [userId]);
+    profile = await dbGet<UserProfile>('SELECT * FROM profiles WHERE user_id = ? LIMIT 1;', [userId]) || null;
+  } else {
+    skills = await dbAll<UserSkill>('SELECT * FROM skills WHERE user_id = "user-default-legacy";');
+    profile = await dbGet<UserProfile>('SELECT * FROM profiles WHERE user_id = "user-default-legacy" LIMIT 1;') || null;
+  }
 
   return { tools: allTools, skills, profile };
 }
 
-export async function generateAndStoreCombinations(options: CombinationOptions = {}): Promise<ToolCombination[]> {
-  const { tools, skills, profile } = await loadUnifiedTools(options.toolIds);
+export async function generateAndStoreCombinations(options: CombinationOptions = {}, userId?: string): Promise<ToolCombination[]> {
+  const { tools, skills, profile } = await loadUnifiedTools(options.toolIds, userId);
 
-  if (tools.length < 2) {
+  if (tools.length === 0) {
     return [];
   }
 
-  // Generate subsets of size 2, 3, 4
-  const subsets = generateSubsets(tools, 2, 4);
+  // Generate subsets of size 1 up to Math.min(tools.length, 4)
+  const subsets: UnifiedTool[][] = [];
+  if (tools.length === 1) {
+    subsets.push([tools[0]]);
+  } else {
+    // Include 1-tool subsets for standalone options
+    for (const t of tools) {
+      subsets.push([t]);
+    }
+    // Include multi-tool subsets (sizes 2, 3, 4)
+    const multiSubsets = generateSubsets(tools, 2, Math.min(tools.length, 4));
+    subsets.push(...multiSubsets);
+  }
 
   // Evaluate each subset with order-independent canonical deduplication
   const evaluatedMap = new Map<string, ToolCombination>();
@@ -1134,20 +1438,42 @@ export async function generateAndStoreCombinations(options: CombinationOptions =
     return a.tool_ids.length - b.tool_ids.length;
   });
 
-  // Deduplicate near-identical outcomes: keep the highest scoring / most concise version per pattern and core deliverable
-  const seenRecipes = new Set<string>();
-  const combinations: ToolCombination[] = [];
+  // Deduplicate near-identical outcomes: keep the highest scoring / most concise version per canonical key
+  const canonicalMap = new Map<string, ToolCombination>();
 
   for (const c of sortedRaw) {
-    // Generate signature of primary 2 tools + pattern
-    const primarySignature = `${c.workflow_pattern}::${c.tool_names.slice(0, 2).sort().join('+')}`;
-    if (seenRecipes.has(primarySignature)) {
-      continue;
+    const key = c.canonical_key || getCanonicalOpportunityKey({
+      title: c.title,
+      summary: c.summary,
+      workflow: c.workflow_steps,
+      requiredTools: c.tool_names,
+      customerType: c.customer_type,
+      targetCustomer: c.target_customer,
+      workflowPattern: c.workflow_pattern
+    });
+    c.canonical_key = key;
+
+    const existing = canonicalMap.get(key);
+    if (!existing) {
+      canonicalMap.set(key, c);
+    } else {
+      // Prefer smallest tool count for equivalent deliverable
+      if (c.tool_ids.length < existing.tool_ids.length) {
+        canonicalMap.set(key, c);
+      } else if (c.tool_ids.length === existing.tool_ids.length && c.score > existing.score) {
+        canonicalMap.set(key, c);
+      }
     }
-    seenRecipes.add(primarySignature);
-    combinations.push(c);
-    if (combinations.length >= 50) break; // Keep top 50 distinct combinations
   }
+
+  const allCombos = Array.from(canonicalMap.values());
+  const discoveryCombos = allCombos.filter(c => c.origin === 'discovery_derived');
+  const profileCombos = allCombos.filter(c => c.origin !== 'discovery_derived');
+
+  // Guarantee balanced representation: up to 25 discovery-derived workflows and remaining profile workflows
+  const selectedDiscovery = discoveryCombos.slice(0, 25);
+  const selectedProfile = profileCombos.slice(0, 50 - selectedDiscovery.length);
+  const combinations = [...selectedDiscovery, ...selectedProfile].sort((a, b) => b.score - a.score);
 
   // Apply Learning Engine adaptive adjustments (clamped ±10 points)
   for (const combo of combinations) {
@@ -1158,23 +1484,35 @@ export async function generateAndStoreCombinations(options: CombinationOptions =
   }
 
   // Preserve existing saved state from DB
-  const existingSaved = await dbAll<{ id: string }>('SELECT id FROM tool_combinations WHERE saved = 1;');
+  const effectiveUserId = userId || 'user-default-legacy';
+  let existingSavedSql = 'SELECT id FROM tool_combinations WHERE saved = 1';
+  const existingSavedParams: any[] = [];
+  if (userId) {
+    existingSavedSql += ' AND user_id = ?';
+    existingSavedParams.push(userId);
+  }
+  const existingSaved = await dbAll<{ id: string }>(existingSavedSql, existingSavedParams);
   const savedSet = new Set(existingSaved.map(s => s.id));
 
   // Clear unsaved combinations to avoid clutter
-  await dbRun('DELETE FROM tool_combinations WHERE saved = 0;');
+  if (userId) {
+    await dbRun('DELETE FROM tool_combinations WHERE saved = 0 AND user_id = ?;', [userId]);
+  } else {
+    await dbRun('DELETE FROM tool_combinations WHERE saved = 0;');
+  }
 
-  // Store in database
+  // Store in database with canonical_key
   for (const combo of combinations) {
     const isSaved = savedSet.has(combo.id) ? 1 : 0;
     await dbRun(
       `INSERT INTO tool_combinations (
-        id, title, summary, tool_ids, tool_names, discovery_ids, origin, market_evidence,
+        id, user_id, title, summary, tool_ids, tool_names, discovery_ids, origin, market_evidence,
         capability_chain, workflow_pattern, workflow_steps, concrete_outcome, customer_type,
         target_customer, monetization_hypothesis, startup_cost, is_zero_cost, time_to_demo,
-        difficulty, score, score_breakdown, confidence, learning_adjustment, learning_explanation, saved, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        difficulty, score, score_breakdown, confidence, learning_adjustment, learning_explanation, canonical_key, saved, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
+        user_id = excluded.user_id,
         title = excluded.title,
         summary = excluded.summary,
         tool_ids = excluded.tool_ids,
@@ -1197,9 +1535,11 @@ export async function generateAndStoreCombinations(options: CombinationOptions =
         score_breakdown = excluded.score_breakdown,
         confidence = excluded.confidence,
         learning_adjustment = excluded.learning_adjustment,
-        learning_explanation = excluded.learning_explanation;`,
+        learning_explanation = excluded.learning_explanation,
+        canonical_key = excluded.canonical_key;`,
       [
         combo.id,
+        effectiveUserId,
         combo.title,
         combo.summary,
         JSON.stringify(combo.tool_ids),
@@ -1223,6 +1563,7 @@ export async function generateAndStoreCombinations(options: CombinationOptions =
         combo.confidence,
         combo.learning_adjustment || 0,
         combo.learning_explanation || null,
+        combo.canonical_key || null,
         isSaved,
         combo.created_at
       ]
@@ -1232,9 +1573,14 @@ export async function generateAndStoreCombinations(options: CombinationOptions =
   return combinations;
 }
 
-export async function getStoredCombinations(filters: { savedOnly?: boolean; minScore?: number; limit?: number } = {}): Promise<ToolCombination[]> {
+export async function getStoredCombinations(filters: { savedOnly?: boolean; minScore?: number; limit?: number } = {}, userId?: string): Promise<ToolCombination[]> {
   let sql = 'SELECT * FROM tool_combinations WHERE 1=1';
   const params: any[] = [];
+
+  if (userId) {
+    sql += ' AND user_id = ?';
+    params.push(userId);
+  }
 
   if (filters.savedOnly) {
     sql += ' AND saved = 1';
@@ -1253,8 +1599,17 @@ export async function getStoredCombinations(filters: { savedOnly?: boolean; minS
 
   const rows = await dbAll<any>(sql, params);
 
-  return rows.map(r => ({
+  const parsed = rows.map(r => ({
     id: r.id,
+    canonical_key: r.canonical_key || getCanonicalOpportunityKey({
+      title: r.title,
+      summary: r.summary,
+      workflow: JSON.parse(r.workflow_steps || '[]'),
+      requiredTools: JSON.parse(r.tool_names || '[]'),
+      customerType: r.customer_type,
+      targetCustomer: r.target_customer,
+      workflowPattern: r.workflow_pattern
+    }),
     title: r.title,
     summary: r.summary,
     tool_ids: JSON.parse(r.tool_ids || '[]'),
@@ -1281,10 +1636,26 @@ export async function getStoredCombinations(filters: { savedOnly?: boolean; minS
     saved: Boolean(r.saved),
     created_at: r.created_at
   }));
+
+  const uniqueMap = new Map<string, ToolCombination>();
+  for (const combo of parsed) {
+    const key = combo.canonical_key || combo.id;
+    if (!uniqueMap.has(key)) {
+      uniqueMap.set(key, combo);
+    }
+  }
+
+  return Array.from(uniqueMap.values());
 }
 
-export async function getStoredCombinationById(id: string): Promise<ToolCombination | null> {
-  const r = await dbGet<any>('SELECT * FROM tool_combinations WHERE id = ?;', [id]);
+export async function getStoredCombinationById(id: string, userId?: string): Promise<ToolCombination | null> {
+  let sql = 'SELECT * FROM tool_combinations WHERE id = ?';
+  const params: any[] = [id];
+  if (userId) {
+    sql += ' AND user_id = ?';
+    params.push(userId);
+  }
+  const r = await dbGet<any>(sql, params);
   if (!r) return null;
 
   return {
@@ -1317,14 +1688,18 @@ export async function getStoredCombinationById(id: string): Promise<ToolCombinat
   };
 }
 
-export async function toggleSaveCombination(id: string): Promise<{ success: boolean; saved: boolean; combination?: ToolCombination }> {
-  const current = await getStoredCombinationById(id);
+export async function toggleSaveCombination(id: string, userId?: string): Promise<{ success: boolean; saved: boolean; combination?: ToolCombination }> {
+  const current = await getStoredCombinationById(id, userId);
   if (!current) {
     return { success: false, saved: false };
   }
 
   const newSaved = !current.saved;
-  await dbRun('UPDATE tool_combinations SET saved = ? WHERE id = ?;', [newSaved ? 1 : 0, id]);
+  if (userId) {
+    await dbRun('UPDATE tool_combinations SET saved = ? WHERE id = ? AND user_id = ?;', [newSaved ? 1 : 0, id, userId]);
+  } else {
+    await dbRun('UPDATE tool_combinations SET saved = ? WHERE id = ?;', [newSaved ? 1 : 0, id]);
+  }
   current.saved = newSaved;
 
   return { success: true, saved: newSaved, combination: current };

@@ -44,39 +44,31 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
 
           <div className="space-y-4">
             <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-[-0.03em] leading-[1.06] bg-gradient-to-r from-slate-100 via-slate-200 to-peach-400 bg-clip-text text-transparent">
-              Find something worth building.
+              Turn simple AI tools into real monthly income.
             </h1>
             <p className="font-sans text-base sm:text-xl text-slate-300 leading-relaxed max-w-2xl font-normal">
-              Opportunity OS looks at what’s new in AI, what people need, and what you already have — then helps you find something you can actually build and turn into income.
+              Opportunity OS matches you with ready-to-sell service ideas, combines free tools like ChatGPT, Canva, and WhatsApp, and gives you step-by-step plans to earn from real clients.
             </p>
           </div>
 
           {/* ONE Primary CTA */}
-          <div className="pt-2 flex flex-wrap items-center gap-4">
+          <div className="pt-2 flex items-center">
             <MagneticButton
               onClick={onExploreClick}
               variant="primary"
+              aria-label="Enter Opportunity OS →"
               className="text-sm py-3.5 px-8 font-bold shadow-xl shadow-peach-500/25 border border-white/40 flex items-center gap-3"
             >
-              <span>Explore Opportunity OS</span>
+              <span>Enter Opportunity OS</span>
               <ArrowRight className="h-4 w-4" />
             </MagneticButton>
-
-            <button
-              onClick={onScanClick}
-              disabled={isScanning}
-              className="px-5 py-3.5 rounded-xl text-xs font-mono font-semibold text-slate-400 hover:text-slate-100 hover:bg-white/5 transition-all flex items-center gap-2 border border-white/10"
-            >
-              <Zap className={`h-3.5 w-3.5 text-peach-400 ${isScanning ? 'animate-spin' : ''}`} />
-              <span>{isScanning ? 'Scanning...' : 'Run Quick Scan'}</span>
-            </button>
           </div>
         </ScrollRevealItem>
 
         {/* Right Column: Clean Vector Summary Surface */}
         <ScrollRevealItem className="lg:col-span-5">
-          <CardShimmerWrapper className="p-6 sm:p-7 border-white/15 backdrop-blur-2xl space-y-5 shadow-2xl shadow-black/60 relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-peach-500/40 to-transparent" />
+          <CardShimmerWrapper className="p-6 sm:p-7 metal-panel-primary border-white/20 backdrop-blur-2xl space-y-5 shadow-2xl shadow-black/70 relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-peach-500/50 to-transparent" />
             
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div>
@@ -89,7 +81,7 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="bg-navy-900/70 p-3.5 rounded-xl border border-white/5 space-y-1 text-left">
+              <div className="bg-navy-900/70 p-3.5 rounded-xl border border-white/8 space-y-1 text-left">
                 <span className="flex items-center gap-1.5 text-slate-400 text-[10px] font-mono uppercase">
                   <Zap className="h-3 w-3 text-peach-400" /> Active Skills
                 </span>
@@ -98,7 +90,7 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
                 </p>
               </div>
 
-              <div className="bg-navy-900/70 p-3.5 rounded-xl border border-white/5 space-y-1 text-left">
+              <div className="bg-navy-900/70 p-3.5 rounded-xl border border-white/8 space-y-1 text-left">
                 <span className="flex items-center gap-1.5 text-slate-400 text-[10px] font-mono uppercase">
                   <Wrench className="h-3 w-3 text-emerald-400" /> Free Tools
                 </span>
@@ -107,7 +99,7 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
                 </p>
               </div>
 
-              <div className="bg-navy-900/70 p-3.5 rounded-xl border border-white/5 space-y-1 text-left">
+              <div className="bg-navy-900/70 p-3.5 rounded-xl border border-white/8 space-y-1 text-left">
                 <span className="flex items-center gap-1.5 text-slate-400 text-[10px] font-mono uppercase">
                   <Target className="h-3 w-3 text-amber-400" /> User Goals
                 </span>
@@ -116,12 +108,16 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
                 </p>
               </div>
 
-              <div className="bg-navy-900/70 p-3.5 rounded-xl border border-white/5 space-y-1 text-left">
+              <div className="bg-navy-900/70 p-3.5 rounded-xl border border-white/8 space-y-1 text-left">
                 <span className="flex items-center gap-1.5 text-slate-400 text-[10px] font-mono uppercase">
                   <ShieldCheck className="h-3 w-3 text-emerald-400" /> Budget Limit
                 </span>
                 <p className="text-lg font-bold text-emerald-400 font-mono">
-                  <AnimatedMetric value={profile?.preferred_budget ?? 0} prefix="₹" />
+                  {profile?.preferred_budget !== undefined && profile?.preferred_budget !== null && !isNaN(Number(profile.preferred_budget))
+                    ? Number(profile.preferred_budget) === 0
+                      ? "₹0 (Free Only)"
+                      : `₹${profile.preferred_budget}`
+                    : "₹0 (Free Only)"}
                 </p>
               </div>
             </div>

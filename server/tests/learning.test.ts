@@ -385,8 +385,10 @@ describe('Phase 7: Learning & Adaptive Recommendation Engine Test Suite', () => 
 
   // Test AB: SQLite persistence in saveOpportunityToDb
   it('Test AB: saveOpportunityToDb persists learning_adjustment and learning_explanation', async () => {
+    const oppIdAB = 'test-opp-ab-' + Date.now();
     await opportunityEngine.saveOpportunityToDb({
-      id: testOppId,
+      id: oppIdAB,
+      canonicalKey: 'canonical::test_ab_persistence_' + Date.now(),
       discoveryIds: [],
       toolIds: [],
       title: 'Test Learning Persistence Opp',
@@ -415,7 +417,8 @@ describe('Phase 7: Learning & Adaptive Recommendation Engine Test Suite', () => 
       isDemoData: false
     });
 
-    const row = await dbGet<any>('SELECT * FROM opportunities WHERE id = ?', [testOppId]);
+    const row = await dbGet<any>('SELECT * FROM opportunities WHERE id = ?', [oppIdAB]);
+    assert.ok(row, 'Opportunity row should exist in DB');
     assert.equal(row.learning_adjustment, 5);
     assert.equal(row.learning_explanation, '+5 pts from Python tool preference');
   });

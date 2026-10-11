@@ -65,9 +65,9 @@ export const AnimatedBarChart: React.FC<AnimatedBarChartProps> = ({
                 whileInView={{ scaleY: 1 }}
                 viewport={{ once: false, amount: 0.3 }}
                 transition={{
-                  duration: 0.7,
-                  delay: index * 0.06,
-                  ease: [0.25, 1, 0.5, 1],
+                  duration: 0.45,
+                  delay: index * 0.04,
+                  ease: [0.22, 1, 0.36, 1],
                 }}
                 style={{
                   height: `${heightPercent}%`,

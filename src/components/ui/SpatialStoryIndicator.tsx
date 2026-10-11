@@ -31,7 +31,7 @@ export const SpatialStoryIndicator: React.FC<SpatialStoryIndicatorProps> = ({
 
   return (
     <div
-      className={`flex items-center gap-2 sm:gap-4 px-4 py-2 rounded-full bg-navy-950/80 border border-white/10 backdrop-blur-md shadow-lg pointer-events-none select-none ${className}`}
+      className={`flex items-center gap-2 sm:gap-4 px-4 py-2 rounded-full bg-navy-950/95 border border-white/10 shadow-lg pointer-events-none select-none ${className}`}
     >
       {STAGES.map((stage, idx) => {
         const isActive = idx === activeIdx;

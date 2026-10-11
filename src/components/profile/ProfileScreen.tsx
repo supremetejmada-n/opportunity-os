@@ -17,8 +17,12 @@ import {
   Activity,
   Cpu,
   Sparkles,
-  Layers
+  Layers,
+  Shield,
+  CreditCard,
+  Clock
 } from 'lucide-react';
+import { useSubscription } from '../../context/SubscriptionContext.js';
 import { 
   UserProfile, 
   UserSkill, 
@@ -32,6 +36,7 @@ import {
 } from '../../types/index.js';
 import { GlassCard } from '../ui/GlassCard.js';
 import { AnimatedMetric } from '../widgets/animated-metric.js';
+import { sanitizeTitleOrName, humanizeToolName, formatHumanPricing } from '../../utils/humanizer.js';
 
 interface ProfileScreenProps {
   profile: UserProfile | null;
@@ -78,6 +83,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   onAddProject,
   onDeleteProject,
 }) => {
+  const { subscription, openSubscriptionModal } = useSubscription();
   const [activeTab, setActiveTab] = useState<ProfileTab>('overview');
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -278,7 +284,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   ];
 
   return (
-    <div className="space-y-6 py-4 max-w-5xl mx-auto">
+    <div className="space-y-6 w-full">
       {/* Notifications Toast */}
       {statusMsg && (
         <div className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold shadow-xl border ${
@@ -312,42 +318,31 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                   {profile?.name || 'M. Supreme Tej'}
                 </h1>
                 {/* Frosted Vector Status Pill */}
-                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.06] border border-white/15 text-[10px] font-mono font-semibold text-emerald-400 backdrop-blur-md shadow-sm">
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.08] border border-white/15 text-[10px] font-mono font-semibold text-emerald-400 shadow-sm">
                   <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                   </span>
-                  VECTOR STATUS: CALIBRATED (100%)
+                  PROFILE ACTIVE (100%)
                 </span>
               </div>
 
               <p className="font-mono text-xs font-semibold text-peach-400/90 tracking-wide uppercase">
-                {profile?.title || 'Autonomous Builder & AI Systems Architect'}
+                {profile?.title || 'Independent Builder & Creator'}
               </p>
               <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
-                {profile?.bio || 'Architecting zero-cost autonomous AI agents, full-stack micro-saas systems, and high-frequency vector opportunity engines.'}
+                {profile?.bio || 'Building zero-cost services with free tools like ChatGPT, Canva, and WhatsApp to generate steady monthly income.'}
               </p>
             </div>
           </div>
-
-          {/* Quick Action to Edit Profile */}
-          {!isEditingProfile && (
-            <button 
-              onClick={handleStartProfileEdit} 
-              className="btn-secondary text-xs py-2 px-4 flex items-center gap-2 border-white/20 hover:border-peach-500/50 shadow-lg active:scale-95 transition-transform"
-            >
-              <Edit3 className="h-3.5 w-3.5 text-peach-400" />
-              <span>Edit Dossier</span>
-            </button>
-          )}
         </div>
       </GlassCard>
 
       {/* 2. BENTO TELEMETRY GRID (Stats & Impact) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Card 1: Builder Velocity */}
-        <GlassCard variant="secondary" interactive className="p-5 space-y-4 border-white/10 hover:border-peach-500/40">
-          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+        <GlassCard variant="secondary" interactive className="p-6 border-white/10 hover:border-peach-500/40 min-h-[220px]">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3 w-full mb-auto">
             <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
               <Zap className="h-3.5 w-3.5 text-peach-400" />
               Builder Velocity
@@ -357,38 +352,40 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <span className="text-[10px] text-slate-500 uppercase font-mono block">Execution Speed</span>
-              <div className="font-mono text-xl sm:text-2xl font-bold text-slate-100 flex items-baseline">
-                <AnimatedMetric value={0.4} decimals={1} suffix="s" />
-                <span className="text-xs text-slate-400 font-sans ml-1">avg</span>
+          <div className="my-auto flex flex-col justify-center w-full py-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <span className="text-[10px] text-slate-500 uppercase font-mono block">Execution Speed</span>
+                <div className="font-mono text-xl sm:text-2xl font-bold text-slate-100 flex items-baseline">
+                  <AnimatedMetric value={0.4} decimals={1} suffix="s" />
+                  <span className="text-xs text-slate-400 font-sans ml-1">avg</span>
+                </div>
               </div>
-            </div>
-            <div className="space-y-1">
-              <span className="text-[10px] text-slate-500 uppercase font-mono block">Active Workflows</span>
-              <div className="font-mono text-xl sm:text-2xl font-bold text-emerald-400">
-                <AnimatedMetric value={projects.length + goals.length || 14} />
+              <div className="space-y-1">
+                <span className="text-[10px] text-slate-500 uppercase font-mono block">Active Workflows</span>
+                <div className="font-mono text-xl sm:text-2xl font-bold text-emerald-400">
+                  <AnimatedMetric value={projects.length + goals.length} />
+                </div>
               </div>
-            </div>
-            <div className="space-y-1">
-              <span className="text-[10px] text-slate-500 uppercase font-mono block">System Uptime</span>
-              <div className="font-mono text-xl sm:text-2xl font-bold text-slate-100">
-                <AnimatedMetric value={99.98} decimals={2} suffix="%" />
+              <div className="space-y-1">
+                <span className="text-[10px] text-slate-500 uppercase font-mono block">System Uptime</span>
+                <div className="font-mono text-xl sm:text-2xl font-bold text-slate-100">
+                  <AnimatedMetric value={99.98} decimals={2} suffix="%" />
+                </div>
               </div>
-            </div>
-            <div className="space-y-1">
-              <span className="text-[10px] text-slate-500 uppercase font-mono block">Equipped Stack</span>
-              <div className="font-mono text-xl sm:text-2xl font-bold text-peach-400">
-                <AnimatedMetric value={skills.length + tools.length || 28} />
+              <div className="space-y-1">
+                <span className="text-[10px] text-slate-500 uppercase font-mono block">Equipped Stack</span>
+                <div className="font-mono text-xl sm:text-2xl font-bold text-peach-400">
+                  <AnimatedMetric value={skills.length + tools.length} />
+                </div>
               </div>
             </div>
           </div>
         </GlassCard>
 
         {/* Card 2: Equipped Arsenal */}
-        <GlassCard variant="secondary" interactive className="p-5 space-y-4 border-white/10 hover:border-peach-500/40">
-          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+        <GlassCard variant="secondary" interactive className="p-6 border-white/10 hover:border-peach-500/40 min-h-[220px]">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3 w-full mb-auto">
             <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
               <Wrench className="h-3.5 w-3.5 text-indigo-400" />
               Equipped Arsenal
@@ -398,34 +395,38 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             </span>
           </div>
 
-          <div className="flex flex-wrap gap-2 pt-1">
+          <div className="my-auto flex flex-col justify-center w-full py-2">
             {tools.length > 0 ? (
-              tools.slice(0, 8).map((t, idx) => (
-                <span
-                  key={t.id || idx}
-                  className="px-2.5 py-1 rounded-lg bg-white/[0.05] border border-white/10 hover:border-peach-500/40 hover:bg-peach-500/10 hover:-translate-y-0.5 text-xs font-mono text-slate-200 transition-all cursor-pointer flex items-center gap-1.5"
-                >
-                  <span className="h-1.5 w-1.5 rounded-full bg-peach-400 inline-block" />
-                  {t.name}
-                </span>
-              ))
+              <div className="flex flex-wrap gap-2">
+                {tools.slice(0, 8).map((t, idx) => (
+                  <span
+                    key={t.id || idx}
+                    className="px-2.5 py-1 rounded-lg bg-white/[0.05] border border-white/10 hover:border-peach-500/40 hover:bg-peach-500/10 hover:-translate-y-0.5 text-xs font-mono text-slate-200 transition-all cursor-pointer flex items-center gap-1.5"
+                  >
+                    <span className="h-1.5 w-1.5 rounded-full bg-peach-400 inline-block" />
+                    {t.name}
+                  </span>
+                ))}
+              </div>
             ) : (
-              ['Claude 3.5 Sonnet', 'Gemini 1.5 Pro', 'React 18', 'Tailwind CSS', 'Node.js', 'Vector DB', 'Express', 'Framer Motion'].map((tool, idx) => (
-                <span
-                  key={idx}
-                  className="px-2.5 py-1 rounded-lg bg-white/[0.05] border border-white/10 hover:border-peach-500/40 hover:bg-peach-500/10 hover:-translate-y-0.5 text-xs font-mono text-slate-200 transition-all cursor-pointer flex items-center gap-1.5"
+              <div className="text-center py-2 space-y-2">
+                <p className="text-xs text-slate-400 font-sans">No tools added yet.</p>
+                <button
+                  type="button"
+                  onClick={() => handleOpenToolModal()}
+                  className="btn-primary text-[11px] py-1.5 px-3 font-mono font-bold inline-flex items-center gap-1.5 cursor-pointer"
                 >
-                  <span className="h-1.5 w-1.5 rounded-full bg-peach-400 inline-block" />
-                  {tool}
-                </span>
-              ))
+                  <Plus className="h-3 w-3" />
+                  <span>Add First Tool</span>
+                </button>
+              </div>
             )}
           </div>
         </GlassCard>
 
         {/* Card 3: Domain Capabilities */}
-        <GlassCard variant="secondary" interactive className="p-5 space-y-4 border-white/10 hover:border-peach-500/40">
-          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+        <GlassCard variant="secondary" interactive className="p-6 border-white/10 hover:border-peach-500/40 min-h-[220px]">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3 w-full mb-auto">
             <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
               <Activity className="h-3.5 w-3.5 text-emerald-400" />
               Domain Capabilities
@@ -435,38 +436,55 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             </span>
           </div>
 
-          <div className="space-y-3 pt-1">
-            {[
-              { label: 'Automation Capacity', pct: 96, color: 'bg-emerald-500' },
-              { label: 'Frontend Craftsmanship', pct: 98, color: 'bg-peach-500' },
-              { label: 'Data Intelligence', pct: 92, color: 'bg-indigo-500' },
-              { label: 'System Architecture', pct: 95, color: 'bg-purple-500' },
-            ].map((cap, idx) => (
-              <div key={idx} className="space-y-1">
-                <div className="flex justify-between text-[11px] font-sans">
-                  <span className="text-slate-300 font-medium">{cap.label}</span>
-                  <span className="font-mono font-bold text-slate-200">{cap.pct}%</span>
-                </div>
-                <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full ${cap.color} rounded-full transition-all duration-1000 ease-out`}
-                    style={{ width: `${cap.pct}%` }}
-                  />
-                </div>
+          <div className="my-auto flex flex-col justify-center w-full py-2">
+            {skills.length === 0 && tools.length === 0 ? (
+              <div className="text-center py-2 space-y-2">
+                <p className="text-xs text-slate-400 font-sans">No skills or tools recorded yet.</p>
+                <button
+                  type="button"
+                  onClick={() => handleOpenSkillModal()}
+                  className="btn-secondary text-[11px] py-1.5 px-3 font-mono font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Plus className="h-3 w-3" />
+                  <span>Add First Skill</span>
+                </button>
               </div>
-            ))}
+            ) : (
+              <div className="space-y-3">
+                {[
+                  { label: 'Automation Capacity', pct: Math.min(100, Math.max(10, (tools.length * 15) + (skills.length * 10))), color: 'bg-emerald-500' },
+                  { label: 'Frontend Craftsmanship', pct: Math.min(100, Math.max(10, (skills.length * 20))), color: 'bg-peach-500' },
+                  { label: 'Data Intelligence', pct: Math.min(100, Math.max(10, (tools.length * 20))), color: 'bg-indigo-500' },
+                  { label: 'System Architecture', pct: Math.min(100, Math.max(10, ((skills.length + tools.length) * 12))), color: 'bg-purple-500' },
+                ].map((cap, idx) => (
+                  <div key={idx} className="space-y-1">
+                    <div className="flex justify-between text-[11px] font-sans">
+                      <span className="text-slate-300 font-medium">{cap.label}</span>
+                      <span className="font-mono font-bold text-slate-200">{cap.pct}%</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${cap.color} rounded-full transition-all duration-1000 ease-out`}
+                        style={{ width: `${cap.pct}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </GlassCard>
       </div>
 
       {/* Sub-Tab Navigation */}
-      <div className="flex overflow-x-auto gap-3 sm:gap-3.5 border-b border-white/10 pb-3 scrollbar-none">
+      <div className="flex overflow-x-auto gap-3 sm:gap-3.5 border-b border-white/10 pb-3 scrollbar-none" data-testid="profile-tabs-bar">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
+              data-testid={`profile-tab-${tab.id}`}
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2.5 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all active:scale-[0.97] ${
                 isActive
@@ -490,7 +508,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 
       {/* TAB 1: OVERVIEW & CONSTRAINTS */}
       {activeTab === 'overview' && (
-        <GlassCard variant="primary" className="panel-card p-6 space-y-6">
+        <div className="space-y-6">
+          <GlassCard variant="primary" className="panel-card p-6 space-y-6">
           <div className="flex items-center justify-between border-b border-white/10 pb-4">
             <h2 className="text-sm font-bold text-slate-200 flex items-center gap-2">
               <User className="h-4 w-4 text-peach-500" />
@@ -498,19 +517,34 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             </h2>
 
             {!isEditingProfile ? (
-              <button onClick={handleStartProfileEdit} className="btn-secondary text-xs py-1 px-3">
-                <Edit3 className="h-3.5 w-3.5" />
-                <span>Edit Constraints</span>
+              <button 
+                type="button" 
+                onClick={handleStartProfileEdit} 
+                className="btn-secondary text-xs py-1.5 px-3.5 cursor-pointer flex items-center gap-1.5 border-white/20 hover:border-peach-500/50 shadow-md active:scale-95 transition-all"
+                data-testid="edit-profile-btn"
+              >
+                <Edit3 className="h-3.5 w-3.5 text-peach-400" />
+                <span>Edit Profile</span>
               </button>
             ) : (
               <div className="flex items-center gap-2">
-                <button onClick={() => setIsEditingProfile(false)} className="btn-secondary text-xs py-1 px-3">
+                <button 
+                  type="button" 
+                  onClick={() => setIsEditingProfile(false)} 
+                  className="btn-secondary text-xs py-1.5 px-3 cursor-pointer flex items-center gap-1 active:scale-95 transition-all"
+                  data-testid="cancel-profile-btn"
+                >
                   <X className="h-3.5 w-3.5" />
                   <span>Cancel</span>
                 </button>
-                <button onClick={handleSaveProfile} className="btn-primary text-xs py-1 px-3">
+                <button 
+                  type="button" 
+                  onClick={handleSaveProfile} 
+                  className="btn-primary text-xs py-1.5 px-3.5 cursor-pointer flex items-center gap-1 active:scale-95 transition-all"
+                  data-testid="save-profile-btn"
+                >
                   <Save className="h-3.5 w-3.5" />
-                  <span>Save</span>
+                  <span>Save Profile</span>
                 </button>
               </div>
             )}
@@ -539,7 +573,13 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 <div className="grid grid-cols-2 gap-4 pt-1">
                   <div>
                     <span className="text-slate-500 block">Preferred Budget</span>
-                    <span className="text-emerald-400 font-mono font-bold text-sm">₹{profile?.preferred_budget ?? 0}</span>
+                    <span className="text-emerald-400 font-mono font-bold text-sm">
+                      {profile?.preferred_budget !== undefined && profile?.preferred_budget !== null && !isNaN(Number(profile.preferred_budget))
+                        ? Number(profile.preferred_budget) === 0
+                          ? "₹0 (Free Only)"
+                          : `₹${profile.preferred_budget}`
+                        : "₹0 (Free Only)"}
+                    </span>
                   </div>
                   <div>
                     <span className="text-slate-500 block">Available Hours</span>
@@ -567,22 +607,24 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs animate-fade-in">
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">Name</label>
+                <label className="block font-semibold text-slate-300 mb-1">Profile Name</label>
                 <input
                   type="text"
+                  data-testid="input-profile-name"
                   value={profileForm.name || ''}
                   onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 focus:border-indigo-500 focus:outline-none"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 focus:border-peach-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">Title</label>
+                <label className="block font-semibold text-slate-300 mb-1">Title / Focus</label>
                 <input
                   type="text"
+                  data-testid="input-profile-title"
                   value={profileForm.title || ''}
                   onChange={(e) => setProfileForm({ ...profileForm, title: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 focus:border-indigo-500 focus:outline-none"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 focus:border-peach-500 focus:outline-none"
                 />
               </div>
 
@@ -590,9 +632,10 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 <label className="block font-semibold text-slate-300 mb-1">Bio / Strategy Focus</label>
                 <textarea
                   rows={2}
+                  data-testid="input-profile-bio"
                   value={profileForm.bio || ''}
                   onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 focus:border-indigo-500 focus:outline-none"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 focus:border-peach-500 focus:outline-none"
                 />
               </div>
 
@@ -600,9 +643,10 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 <label className="block font-semibold text-slate-300 mb-1">Preferred Upfront Budget (₹)</label>
                 <input
                   type="number"
+                  data-testid="input-profile-budget"
                   value={profileForm.preferred_budget ?? 0}
                   onChange={(e) => setProfileForm({ ...profileForm, preferred_budget: Number(e.target.value) })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 focus:border-indigo-500 focus:outline-none"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 focus:border-peach-500 focus:outline-none"
                 />
               </div>
 
@@ -610,14 +654,152 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 <label className="block font-semibold text-slate-300 mb-1">Available Hours / Week</label>
                 <input
                   type="number"
+                  data-testid="input-profile-hours"
                   value={profileForm.available_hours_per_week ?? 20}
                   onChange={(e) => setProfileForm({ ...profileForm, available_hours_per_week: Number(e.target.value) })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 focus:border-indigo-500 focus:outline-none"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 focus:border-peach-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1">Preferred Work Type</label>
+                <select
+                  data-testid="input-profile-work-type"
+                  value={profileForm.preferred_work_type || 'Freelance'}
+                  onChange={(e) => setProfileForm({ ...profileForm, preferred_work_type: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 focus:border-peach-500 focus:outline-none"
+                >
+                  <option value="Freelance">Freelance</option>
+                  <option value="Micro-SaaS">Micro-SaaS</option>
+                  <option value="Agency Service">Agency Service</option>
+                  <option value="Consulting">Consulting</option>
+                  <option value="Content / Digital Asset">Content / Digital Asset</option>
+                  <option value="Any">Any</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1">Remote Preference</label>
+                <select
+                  data-testid="input-profile-remote"
+                  value={profileForm.remote_preference || 'Remote Only'}
+                  onChange={(e) => setProfileForm({ ...profileForm, remote_preference: e.target.value as any })}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 focus:border-peach-500 focus:outline-none"
+                >
+                  <option value="Remote Only">Remote Only</option>
+                  <option value="Hybrid">Hybrid</option>
+                  <option value="Any">Any</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1">Learning Tolerance</label>
+                <select
+                  data-testid="input-profile-learning"
+                  value={profileForm.learning_tolerance || 'High'}
+                  onChange={(e) => setProfileForm({ ...profileForm, learning_tolerance: e.target.value as any })}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 focus:border-peach-500 focus:outline-none"
+                >
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Low">Low</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1">Disliked Work</label>
+                <input
+                  type="text"
+                  data-testid="input-profile-disliked"
+                  value={profileForm.disliked_work || ''}
+                  placeholder="e.g. Cold calling, manual data entry"
+                  onChange={(e) => setProfileForm({ ...profileForm, disliked_work: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 focus:border-peach-500 focus:outline-none"
                 />
               </div>
             </div>
           )}
         </GlassCard>
+
+        {/* SUBSCRIPTION & MEMBERSHIP STATUS CARD */}
+        <GlassCard variant="secondary" className="panel-card p-6 space-y-5 border-white/10 bg-slate-950/60 mt-6">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-peach-500/10 border border-peach-500/20 text-peach-400">
+                <CreditCard className="h-4.5 w-4.5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-bold text-slate-100">Subscription & Access Tier</h2>
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider ${
+                    subscription?.status === 'active'
+                      ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                      : subscription?.status === 'trialing'
+                      ? 'bg-peach-500/15 text-peach-300 border border-peach-500/30'
+                      : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                  }`}>
+                    {subscription?.status === 'active'
+                      ? 'Pro Plan Active'
+                      : subscription?.status === 'trialing'
+                      ? 'Free Trial (Full Access)'
+                      : 'Subscription Expired'}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  ₹8/month • High-velocity AI opportunity radar & monetization blueprints
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={openSubscriptionModal}
+              data-testid="profile-manage-subscription-btn"
+              className="btn-primary text-xs py-2 px-4 flex items-center gap-2 cursor-pointer shadow-lg active:scale-95 transition-all"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>{subscription?.status === 'active' ? 'Manage Membership' : 'Upgrade to Pro (₹8/mo)'}</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+            <div className="bg-slate-900/60 p-3.5 rounded-xl border border-white/5 space-y-1">
+              <span className="text-[10px] text-slate-500 uppercase font-mono block">Billing Rate</span>
+              <p className="text-sm font-bold text-slate-100 font-mono">₹8.00 / month</p>
+              <span className="text-[11px] text-slate-400">Fixed rate • No automatic renewals</span>
+            </div>
+
+            <div className="bg-slate-900/60 p-3.5 rounded-xl border border-white/5 space-y-1">
+              <span className="text-[10px] text-slate-500 uppercase font-mono block">Access Status</span>
+              <p className="text-sm font-bold font-mono">
+                {subscription?.status === 'active' ? (
+                  <span className="text-emerald-400">Full Pro Entitlement</span>
+                ) : subscription?.status === 'trialing' ? (
+                  <span className="text-peach-300">{subscription?.trial?.remainingFormatted || 'Active'} remaining</span>
+                ) : (
+                  <span className="text-rose-400">Locked — Renewal Required</span>
+                )}
+              </p>
+              <span className="text-[11px] text-slate-400">
+                {subscription?.status === 'active'
+                  ? `Renews manually by ${subscription.currentPeriod?.end ? new Date(subscription.currentPeriod.end).toLocaleDateString() : 'end of term'}`
+                  : subscription?.status === 'trialing'
+                  ? `Free trial ends ${subscription.trial?.expiresAt ? new Date(subscription.trial.expiresAt).toLocaleDateString() : 'in 3 days'}`
+                  : 'Renew to regain access to Scanner & Combiner'}
+              </span>
+            </div>
+
+            <div className="bg-slate-900/60 p-3.5 rounded-xl border border-white/5 space-y-1">
+              <span className="text-[10px] text-slate-500 uppercase font-mono block">Billing Provider</span>
+              <p className="text-sm font-bold text-slate-100 flex items-center gap-1.5">
+                <Shield className="h-3.5 w-3.5 text-indigo-400" />
+                <span>Razorpay Secure (UPI & Cards)</span>
+              </p>
+              <span className="text-[11px] text-slate-400">100% Secure • Zero hidden charges</span>
+            </div>
+          </div>
+        </GlassCard>
+      </div>
       )}
 
       {/* TAB 2: SKILLS using .interactive-card */}
@@ -625,7 +807,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-200">Configured Skills ({skills.length})</h2>
-            <button onClick={() => handleOpenSkillModal()} className="btn-primary text-xs py-1 px-3">
+            <button type="button" onClick={() => handleOpenSkillModal()} className="btn-primary text-xs py-1 px-3 cursor-pointer">
               <Plus className="h-3.5 w-3.5" />
               <span>Add Skill</span>
             </button>
@@ -652,10 +834,10 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 </div>
 
                 <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800/80 text-[11px]">
-                  <button onClick={() => handleOpenSkillModal(skill)} className="btn-ghost p-1 text-slate-400 hover:text-slate-200">
+                  <button type="button" onClick={() => handleOpenSkillModal(skill)} className="btn-ghost p-1 text-slate-400 hover:text-slate-200 cursor-pointer">
                     <Edit3 className="h-3.5 w-3.5" />
                   </button>
-                  <button onClick={() => onDeleteSkill(skill.id)} className="btn-ghost p-1 text-slate-400 hover:text-red-400">
+                  <button type="button" onClick={() => onDeleteSkill(skill.id)} className="btn-ghost p-1 text-slate-400 hover:text-red-400 cursor-pointer">
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -670,7 +852,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-200">Accessible Tools ({tools.length})</h2>
-            <button onClick={() => handleOpenToolModal()} className="btn-primary text-xs py-1 px-3">
+            <button type="button" onClick={() => handleOpenToolModal()} className="btn-primary text-xs py-1 px-3 cursor-pointer">
               <Plus className="h-3.5 w-3.5" />
               <span>Add Tool</span>
             </button>
@@ -700,10 +882,10 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                 </div>
 
                 <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800/80">
-                  <button onClick={() => handleOpenToolModal(tool)} className="btn-ghost p-1 text-slate-400 hover:text-slate-200">
+                  <button type="button" onClick={() => handleOpenToolModal(tool)} className="btn-ghost p-1 text-slate-400 hover:text-slate-200 cursor-pointer">
                     <Edit3 className="h-3.5 w-3.5" />
                   </button>
-                  <button onClick={() => onDeleteTool(tool.id)} className="btn-ghost p-1 text-slate-400 hover:text-red-400">
+                  <button type="button" onClick={() => onDeleteTool(tool.id)} className="btn-ghost p-1 text-slate-400 hover:text-red-400 cursor-pointer">
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -718,7 +900,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-200">Strategic Goals ({goals.length})</h2>
-            <button onClick={() => setIsGoalModalOpen(true)} className="btn-primary text-xs py-1 px-3">
+            <button type="button" onClick={() => setIsGoalModalOpen(true)} className="btn-primary text-xs py-1 px-3 cursor-pointer">
               <Plus className="h-3.5 w-3.5" />
               <span>Add Goal</span>
             </button>
@@ -734,7 +916,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                   </div>
                   {g.description && <p className="text-xs text-slate-400">{g.description}</p>}
                 </div>
-                <button onClick={() => onDeleteGoal(g.id)} className="btn-ghost p-1 text-slate-400 hover:text-red-400">
+                <button type="button" onClick={() => onDeleteGoal(g.id)} className="btn-ghost p-1 text-slate-400 hover:text-red-400 cursor-pointer">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </GlassCard>
@@ -748,7 +930,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-200">Target Interests ({interests.length})</h2>
-            <button onClick={() => setIsInterestModalOpen(true)} className="btn-primary text-xs py-1 px-3">
+            <button type="button" onClick={() => setIsInterestModalOpen(true)} className="btn-primary text-xs py-1 px-3 cursor-pointer">
               <Plus className="h-3.5 w-3.5" />
               <span>Add Topic</span>
             </button>
@@ -761,7 +943,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                   <span className="text-[10px] text-indigo-400 uppercase font-mono font-semibold">{inst.category}</span>
                   <h3 className="font-bold text-slate-200 text-xs">{inst.topic}</h3>
                 </div>
-                <button onClick={() => onDeleteInterest(inst.id)} className="btn-ghost p-1 text-slate-400 hover:text-red-400">
+                <button type="button" onClick={() => onDeleteInterest(inst.id)} className="btn-ghost p-1 text-slate-400 hover:text-red-400 cursor-pointer">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </GlassCard>
@@ -775,7 +957,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-200">Current Projects ({projects.length})</h2>
-            <button onClick={() => setIsProjectModalOpen(true)} className="btn-primary text-xs py-1 px-3">
+            <button type="button" onClick={() => setIsProjectModalOpen(true)} className="btn-primary text-xs py-1 px-3 cursor-pointer">
               <Plus className="h-3.5 w-3.5" />
               <span>Add Project</span>
             </button>
@@ -791,7 +973,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
                   </div>
                   {proj.description && <p className="text-xs text-slate-400">{proj.description}</p>}
                 </div>
-                <button onClick={() => onDeleteProject(proj.id)} className="btn-ghost p-1 text-slate-400 hover:text-red-400">
+                <button type="button" onClick={() => onDeleteProject(proj.id)} className="btn-ghost p-1 text-slate-400 hover:text-red-400 cursor-pointer">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </GlassCard>
@@ -806,7 +988,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           <div className="modal-content p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="font-bold text-slate-100 text-sm">{editingSkill ? 'Edit Skill' : 'Add Skill'}</h3>
-              <button onClick={() => setIsSkillModalOpen(false)} className="btn-ghost p-1 text-slate-400 hover:text-slate-200"><X className="h-4 w-4" /></button>
+              <button type="button" onClick={() => setIsSkillModalOpen(false)} className="btn-ghost p-1 text-slate-400 hover:text-slate-200 cursor-pointer"><X className="h-4 w-4" /></button>
             </div>
             <div className="space-y-3 text-xs">
               <div>
@@ -847,8 +1029,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
-              <button onClick={() => setIsSkillModalOpen(false)} className="btn-secondary text-xs">Cancel</button>
-              <button onClick={handleSaveSkill} className="btn-primary text-xs">Save</button>
+              <button type="button" onClick={() => setIsSkillModalOpen(false)} className="btn-secondary text-xs cursor-pointer">Cancel</button>
+              <button type="button" onClick={handleSaveSkill} className="btn-primary text-xs cursor-pointer">Save</button>
             </div>
           </div>
         </div>
@@ -860,7 +1042,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           <div className="modal-content p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="font-bold text-slate-100 text-sm">{editingTool ? 'Edit Tool' : 'Add Tool'}</h3>
-              <button onClick={() => setIsToolModalOpen(false)} className="btn-ghost p-1 text-slate-400 hover:text-slate-200"><X className="h-4 w-4" /></button>
+              <button type="button" onClick={() => setIsToolModalOpen(false)} className="btn-ghost p-1 text-slate-400 hover:text-slate-200 cursor-pointer"><X className="h-4 w-4" /></button>
             </div>
             <div className="space-y-3 text-xs">
               <div>
@@ -900,8 +1082,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
-              <button onClick={() => setIsToolModalOpen(false)} className="btn-secondary text-xs">Cancel</button>
-              <button onClick={handleSaveTool} className="btn-primary text-xs">Save</button>
+              <button type="button" onClick={() => setIsToolModalOpen(false)} className="btn-secondary text-xs cursor-pointer">Cancel</button>
+              <button type="button" onClick={handleSaveTool} className="btn-primary text-xs cursor-pointer">Save</button>
             </div>
           </div>
         </div>
@@ -913,7 +1095,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           <div className="modal-content p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="font-bold text-slate-100 text-sm">Add Strategic Goal</h3>
-              <button onClick={() => setIsGoalModalOpen(false)} className="btn-ghost p-1 text-slate-400 hover:text-slate-200"><X className="h-4 w-4" /></button>
+              <button type="button" onClick={() => setIsGoalModalOpen(false)} className="btn-ghost p-1 text-slate-400 hover:text-slate-200 cursor-pointer"><X className="h-4 w-4" /></button>
             </div>
             <div className="space-y-3 text-xs">
               <div>
@@ -928,8 +1110,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
-              <button onClick={() => setIsGoalModalOpen(false)} className="btn-secondary text-xs">Cancel</button>
-              <button onClick={handleSaveGoal} className="btn-primary text-xs">Save</button>
+              <button type="button" onClick={() => setIsGoalModalOpen(false)} className="btn-secondary text-xs cursor-pointer">Cancel</button>
+              <button type="button" onClick={handleSaveGoal} className="btn-primary text-xs cursor-pointer">Save</button>
             </div>
           </div>
         </div>
@@ -941,7 +1123,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           <div className="modal-content p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="font-bold text-slate-100 text-sm">Add Interest Topic</h3>
-              <button onClick={() => setIsInterestModalOpen(false)} className="btn-ghost p-1 text-slate-400 hover:text-slate-200"><X className="h-4 w-4" /></button>
+              <button type="button" onClick={() => setIsInterestModalOpen(false)} className="btn-ghost p-1 text-slate-400 hover:text-slate-200 cursor-pointer"><X className="h-4 w-4" /></button>
             </div>
             <div className="space-y-3 text-xs">
               <div>
@@ -966,8 +1148,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
-              <button onClick={() => setIsInterestModalOpen(false)} className="btn-secondary text-xs">Cancel</button>
-              <button onClick={handleSaveInterest} className="btn-primary text-xs">Save</button>
+              <button type="button" onClick={() => setIsInterestModalOpen(false)} className="btn-secondary text-xs cursor-pointer">Cancel</button>
+              <button type="button" onClick={handleSaveInterest} className="btn-primary text-xs cursor-pointer">Save</button>
             </div>
           </div>
         </div>
@@ -979,7 +1161,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           <div className="modal-content p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="font-bold text-slate-100 text-sm">Add Project</h3>
-              <button onClick={() => setIsProjectModalOpen(false)} className="btn-ghost p-1 text-slate-400 hover:text-slate-200"><X className="h-4 w-4" /></button>
+              <button type="button" onClick={() => setIsProjectModalOpen(false)} className="btn-ghost p-1 text-slate-400 hover:text-slate-200 cursor-pointer"><X className="h-4 w-4" /></button>
             </div>
             <div className="space-y-3 text-xs">
               <div>
@@ -1003,8 +1185,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
-              <button onClick={() => setIsProjectModalOpen(false)} className="btn-secondary text-xs">Cancel</button>
-              <button onClick={handleSaveProject} className="btn-primary text-xs">Save</button>
+              <button type="button" onClick={() => setIsProjectModalOpen(false)} className="btn-secondary text-xs cursor-pointer">Cancel</button>
+              <button type="button" onClick={handleSaveProject} className="btn-primary text-xs cursor-pointer">Save</button>
             </div>
           </div>
         </div>

@@ -7,7 +7,9 @@ import { verifyDiscovery, validateDiscoveryClaims } from './discovery/verifier.j
 import { classifyDiscovery } from './discovery/classifier.js';
 import { NormalizedDiscovery } from './discovery/types.js';
 import { opportunityEngine } from './opportunityEngine.js';
+import { generateAndStoreCombinations } from './combineEngine.js';
 import { learningEngine } from './learningEngine.js';
+import { productStoryEngine } from './productStoryEngine.js';
 import {
   Opportunity,
   ScanRecord,
@@ -58,11 +60,12 @@ export class ScanEngine {
   /**
    * Executes the full On-Demand Opportunity Scan pipeline.
    */
-  async runOnDemandScan(): Promise<ScanResult> {
+  async runOnDemandScan(userId?: string): Promise<ScanResult> {
     if (this.isScanRunning) {
       throw new Error('A scan is already in progress. Please wait for it to complete.');
     }
 
+    const effectiveUserId = userId || 'user-default-legacy';
     this.isScanRunning = true;
     const scanId = crypto.randomUUID();
     const startedAt = new Date().toISOString();
@@ -70,9 +73,9 @@ export class ScanEngine {
 
     // Initialize scan record in DB
     await dbRun(
-      `INSERT INTO scan_records (id, started_at, completed_at, status, sources_attempted, items_collected, items_normalized, duplicates_removed, verified_count, rejected_count, changed_count, opportunities_generated, errors, duration_ms, created_at)
-       VALUES (?, ?, NULL, 'running', 0, 0, 0, 0, 0, 0, 0, 0, '[]', 0, ?)`,
-      [scanId, startedAt, startedAt]
+      `INSERT INTO scan_records (id, user_id, started_at, completed_at, status, sources_attempted, items_collected, items_normalized, duplicates_removed, verified_count, rejected_count, changed_count, opportunities_generated, errors, duration_ms, created_at)
+       VALUES (?, ?, ?, NULL, 'running', 0, 0, 0, 0, 0, 0, 0, 0, '[]', 0, ?)`,
+      [scanId, effectiveUserId, startedAt, startedAt]
     );
 
     const errors: string[] = [];
@@ -218,7 +221,14 @@ export class ScanEngine {
       }
 
       // 6. EVALUATE OPPORTUNITIES VIA PHASE 4 & 7 ENGINES
-      const candidateOpps: any[] = await opportunityEngine.evaluateOpportunities();
+      const candidateOpps: any[] = await opportunityEngine.evaluateOpportunities(scanId, effectiveUserId);
+
+      // 6b. RE-EVALUATE COMBINE TOOLS VIA UNIFIED TOOL INVENTORY
+      try {
+        await generateAndStoreCombinations({ forceRefresh: true }, effectiveUserId);
+      } catch (combErr: any) {
+        console.warn(`[Scan Engine] Error re-evaluating tool combinations: ${combErr.message}`);
+      }
 
       // STRICT RULE: Apply base quality threshold (score >= 65 before learning adjustment)
       // Note: evaluateOpportunities already filters base score >= 65 and applies personalization adjustments bounded to ±10.
@@ -245,7 +255,7 @@ export class ScanEngine {
           title: opp.title,
           customerType: opp.customerType || opp.target_customer,
           requiredTools: tools
-        });
+        }, effectiveUserId);
 
         // Determine matching changeType
         let itemChangeType: DiscoveryChangeType = 'unchanged';
@@ -269,6 +279,19 @@ export class ScanEngine {
         };
 
         (opp as any).intelligenceExplanation = intelExp;
+      }
+
+      // 8. DYNAMIC PRODUCT STORY EVOLUTION FROM NEW DISCOVERIES
+      const newlyDiscoveredItems = processedItems
+        .filter(pi => pi.changeType === 'new')
+        .map(pi => pi.discovery);
+
+      let storyEvolution = { updated: false, story: await productStoryEngine.getCurrentStory() };
+      if (newlyDiscoveredItems.length > 0) {
+        console.log(`[Scan Engine] ${newlyDiscoveredItems.length} genuinely new tools discovered. Triggering Product Story evolution...`);
+        storyEvolution = await productStoryEngine.evolveStoryWithNewDiscoveries(newlyDiscoveredItems);
+      } else {
+        console.log(`[Scan Engine] Zero new tools discovered (all items existing/deduped). Product Story remains unchanged.`);
       }
 
       const durationMs = Date.now() - startTimeMs;
@@ -319,7 +342,10 @@ export class ScanEngine {
       return {
         scanRecord: record!,
         recommendations: topRecommendations,
-        totalRecommended: topRecommendations.length
+        totalRecommended: topRecommendations.length,
+        newDiscoveryCount: newlyDiscoveredItems.length,
+        storyUpdated: storyEvolution.updated,
+        productStory: (storyEvolution.story as any)
       };
     } catch (fatalErr: any) {
       console.error('[Scan Engine] Fatal error during scan execution:', fatalErr);
@@ -368,8 +394,14 @@ export class ScanEngine {
   /**
    * Retrieves scan record by ID
    */
-  async getScanRecordById(id: string): Promise<ScanRecord | null> {
-    const row = await dbGet<any>('SELECT * FROM scan_records WHERE id = ?;', [id]);
+  async getScanRecordById(id: string, userId?: string): Promise<ScanRecord | null> {
+    let query = 'SELECT * FROM scan_records WHERE id = ?';
+    const params: any[] = [id];
+    if (userId) {
+      query += ' AND user_id = ?';
+      params.push(userId);
+    }
+    const row = await dbGet<any>(query, params);
     if (!row) return null;
     return this.mapRowToScanRecord(row);
   }
@@ -377,8 +409,15 @@ export class ScanEngine {
   /**
    * Retrieves latest scan record
    */
-  async getLatestScanRecord(): Promise<ScanRecord | null> {
-    const row = await dbGet<any>('SELECT * FROM scan_records ORDER BY started_at DESC LIMIT 1;');
+  async getLatestScanRecord(userId?: string): Promise<ScanRecord | null> {
+    let query = 'SELECT * FROM scan_records';
+    const params: any[] = [];
+    if (userId) {
+      query += ' WHERE user_id = ?';
+      params.push(userId);
+    }
+    query += ' ORDER BY started_at DESC LIMIT 1;';
+    const row = await dbGet<any>(query, params);
     if (!row) return null;
     return this.mapRowToScanRecord(row);
   }
@@ -386,8 +425,16 @@ export class ScanEngine {
   /**
    * Retrieves scan execution history
    */
-  async getScanHistory(limit: number = 20): Promise<ScanRecord[]> {
-    const rows = await dbAll<any>('SELECT * FROM scan_records ORDER BY started_at DESC LIMIT ?;', [limit]);
+  async getScanHistory(limit: number = 20, userId?: string): Promise<ScanRecord[]> {
+    let query = 'SELECT * FROM scan_records';
+    const params: any[] = [];
+    if (userId) {
+      query += ' WHERE user_id = ?';
+      params.push(userId);
+    }
+    query += ' ORDER BY started_at DESC LIMIT ?;';
+    params.push(limit);
+    const rows = await dbAll<any>(query, params);
     return rows.map(r => this.mapRowToScanRecord(r));
   }
 

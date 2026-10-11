@@ -7,19 +7,35 @@ import { DiscoverScreen } from './components/discover/DiscoverScreen.js';
 import { OpportunitiesScreen } from './components/opportunities/OpportunitiesScreen.js';
 import { CombineScreen } from './components/combiner/CombineScreen.js';
 import { ProgressScreen } from './components/progress/ProgressScreen.js';
+import { ScanScreen } from './components/scan/ScanScreen.js';
 import { SpatialScrollProvider } from './components/ui/SpatialScrollProvider.js';
 import { LenisProvider } from './components/ui/LenisProvider.js';
 import { ParallaxBackdrop } from './components/layout/ParallaxBackdrop.js';
 import { PresentationFrame } from './components/layout/PresentationFrame.js';
 import { RetinaNoiseTexture } from './components/ui/RetinaNoiseTexture.js';
-import { api, FullProfileData } from './services/api.js';
+import { OpportunityDetailModal } from './components/widgets/OpportunityDetailModal.js';
+import { PracticalGuideWorkspace } from './components/guide/PracticalGuideWorkspace.js';
+import { api, FullProfileData, getAuthToken } from './services/api.js';
 import { UserProfile, UserSkill, UserTool, UserGoal, UserInterest, UserProject, ProgressMetrics } from './types/index.js';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw, LogIn } from 'lucide-react';
+import { AuthProvider, useAuth } from './context/AuthContext.js';
+import { AuthModal } from './components/auth/AuthModal.js';
+import { SubscriptionProvider, useSubscription } from './context/SubscriptionContext.js';
+import { SubscriptionModal } from './components/subscription/SubscriptionModal.js';
 
-export const App: React.FC = () => {
+export interface ActiveGuideSession {
+  planId?: string;
+  card?: any;
+  returnTab: NavTab;
+}
+
+const AppContent: React.FC = () => {
+  const { user, isAuthenticated, isLoading: authLoading, openAuthModal } = useAuth();
+  const { openSubscriptionModal } = useSubscription();
   const [activeTab, setActiveTab] = useState<NavTab>('home');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeGuideSession, setActiveGuideSession] = useState<ActiveGuideSession | null>(null);
 
   // Profile State
   const [profileData, setProfileData] = useState<FullProfileData | null>(null);
@@ -40,8 +56,39 @@ export const App: React.FC = () => {
   // Scan state
   const [isScanning, setIsScanning] = useState(false);
   const [scanNotice, setScanNotice] = useState<string | null>(null);
+  const [dataVersion, setDataVersion] = useState(0);
+
+  const handleNavigateTab = (tabName: NavTab) => {
+    setActiveGuideSession(null);
+    setActiveTab(tabName);
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  };
+
+  const handleOpenGuide = (session: { planId?: string; card?: any; returnTab?: NavTab }) => {
+    setActiveGuideSession({
+      planId: session.planId,
+      card: session.card,
+      returnTab: session.returnTab || activeTab,
+    });
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  };
+
+  const handleExitGuide = () => {
+    const returnTarget = activeGuideSession?.returnTab || activeTab;
+    setActiveGuideSession(null);
+    handleNavigateTab(returnTarget);
+  };
 
   const loadProfile = async () => {
+    if (!getAuthToken()) {
+      setLoading(false);
+      setProfileData(null);
+      return;
+    }
     try {
       setLoading(true);
       setError(null);
@@ -51,30 +98,52 @@ export const App: React.FC = () => {
       setMetrics(progress.metrics);
     } catch (err: any) {
       console.error('Error loading initial data:', err);
-      setError(err.message || 'Failed to connect to backend server');
+      if (err.message?.includes('Failed to load profile data') || err.message?.includes('401')) {
+        setProfileData(null);
+      } else {
+        setError(err.message || 'Failed to connect to backend server');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadProfile();
-  }, []);
+    if (isAuthenticated) {
+      loadProfile();
+    } else if (!authLoading) {
+      setLoading(false);
+      setProfileData(null);
+    }
+  }, [isAuthenticated, authLoading]);
 
   const handleScanClick = async () => {
     setIsScanning(true);
     setScanNotice('Initiating discovery and verification scan across adapters...');
     try {
       const res = await api.triggerScan();
+      await loadProfile();
+      setDataVersion(v => v + 1);
       setTimeout(() => {
         setIsScanning(false);
-        setScanNotice(res.message);
-        setTimeout(() => setScanNotice(null), 5000);
-      }, 1200);
+        const scanStatus = res.status || res.scanRecord?.status;
+        if (res.success === false || scanStatus === 'failed') {
+          setScanNotice(res.message || "Scan failed. Your existing discoveries remain unchanged.");
+        } else if (scanStatus === 'partial') {
+          setScanNotice(res.message || `Scan completed with partial results (${res.scanRecord?.items_collected || 0} items collected, some sources failed).`);
+        } else {
+          setScanNotice(res.message || 'Scan completed successfully.');
+        }
+        setTimeout(() => setScanNotice(null), 6000);
+      }, 1000);
     } catch (err: any) {
+      setDataVersion(v => v + 1);
       setIsScanning(false);
-      setScanNotice('Scan completed cleanly.');
-      setTimeout(() => setScanNotice(null), 3000);
+      if (err.message?.includes('subscription') || err.message?.includes('SUBSCRIPTION_EXPIRED') || err.message?.includes('free trial')) {
+        openSubscriptionModal();
+      }
+      setScanNotice(`Scan failed: ${err.message || "Could not complete scan."} Existing discoveries remain unchanged.`);
+      setTimeout(() => setScanNotice(null), 6000);
     }
   };
 
@@ -184,7 +253,7 @@ export const App: React.FC = () => {
           {/* Pillar 8: Floating Detached Navigation Dock */}
           <Navbar
             activeTab={activeTab}
-            setActiveTab={setActiveTab}
+            setActiveTab={handleNavigateTab}
             profile={profileData?.profile || null}
             onScanClick={handleScanClick}
             isScanning={isScanning}
@@ -212,10 +281,27 @@ export const App: React.FC = () => {
                   <h3 className="text-base font-bold text-slate-100">Connection Failed</h3>
                   <p className="text-xs text-slate-400">{error}</p>
                 </div>
-                <button onClick={loadProfile} className="btn-primary text-xs">
+                <button type="button" onClick={loadProfile} className="btn-primary text-xs">
                   Retry Connection
                 </button>
               </div>
+            ) : activeGuideSession ? (
+              <PracticalGuideWorkspace
+                planId={activeGuideSession.planId}
+                card={activeGuideSession.card}
+                returnTabLabel={
+                  activeGuideSession.returnTab === 'combine' ? "Combine Tools" :
+                  activeGuideSession.returnTab === 'progress' ? "Step-by-Step Guide" :
+                  activeGuideSession.returnTab === 'home' ? "Home" :
+                  activeGuideSession.returnTab === 'discover' ? "New AI Tools" :
+                  "Ways to Earn"
+                }
+                onBack={handleExitGuide}
+                onPlanUpdated={() => {
+                  loadProfile();
+                  setDataVersion(v => v + 1);
+                }}
+              />
             ) : (
               <div className="w-full min-h-[60vh]">
                 {activeTab === 'home' && (
@@ -224,9 +310,10 @@ export const App: React.FC = () => {
                     skills={profileData?.skills || []}
                     tools={profileData?.tools || []}
                     goals={profileData?.goals || []}
-                    setActiveTab={setActiveTab}
+                    setActiveTab={handleNavigateTab}
                     onScanClick={handleScanClick}
                     isScanning={isScanning}
+                    dataVersion={dataVersion}
                   />
                 )}
 
@@ -258,17 +345,29 @@ export const App: React.FC = () => {
 
                 {activeTab === 'discover' && (
                   <PresentationFrame>
-                    <DiscoverScreen onScanClick={handleScanClick} isScanning={isScanning} />
+                    <DiscoverScreen 
+                      onScanClick={handleScanClick} 
+                      isScanning={isScanning} 
+                      onNavigateTab={handleNavigateTab}
+                      dataVersion={dataVersion}
+                      tools={profileData?.tools || []}
+                      skills={profileData?.skills || []}
+                    />
                   </PresentationFrame>
                 )}
 
                 {activeTab === 'opportunities' && (
                   <PresentationFrame>
                     <OpportunitiesScreen
-                      onStartPlan={() => {
-                        setActiveTab('progress');
+                      tools={profileData?.tools || []}
+                      skills={profileData?.skills || []}
+                      onNavigateTab={handleNavigateTab}
+                      onOpenGuide={(card) => handleOpenGuide({ card, returnTab: 'opportunities' })}
+                      onStartPlan={(id) => {
+                        handleOpenGuide({ planId: id, returnTab: 'opportunities' });
                         loadProfile();
                       }}
+                      dataVersion={dataVersion}
                     />
                   </PresentationFrame>
                 )}
@@ -277,10 +376,13 @@ export const App: React.FC = () => {
                   <PresentationFrame>
                     <CombineScreen
                       tools={profileData?.tools || []}
-                      onStartPlan={() => {
-                        setActiveTab('progress');
+                      onNavigateTab={handleNavigateTab}
+                      onOpenGuide={(card) => handleOpenGuide({ card, returnTab: 'combine' })}
+                      onStartPlan={(id) => {
+                        if (id) handleOpenGuide({ planId: id, returnTab: 'combine' });
                         loadProfile();
                       }}
+                      dataVersion={dataVersion}
                     />
                   </PresentationFrame>
                 )}
@@ -290,6 +392,9 @@ export const App: React.FC = () => {
                     <ProgressScreen
                       metrics={metrics}
                       onRefreshMetrics={loadProfile}
+                      onContinuePlan={(id) => handleOpenGuide({ planId: id, returnTab: 'progress' })}
+                      onNavigateTab={handleNavigateTab}
+                      dataVersion={dataVersion}
                     />
                   </PresentationFrame>
                 )}
@@ -301,8 +406,24 @@ export const App: React.FC = () => {
           <footer className="relative z-10 border-t border-slate-800/40 bg-transparent backdrop-blur-md py-5 text-center text-xs text-slate-500">
             <p>Personal AI Opportunity Engine • Simple interface. Deep intelligence. Zero clutter.</p>
           </footer>
+
+          {/* Authentication Modal */}
+          <AuthModal />
+
+          {/* Subscription Modal */}
+          <SubscriptionModal />
         </div>
       </SpatialScrollProvider>
     </LenisProvider>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <SubscriptionProvider>
+        <AppContent />
+      </SubscriptionProvider>
+    </AuthProvider>
   );
 };

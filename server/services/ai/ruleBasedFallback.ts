@@ -57,6 +57,46 @@ export class RuleBasedFallback implements AIProvider {
     let structuredData: any = {};
 
     switch (request.taskType) {
+      case 'product_story_evolution': {
+        structuredData = {
+          headline: "Find what's newly available.",
+          summary: "Opportunity OS scans daily AI releases, filters out the technical noise, and surfaces practical tools you can start using immediately.",
+          themeDetected: "Live Market Radar",
+          narrativeStages: {
+            discover: {
+              id: "discover",
+              badge: "01 DISCOVER · LIVE MARKET RADAR",
+              headline: "Find what's newly available.",
+              body: "Opportunity OS scans daily AI releases, filters out the technical noise, and surfaces practical tools you can start using immediately."
+            },
+            understand: {
+              id: "understand",
+              badge: "02 UNDERSTAND · SKILL & TOOL FIT",
+              headline: "Match tools to what you already know.",
+              body: "Instantly see realistic client services you can deliver with free tools like Gemini, Canva, and WhatsApp—zero coding required."
+            },
+            combine: {
+              id: "combine",
+              badge: "03 COMBINE · TOOL WORKFLOWS",
+              headline: "Combine tools into complete services.",
+              body: "Stack simple tools together to create end-to-end deliverables for local businesses, from social media kits to customer inquiry setups."
+            },
+            act: {
+              id: "act",
+              badge: "04 ACT · EXECUTION ROADMAP",
+              headline: "Turn opportunity into a step-by-step plan.",
+              body: "Follow clear, bite-sized checklists with copy-paste prompts and client outreach templates to land your first buyer."
+            },
+            learn: {
+              id: "learn",
+              badge: "05 LEARN · SMARTER MATCHING",
+              headline: "Your results sharpen what comes next.",
+              body: "Every completed project refines your matching engine to recommend higher-value opportunities tailored to your track record."
+            }
+          }
+        };
+        break;
+      }
       case 'classify':
         // Neutral fallback metadata - do NOT assume open source or free status
         structuredData = {

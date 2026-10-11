@@ -1,4 +1,4 @@
-import { describe, it } from 'node:test';
+import { describe, it, before } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   evaluateToolAccess,
@@ -10,6 +10,7 @@ import {
   generateSubsets,
   normalizeCapabilities,
   getStoredCombinationById,
+  generateAndStoreCombinations,
   UnifiedTool
 } from '../services/combineEngine.js';
 import { UserSkill, UserProfile } from '../../src/types/index.js';
@@ -157,20 +158,21 @@ const sampleProfile: UserProfile = {
 // ============================================================================
 
 describe('Phase 5: "Combine My Tools" Engine Test Suite', () => {
+  before(async () => {
+    await initDatabase();
+  });
 
-  // Test A: Combination size 2–4 strictly enforced
-  it('Test A: strictly enforces combination size between 2 and 4 tools', () => {
-    // 1 tool combination must be rejected
-    const singleToolResult = evaluateCombination([discoveryToolOllama], sampleSkills, sampleProfile);
-    assert.equal(singleToolResult, null, 'Single tool combination must return null');
+  // Test A: Flexible combination size (1, 2, 3, 4, 5+ tools supported)
+  it('Test A: supports 1 tool standalone services, 2, 3, 4, and 5+ tool selections', () => {
+    // 0 tools returns null
+    const zeroToolsResult = evaluateCombination([], sampleSkills, sampleProfile);
+    assert.equal(zeroToolsResult, null, '0 tools must return null');
 
-    // 5 tools combination must be rejected
-    const fiveToolsResult = evaluateCombination(
-      [discoveryToolOllama, profileToolCanva, profileToolCapCut, profileToolPython, discoveryToolWhisper],
-      sampleSkills,
-      sampleProfile
-    );
-    assert.equal(fiveToolsResult, null, '5-tool combination must return null');
+    // 1 tool standalone service evaluation
+    const singleToolResult = evaluateCombination([profileToolCanva], sampleSkills, sampleProfile);
+    assert.ok(singleToolResult !== null, 'Single tool must return standalone service');
+    assert.equal(singleToolResult.tool_ids.length, 1);
+    assert.ok(singleToolResult.summary.includes('Canva') || singleToolResult.tool_names.includes('Canva'), 'Standalone service must feature selected tool');
 
     // Valid 2-tool combination
     const twoToolResult = evaluateCombination([discoveryToolOllama, profileToolCanva], sampleSkills, sampleProfile);
@@ -185,6 +187,85 @@ describe('Phase 5: "Combine My Tools" Engine Test Suite', () => {
     );
     assert.ok(threeToolResult !== null, 'Valid 3-tool combination should be created');
     assert.equal(threeToolResult.tool_ids.length, 3);
+  });
+
+  // Test Requirement 8: All 12 flexible combine requirement test cases
+  it('Test Req 8.1: Empty selection (0 tools) returns empty or null safely', () => {
+    const res = evaluateCombination([], sampleSkills, sampleProfile);
+    assert.equal(res, null);
+  });
+
+  it('Test Req 8.2: 1 tool selected generates standalone service opportunity', () => {
+    const res = evaluateCombination([profileToolCapCut], sampleSkills, sampleProfile);
+    assert.ok(res !== null);
+    assert.equal(res.tool_names[0], 'CapCut');
+    assert.ok(res.workflow_pattern.startsWith('STANDALONE_'));
+  });
+
+  it('Test Req 8.3 & 8.4: 2 and 3 tools generate compatible workflows', () => {
+    const res2 = evaluateCombination([discoveryToolOllama, profileToolCanva], sampleSkills, sampleProfile);
+    assert.ok(res2 !== null && res2.tool_ids.length === 2);
+
+    const res3 = evaluateCombination([discoveryToolCrawl4AI, discoveryToolOllama, discoveryToolDiscord], sampleSkills, sampleProfile);
+    assert.ok(res3 !== null && res3.tool_ids.length === 3);
+  });
+
+  it('Test Req 8.5: 5 or more tools selection is accepted and matching works', async () => {
+    await initDatabase();
+    try {
+      const combinations = await generateAndStoreCombinations({
+        toolIds: ['Canva', 'CapCut', 'Python', 'Ollama', 'Whisper']
+      });
+      assert.ok(Array.isArray(combinations));
+      assert.ok(combinations.length > 0, `Returned combinations: ${combinations.length}`);
+    } catch (err: any) {
+      console.error('Test 8.5 Error:', err);
+      throw err;
+    }
+  });
+
+  it('Test Req 8.6: Duplicate tool IDs are handled safely', async () => {
+    await initDatabase();
+    try {
+      const combinations = await generateAndStoreCombinations({
+        toolIds: ['Canva', 'Canva', 'Canva']
+      });
+      assert.ok(Array.isArray(combinations));
+      assert.ok(combinations.length > 0, `Returned combinations: ${combinations.length}`);
+    } catch (err: any) {
+      console.error('Test 8.6 Error:', err);
+      throw err;
+    }
+  });
+
+  it('Test Req 8.7: Invalid tool IDs are handled gracefully', async () => {
+    await initDatabase();
+    try {
+      const combinations = await generateAndStoreCombinations({
+        toolIds: ['non_existent_tool_abc']
+      });
+      assert.ok(Array.isArray(combinations));
+      assert.ok(combinations.length > 0, `Returned combinations: ${combinations.length}`);
+    } catch (err: any) {
+      console.error('Test 8.7 Error:', err);
+      throw err;
+    }
+  });
+
+  it('Test Req 8.9: Unknown tool cost remains unverified', () => {
+    const unknownCostTool: UnifiedTool = {
+      id: 'tool_unknown_price',
+      name: 'Custom Unknown Tool',
+      category: 'Other',
+      capabilities: ['graphic design'],
+      accessType: 'Unknown',
+      costPerMonth: 0,
+      source: 'custom',
+      pricingStatus: 'unknown'
+    };
+    const { isZeroCost, hasUnknownCost } = checkCombinationZeroCost([unknownCostTool]);
+    assert.equal(isZeroCost, false, 'Unknown cost must not be claimed as zero cost');
+    assert.equal(hasUnknownCost, true, 'hasUnknownCost must be true');
   });
 
   // Test B: Deduplication is order-independent

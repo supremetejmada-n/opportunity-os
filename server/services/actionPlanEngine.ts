@@ -47,29 +47,87 @@ export class ActionPlanEngine {
   /**
    * Generates a 6-phase deterministic action plan for an Opportunity
    */
-  async generatePlanForOpportunity(opportunityId: string): Promise<ActionPlan> {
-    const opp = await dbGet<any>('SELECT * FROM opportunities WHERE id = ?', [opportunityId]);
-    if (!opp) {
-      throw new Error(`Opportunity not found: ${opportunityId}`);
+  async generatePlanForOpportunity(opportunityId: string, cardPayload?: any, userId?: string): Promise<ActionPlan> {
+    const effectiveUserId = userId || 'user-default-legacy';
+    let opp = await dbGet<any>('SELECT * FROM opportunities WHERE id = ?', [opportunityId]);
+    if (!opp && cardPayload?.canonical_key) {
+      opp = await dbGet<any>('SELECT * FROM opportunities WHERE canonical_key = ?', [cardPayload.canonical_key]);
     }
 
-    // Check if an active action plan already exists for this opportunity
-    const existing = await dbGet<any>(
-      'SELECT id FROM action_plans WHERE opportunity_id = ? AND status != "abandoned" ORDER BY created_at DESC LIMIT 1',
-      [opportunityId]
-    );
+    // Check if an active action plan already exists for this opportunity and user
+    let existingSql = 'SELECT id FROM action_plans WHERE opportunity_id = ? AND status != "abandoned"';
+    const existingParams: any[] = [opportunityId];
+    if (userId) {
+      existingSql += ' AND user_id = ?';
+      existingParams.push(userId);
+    }
+    existingSql += ' ORDER BY created_at DESC LIMIT 1';
+    const existing = await dbGet<any>(existingSql, existingParams);
     if (existing) {
-      const plan = await this.getActionPlanById(existing.id);
+      const plan = await this.getActionPlanById(existing.id, userId);
       if (plan) return plan;
     }
 
-    const profile = await dbGet<any>('SELECT * FROM profiles LIMIT 1') || {
-      available_hours_per_week: 20,
-      preferred_budget: 0,
-      disliked_work: ''
-    };
+    if (!opp) {
+      const title = cardPayload?.title || cardPayload?.name || `Opportunity (${opportunityId})`;
+      const summary = cardPayload?.summary || cardPayload?.description || 'Execution Opportunity';
+      const concreteOutcome = cardPayload?.concrete_outcome || cardPayload?.outcome || summary;
+      const targetCustomer = cardPayload?.target_customer || cardPayload?.customer_type || 'Target Clients';
+      const customerType = cardPayload?.customer_type || 'Clients';
+      const requiredSkills = cardPayload?.required_skills || cardPayload?.missing_skills || [];
+      const toolsNeeded = cardPayload?.tools_needed || cardPayload?.tools || cardPayload?.required_tools || [];
+      const difficulty = cardPayload?.difficulty || 'Medium';
 
-    const skills = await dbAll<{ name: string }>('SELECT name FROM skills');
+      opp = {
+        id: opportunityId,
+        title,
+        summary,
+        concrete_outcome: concreteOutcome,
+        target_customer: targetCustomer,
+        customer_type: customerType,
+        required_skills: Array.isArray(requiredSkills) ? JSON.stringify(requiredSkills) : requiredSkills,
+        tools_needed: Array.isArray(toolsNeeded) ? JSON.stringify(toolsNeeded) : toolsNeeded,
+        difficulty
+      };
+
+      await dbRun(
+        `INSERT OR IGNORE INTO opportunities (id, user_id, title, summary, solution, customer_type, target_customer, difficulty, missing_skills, required_tools)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          opp.id,
+          effectiveUserId,
+          opp.title,
+          opp.summary,
+          opp.concrete_outcome || opp.summary,
+          opp.customer_type,
+          opp.target_customer,
+          opp.difficulty,
+          typeof opp.required_skills === 'string' ? opp.required_skills : JSON.stringify(opp.required_skills),
+          typeof opp.tools_needed === 'string' ? opp.tools_needed : JSON.stringify(opp.tools_needed)
+        ]
+      );
+    }
+
+    let profile: any = null;
+    if (userId) {
+      profile = await dbGet<any>('SELECT * FROM profiles WHERE user_id = ? LIMIT 1', [userId]);
+    }
+    if (!profile && (!userId || userId === 'user-default-legacy')) {
+      profile = await dbGet<any>('SELECT * FROM profiles WHERE user_id = "user-default-legacy" LIMIT 1')
+             || await dbGet<any>('SELECT * FROM profiles LIMIT 1')
+             || {
+               available_hours_per_week: 20,
+               preferred_budget: 0,
+               disliked_work: ''
+             };
+    }
+
+    let skills: { name: string }[] = [];
+    if (userId) {
+      skills = await dbAll<{ name: string }>('SELECT name FROM skills WHERE user_id = ?', [userId]);
+    } else {
+      skills = await dbAll<{ name: string }>('SELECT name FROM skills');
+    }
     const userSkillNames = new Set(skills.map(s => s.name.toLowerCase()));
 
     // Parse opportunity arrays safely
@@ -113,49 +171,107 @@ export class ActionPlanEngine {
     // Persist action plan in SQLite
     const now = new Date().toISOString();
     await dbRun(
-      `INSERT INTO action_plans (id, opportunity_id, combination_id, title, objective, summary, estimated_total_time, difficulty, status, created_at, updated_at)
-       VALUES (?, ?, NULL, ?, ?, ?, ?, ?, 'not_started', ?, ?)`,
-      [planId, opportunityId, title, objective, summary, estimatedTotalTime, difficulty, now, now]
+      `INSERT INTO action_plans (id, user_id, opportunity_id, combination_id, title, objective, summary, estimated_total_time, difficulty, status, created_at, updated_at)
+       VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?, 'not_started', ?, ?)`,
+      [planId, effectiveUserId, opportunityId, title, objective, summary, estimatedTotalTime, difficulty, now, now]
     );
 
     // Persist action steps
     for (const step of steps) {
       await dbRun(
-        `INSERT INTO action_steps (id, action_plan_id, step_order, phase, title, description, estimated_time, status, notes, completed_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 'not_started', NULL, NULL)`,
-        [step.id, planId, step.step_order, step.phase, step.title, step.description, step.estimated_time]
+        `INSERT INTO action_steps (id, user_id, action_plan_id, step_order, phase, title, description, estimated_time, status, notes, completed_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'not_started', NULL, NULL)`,
+        [step.id, effectiveUserId, planId, step.step_order, step.phase, step.title, step.description, step.estimated_time]
       );
     }
 
-    return (await this.getActionPlanById(planId))!;
+    return (await this.getActionPlanById(planId, userId))!;
   }
 
   /**
    * Generates a 6-phase deterministic action plan for a Tool Combination
    */
-  async generatePlanForCombination(combinationId: string): Promise<ActionPlan> {
-    const combo = await dbGet<any>('SELECT * FROM tool_combinations WHERE id = ?', [combinationId]);
-    if (!combo) {
-      throw new Error(`Tool combination not found: ${combinationId}`);
+  async generatePlanForCombination(combinationId: string, cardPayload?: any, userId?: string): Promise<ActionPlan> {
+    const effectiveUserId = userId || 'user-default-legacy';
+    let combo = await dbGet<any>('SELECT * FROM tool_combinations WHERE id = ?', [combinationId]);
+    if (!combo && cardPayload?.canonical_key) {
+      combo = await dbGet<any>('SELECT * FROM tool_combinations WHERE canonical_key = ?', [cardPayload.canonical_key]);
     }
 
-    // Check if an active action plan already exists for this combination
-    const existing = await dbGet<any>(
-      'SELECT id FROM action_plans WHERE combination_id = ? AND status != "abandoned" ORDER BY created_at DESC LIMIT 1',
-      [combinationId]
-    );
+    // Check if an active action plan already exists for this combination and user
+    let existingSql = 'SELECT id FROM action_plans WHERE combination_id = ? AND status != "abandoned"';
+    const existingParams: any[] = [combinationId];
+    if (userId) {
+      existingSql += ' AND user_id = ?';
+      existingParams.push(userId);
+    }
+    existingSql += ' ORDER BY created_at DESC LIMIT 1';
+    const existing = await dbGet<any>(existingSql, existingParams);
     if (existing) {
-      const plan = await this.getActionPlanById(existing.id);
+      const plan = await this.getActionPlanById(existing.id, userId);
       if (plan) return plan;
     }
 
-    const profile = await dbGet<any>('SELECT * FROM profiles LIMIT 1') || {
-      available_hours_per_week: 20,
-      preferred_budget: 0,
-      disliked_work: ''
-    };
+    if (!combo) {
+      const title = cardPayload?.title || cardPayload?.name || `Tool Combination (${combinationId})`;
+      const summary = cardPayload?.summary || cardPayload?.description || cardPayload?.outcome || 'AI Tool Workflow';
+      const toolNames = cardPayload?.tool_names || cardPayload?.tools || cardPayload?.selected_tools || (cardPayload?.tools_needed ? (typeof cardPayload.tools_needed === 'string' ? JSON.parse(cardPayload.tools_needed) : cardPayload.tools_needed) : []);
+      const outcome = cardPayload?.concrete_outcome || cardPayload?.outcome || cardPayload?.description || summary;
+      const targetCustomer = cardPayload?.target_customer || cardPayload?.customer_type || 'Target Clients';
+      const customerType = cardPayload?.customer_type || 'Clients';
+      const difficulty = cardPayload?.difficulty || 'Medium';
 
-    const skills = await dbAll<{ name: string }>('SELECT name FROM skills');
+      combo = {
+        id: combinationId,
+        title,
+        summary,
+        tool_names: Array.isArray(toolNames) ? JSON.stringify(toolNames) : (typeof toolNames === 'string' ? toolNames : '[]'),
+        concrete_outcome: outcome,
+        target_customer: targetCustomer,
+        customer_type: customerType,
+        difficulty,
+        startup_cost: cardPayload?.startup_cost ?? -1
+      };
+
+      await dbRun(
+        `INSERT OR IGNORE INTO tool_combinations (id, user_id, title, summary, tool_names, concrete_outcome, customer_type, target_customer, difficulty, startup_cost, workflow_pattern)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          combo.id,
+          effectiveUserId,
+          combo.title,
+          combo.summary,
+          typeof combo.tool_names === 'string' ? combo.tool_names : JSON.stringify(combo.tool_names),
+          combo.concrete_outcome,
+          combo.customer_type,
+          combo.target_customer,
+          combo.difficulty,
+          combo.startup_cost,
+          'Custom'
+        ]
+      );
+    }
+
+    let profile: any = null;
+    if (userId) {
+      profile = await dbGet<any>('SELECT * FROM profiles WHERE user_id = ? LIMIT 1', [userId]);
+    }
+    if (!profile && (!userId || userId === 'user-default-legacy')) {
+      profile = await dbGet<any>('SELECT * FROM profiles WHERE user_id = "user-default-legacy" LIMIT 1')
+             || await dbGet<any>('SELECT * FROM profiles LIMIT 1')
+             || {
+               available_hours_per_week: 20,
+               preferred_budget: 0,
+               disliked_work: ''
+             };
+    }
+
+    let skills: { name: string }[] = [];
+    if (userId) {
+      skills = await dbAll<{ name: string }>('SELECT name FROM skills WHERE user_id = ?', [userId]);
+    } else {
+      skills = await dbAll<{ name: string }>('SELECT name FROM skills');
+    }
     const userSkillNames = new Set(skills.map(s => s.name.toLowerCase()));
 
     let toolNames: string[] = [];
@@ -189,21 +305,21 @@ export class ActionPlanEngine {
     // Persist action plan in SQLite
     const now = new Date().toISOString();
     await dbRun(
-      `INSERT INTO action_plans (id, opportunity_id, combination_id, title, objective, summary, estimated_total_time, difficulty, status, created_at, updated_at)
-       VALUES (?, NULL, ?, ?, ?, ?, ?, ?, 'not_started', ?, ?)`,
-      [planId, combinationId, title, objective, summary, estimatedTotalTime, difficulty, now, now]
+      `INSERT INTO action_plans (id, user_id, opportunity_id, combination_id, title, objective, summary, estimated_total_time, difficulty, status, created_at, updated_at)
+       VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, 'not_started', ?, ?)`,
+      [planId, effectiveUserId, combinationId, title, objective, summary, estimatedTotalTime, difficulty, now, now]
     );
 
     // Persist action steps
     for (const step of steps) {
       await dbRun(
-        `INSERT INTO action_steps (id, action_plan_id, step_order, phase, title, description, estimated_time, status, notes, completed_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 'not_started', NULL, NULL)`,
-        [step.id, planId, step.step_order, step.phase, step.title, step.description, step.estimated_time]
+        `INSERT INTO action_steps (id, user_id, action_plan_id, step_order, phase, title, description, estimated_time, status, notes, completed_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'not_started', NULL, NULL)`,
+        [step.id, effectiveUserId, planId, step.step_order, step.phase, step.title, step.description, step.estimated_time]
       );
     }
 
-    return (await this.getActionPlanById(planId))!;
+    return (await this.getActionPlanById(planId, userId))!;
   }
 
   /**
@@ -362,8 +478,14 @@ export class ActionPlanEngine {
   /**
    * Retrieves an Action Plan with its steps and computed progress percentage
    */
-  async getActionPlanById(planId: string): Promise<ActionPlan | null> {
-    const raw = await dbGet<any>('SELECT * FROM action_plans WHERE id = ?', [planId]);
+  async getActionPlanById(planId: string, userId?: string): Promise<ActionPlan | null> {
+    let query = 'SELECT * FROM action_plans WHERE id = ?';
+    const params: any[] = [planId];
+    if (userId) {
+      query += ' AND user_id = ?';
+      params.push(userId);
+    }
+    const raw = await dbGet<any>(query, params);
     if (!raw) return null;
 
     const rawSteps = await dbAll<any>(
@@ -422,10 +544,14 @@ export class ActionPlanEngine {
     opportunityId?: string;
     combinationId?: string;
     status?: string;
-  }): Promise<ActionPlan[]> {
+  }, userId?: string): Promise<ActionPlan[]> {
     let query = 'SELECT id FROM action_plans WHERE 1=1';
     const args: any[] = [];
 
+    if (userId) {
+      query += ' AND user_id = ?';
+      args.push(userId);
+    }
     if (params?.opportunityId) {
       query += ' AND opportunity_id = ?';
       args.push(params.opportunityId);
@@ -444,20 +570,39 @@ export class ActionPlanEngine {
 
     const plans: ActionPlan[] = [];
     for (const row of rows) {
-      const p = await this.getActionPlanById(row.id);
+      const p = await this.getActionPlanById(row.id, userId);
       if (p) plans.push(p);
     }
     return plans;
   }
 
   /**
+   * Retrieves the current primary active plan for the user (in_progress status ONLY)
+   */
+  async getCurrentActivePlan(userId?: string): Promise<ActionPlan | null> {
+    let query = 'SELECT id FROM action_plans WHERE status = "in_progress"';
+    const args: any[] = [];
+    if (userId) {
+      query += ' AND user_id = ?';
+      args.push(userId);
+    }
+    query += ' ORDER BY updated_at DESC LIMIT 1';
+    const inProgress = await dbGet<{ id: string }>(query, args);
+    if (inProgress) {
+      const plan = await this.getActionPlanById(inProgress.id, userId);
+      if (plan) return plan;
+    }
+    return null;
+  }
+
+  /**
    * Helper wrapper method to generate plan for opportunity or combination
    */
-  async generateActionPlan(params: { opportunityId?: string; combinationId?: string }): Promise<ActionPlan> {
+  async generateActionPlan(params: { opportunityId?: string; combinationId?: string }, userId?: string): Promise<ActionPlan> {
     if (params.opportunityId) {
-      return this.generatePlanForOpportunity(params.opportunityId);
+      return this.generatePlanForOpportunity(params.opportunityId, undefined, userId);
     } else if (params.combinationId) {
-      return this.generatePlanForCombination(params.combinationId);
+      return this.generatePlanForCombination(params.combinationId, undefined, userId);
     } else {
       throw new Error('Either opportunityId or combinationId is required');
     }
@@ -466,30 +611,31 @@ export class ActionPlanEngine {
   /**
    * Alias methods for route compatibility
    */
-  async startActionPlan(planId: string): Promise<ActionPlan> {
-    return this.startPlan(planId);
+  async startActionPlan(planId: string, userId?: string): Promise<ActionPlan> {
+    return this.startPlan(planId, userId);
   }
 
-  async completeActionPlan(planId: string): Promise<ActionPlan> {
-    return this.completePlan(planId);
+  async completeActionPlan(planId: string, userId?: string): Promise<ActionPlan> {
+    return this.completePlan(planId, userId);
   }
 
-  async deleteActionPlan(planId: string): Promise<boolean> {
-    return this.deletePlan(planId);
+  async deleteActionPlan(planId: string, userId?: string): Promise<boolean> {
+    return this.deletePlan(planId, userId);
   }
 
   async updateActionStep(
     stepId: string,
-    updates: { status?: ActionStepStatus; notes?: string }
+    updates: { status?: ActionStepStatus; notes?: string },
+    userId?: string
   ): Promise<ActionStep> {
-    return this.updateStep(stepId, updates);
+    return this.updateStep(stepId, updates, userId);
   }
 
   /**
    * Starts an Action Plan: sets status to in_progress, step 1 to in_progress
    */
-  async startPlan(planId: string): Promise<ActionPlan> {
-    const plan = await this.getActionPlanById(planId);
+  async startPlan(planId: string, userId?: string): Promise<ActionPlan> {
+    const plan = await this.getActionPlanById(planId, userId);
     if (!plan) throw new Error(`Plan not found: ${planId}`);
 
     const now = new Date().toISOString();
@@ -503,7 +649,7 @@ export class ActionPlanEngine {
       sourceType: 'action_plan',
       sourceId: planId,
       signalType: 'started_plan'
-    });
+    }, userId);
 
     // If step 1 is not_started, transition it to in_progress
     if (plan.steps.length > 0 && plan.steps[0].status === 'not_started') {
@@ -521,43 +667,56 @@ export class ActionPlanEngine {
       resultType: 'general_note',
       outcome: 'neutral',
       notes: `Started action plan: ${plan.title}`
-    });
+    }, userId);
 
-    return (await this.getActionPlanById(planId))!;
+    return (await this.getActionPlanById(planId, userId))!;
   }
 
   /**
    * Pauses an Action Plan
    */
-  async pausePlan(planId: string): Promise<ActionPlan> {
+  async pausePlan(planId: string, userId?: string): Promise<ActionPlan> {
+    const plan = await this.getActionPlanById(planId, userId);
+    if (!plan) throw new Error(`Plan not found: ${planId}`);
+
     const now = new Date().toISOString();
     await dbRun(
       'UPDATE action_plans SET status = "paused", updated_at = ? WHERE id = ?',
       [now, planId]
     );
-    return (await this.getActionPlanById(planId))!;
+    return (await this.getActionPlanById(planId, userId))!;
   }
 
   /**
    * Resumes an Action Plan
    */
-  async resumePlan(planId: string): Promise<ActionPlan> {
+  async resumePlan(planId: string, userId?: string): Promise<ActionPlan> {
+    const plan = await this.getActionPlanById(planId, userId);
+    if (!plan) throw new Error(`Plan not found: ${planId}`);
+
     const now = new Date().toISOString();
     await dbRun(
       'UPDATE action_plans SET status = "in_progress", updated_at = ? WHERE id = ?',
       [now, planId]
     );
-    return (await this.getActionPlanById(planId))!;
+    return (await this.getActionPlanById(planId, userId))!;
   }
 
   /**
    * Marks an Action Plan as completed
    */
-  async completePlan(planId: string): Promise<ActionPlan> {
+  async completePlan(planId: string, userId?: string): Promise<ActionPlan> {
+    const plan = await this.getActionPlanById(planId, userId);
+    if (!plan) throw new Error(`Plan not found: ${planId}`);
+
     const now = new Date().toISOString();
     await dbRun(
       'UPDATE action_plans SET status = "completed", updated_at = ? WHERE id = ?',
       [now, planId]
+    );
+    await dbRun(
+      'UPDATE action_steps SET status = "completed" WHERE action_plan_id = ?',
+      [planId]
     );
 
     // Record Learning Signal
@@ -565,15 +724,18 @@ export class ActionPlanEngine {
       sourceType: 'action_plan',
       sourceId: planId,
       signalType: 'completed_plan'
-    });
+    }, userId);
 
-    return (await this.getActionPlanById(planId))!;
+    return (await this.getActionPlanById(planId, userId))!;
   }
 
   /**
    * Deletes an Action Plan and cascades deletion of its steps and logs
    */
-  async deletePlan(planId: string): Promise<boolean> {
+  async deletePlan(planId: string, userId?: string): Promise<boolean> {
+    const plan = await this.getActionPlanById(planId, userId);
+    if (!plan) return false;
+
     await dbRun('DELETE FROM action_steps WHERE action_plan_id = ?', [planId]);
     await dbRun('DELETE FROM progress_logs WHERE action_plan_id = ?', [planId]);
     const res = await dbRun('DELETE FROM action_plans WHERE id = ?', [planId]);
@@ -585,10 +747,16 @@ export class ActionPlanEngine {
    */
   async updateStep(
     stepId: string,
-    updates: { status?: ActionStepStatus; notes?: string }
+    updates: { status?: ActionStepStatus; notes?: string },
+    userId?: string
   ): Promise<ActionStep> {
     const step = await dbGet<any>('SELECT * FROM action_steps WHERE id = ?', [stepId]);
     if (!step) throw new Error(`Step not found: ${stepId}`);
+
+    if (userId) {
+      const plan = await dbGet<any>('SELECT id FROM action_plans WHERE id = ? AND user_id = ?', [step.action_plan_id, userId]);
+      if (!plan) throw new Error('Unauthorized or plan not found');
+    }
 
     const newStatus = updates.status || step.status;
     const newNotes = updates.notes !== undefined ? updates.notes : step.notes;
@@ -604,7 +772,7 @@ export class ActionPlanEngine {
         sourceType: 'action_step',
         sourceId: stepId,
         signalType: 'completed_step'
-      });
+      }, userId);
     }
 
     // If step was completed or skipped, activate next step if it's currently not_started
@@ -632,7 +800,7 @@ export class ActionPlanEngine {
 
     if (allFinished && hasAnyCompleted && plan?.status !== 'completed') {
       await dbRun('UPDATE action_plans SET status = "completed", updated_at = ? WHERE id = ?', [now, step.action_plan_id]);
-    } else if (newStatus === 'in_progress' && plan?.status === 'not_started') {
+    } else if ((newStatus === 'in_progress' || newStatus === 'completed' || newStatus === 'blocked') && plan?.status === 'not_started') {
       await dbRun('UPDATE action_plans SET status = "in_progress", updated_at = ? WHERE id = ?', [now, step.action_plan_id]);
     }
 
@@ -665,7 +833,8 @@ export class ActionPlanEngine {
     notes: string;
     evidenceLink?: string;
     date?: string;
-  }): Promise<ProgressLog> {
+  }, userId?: string): Promise<ProgressLog> {
+    const effectiveUserId = userId || 'user-default-legacy';
     const id = crypto.randomUUID();
     const actionPlanId = params.actionPlanId || null;
     const stepId = params.stepId || null;
@@ -703,13 +872,13 @@ export class ActionPlanEngine {
 
     await dbRun(
       `INSERT INTO progress_logs (
-        id, action_plan_id, step_id, opportunity_id, combination_id,
+        id, user_id, action_plan_id, step_id, opportunity_id, combination_id,
         result_type, outcome, numeric_value, notes, evidence_link,
         date, demos_created, prospects_contacted, responses_received,
         clients_acquired, revenue_earned, hours_spent, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        id, actionPlanId, stepId, opportunityId, combinationId,
+        id, effectiveUserId, actionPlanId, stepId, opportunityId, combinationId,
         resultType, outcome, numericValue, notes, evidenceLink,
         date, demosCreated, prospectsContacted, responsesReceived,
         clientsAcquired, revenueEarned, hoursSpent, now
@@ -723,7 +892,7 @@ export class ActionPlanEngine {
       signalType: resultType as any,
       signalValue: numericValue || 1.0,
       createdAt: now
-    });
+    }, userId);
 
     return {
       id,
@@ -748,10 +917,14 @@ export class ActionPlanEngine {
     actionPlanId?: string;
     opportunityId?: string;
     combinationId?: string;
-  }): Promise<ProgressLog[]> {
+  }, userId?: string): Promise<ProgressLog[]> {
     let query = 'SELECT * FROM progress_logs WHERE 1=1';
     const args: any[] = [];
 
+    if (userId) {
+      query += ' AND user_id = ?';
+      args.push(userId);
+    }
     if (params?.actionPlanId) {
       query += ' AND action_plan_id = ?';
       args.push(params.actionPlanId);
@@ -787,39 +960,27 @@ export class ActionPlanEngine {
   /**
    * Deletes a progress log
    */
-  async deleteProgressLog(logId: string): Promise<boolean> {
-    const res = await dbRun('DELETE FROM progress_logs WHERE id = ?', [logId]);
+  async deleteProgressLog(logId: string, userId?: string): Promise<boolean> {
+    let query = 'DELETE FROM progress_logs WHERE id = ?';
+    const args: any[] = [logId];
+    if (userId) {
+      query += ' AND user_id = ?';
+      args.push(userId);
+    }
+    const res = await dbRun(query, args);
     return (res.changes || 0) > 0;
   }
 
   /**
    * Aggregates real execution metrics from the database with ZERO fake data
    */
-  async getProgressMetrics(): Promise<ProgressMetrics> {
-    // 1. Saved counts
-    const oppSaved = await dbGet<{ count: number }>('SELECT COUNT(*) as count FROM opportunities WHERE saved = 1');
-    const comboSaved = await dbGet<{ count: number }>('SELECT COUNT(*) as count FROM tool_combinations WHERE saved = 1');
-    const totalSaved = (oppSaved?.count || 0) + (comboSaved?.count || 0);
-
-    // 2. Viewed / total opportunities count
-    const oppTotal = await dbGet<{ count: number }>('SELECT COUNT(*) as count FROM opportunities WHERE status != "ignored"');
-    const comboTotal = await dbGet<{ count: number }>('SELECT COUNT(*) as count FROM tool_combinations');
-    const totalOpportunities = (oppTotal?.count || 0) + (comboTotal?.count || 0);
-
-    // 3. Attempted count: action plans created
-    const plansAttempted = await dbGet<{ count: number }>(
-      'SELECT COUNT(*) as count FROM action_plans WHERE status != "not_started"'
-    );
-
-    // 4. Progress log counters
-    const logSums = await dbGet<{
-      demos: number;
-      prospects: number;
-      responses: number;
-      clients: number;
-      revenue: number;
-      hours: number;
-    }>(`
+  async getProgressMetrics(userId?: string): Promise<ProgressMetrics> {
+    let oppSavedQuery = 'SELECT COUNT(*) as count FROM opportunities WHERE saved = 1';
+    let comboSavedQuery = 'SELECT COUNT(*) as count FROM tool_combinations WHERE saved = 1';
+    let oppTotalQuery = 'SELECT COUNT(*) as count FROM opportunities WHERE status != "ignored"';
+    let comboTotalQuery = 'SELECT COUNT(*) as count FROM tool_combinations';
+    let plansAttemptedQuery = 'SELECT COUNT(*) as count FROM action_plans WHERE status != "not_started"';
+    let logSumsQuery = `
       SELECT 
         COALESCE(SUM(demos_created), 0) as demos,
         COALESCE(SUM(prospects_contacted), 0) as prospects,
@@ -828,7 +989,36 @@ export class ActionPlanEngine {
         COALESCE(SUM(revenue_earned), 0) as revenue,
         COALESCE(SUM(hours_spent), 0) as hours
       FROM progress_logs
-    `);
+    `;
+    const userParams: any[] = [];
+    if (userId) {
+      oppSavedQuery += ' AND user_id = ?';
+      comboSavedQuery += ' AND user_id = ?';
+      oppTotalQuery += ' AND user_id = ?';
+      comboTotalQuery += ' WHERE user_id = ?';
+      plansAttemptedQuery += ' AND user_id = ?';
+      logSumsQuery += ' WHERE user_id = ?';
+      userParams.push(userId);
+    }
+
+    const oppSaved = await dbGet<{ count: number }>(oppSavedQuery, userParams);
+    const comboSaved = await dbGet<{ count: number }>(comboSavedQuery, userParams);
+    const totalSaved = (oppSaved?.count || 0) + (comboSaved?.count || 0);
+
+    const oppTotal = await dbGet<{ count: number }>(oppTotalQuery, userParams);
+    const comboTotal = await dbGet<{ count: number }>(comboTotalQuery, userParams);
+    const totalOpportunities = (oppTotal?.count || 0) + (comboTotal?.count || 0);
+
+    const plansAttempted = await dbGet<{ count: number }>(plansAttemptedQuery, userParams);
+
+    const logSums = await dbGet<{
+      demos: number;
+      prospects: number;
+      responses: number;
+      clients: number;
+      revenue: number;
+      hours: number;
+    }>(logSumsQuery, userParams);
 
     return {
       opportunities_viewed: totalOpportunities,

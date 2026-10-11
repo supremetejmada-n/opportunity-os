@@ -8,28 +8,49 @@ export async function deduplicateDiscoveries(
   const uniqueItems: NormalizedDiscovery[] = [];
   const seenKeys = new Set<string>();
 
-  // Fetch existing URLs and source IDs from SQLite database
-  const existingRows = await dbAll<{ url: string; source: string; source_id: string }>(
-    'SELECT url, source, source_id FROM discoveries;'
+  // Fetch existing URLs, source IDs, and titles from SQLite database
+  const existingRows = await dbAll<{ id: string; url: string; source: string; source_id: string; title: string }>(
+    'SELECT id, url, source, source_id, title FROM discoveries;'
   );
 
   const existingKeys = new Set<string>();
   existingRows.forEach(row => {
-    if (row.url) existingKeys.add(`url:${row.url}`);
-    if (row.source && row.source_id) existingKeys.add(`src:${row.source}:${row.source_id}`);
+    if (row.url) {
+      existingKeys.add(`url:${row.url.trim().toLowerCase().replace(/\/$/, '')}`);
+    }
+    if (row.source && row.source_id) {
+      existingKeys.add(`src:${row.source}:${row.source_id}`);
+    }
+    if (row.title) {
+      existingKeys.add(`title:${row.title.trim().toLowerCase()}`);
+    }
   });
 
   for (const item of candidates) {
-    const urlKey = `url:${item.url}`;
-    const srcKey = `src:${item.source}:${item.sourceId}`;
+    const cleanUrl = (item.url || '').trim().toLowerCase().replace(/\/$/, '');
+    const cleanCanonical = (item.canonicalResourceUrl || '').trim().toLowerCase().replace(/\/$/, '');
+    const cleanTitle = (item.title || '').trim().toLowerCase();
 
-    if (existingKeys.has(urlKey) || existingKeys.has(srcKey) || seenKeys.has(urlKey) || seenKeys.has(srcKey)) {
+    const urlKey = cleanUrl ? `url:${cleanUrl}` : '';
+    const canonicalKey = cleanCanonical ? `url:${cleanCanonical}` : '';
+    const srcKey = `src:${item.source}:${item.sourceId}`;
+    const titleKey = cleanTitle ? `title:${cleanTitle}` : '';
+
+    const isDuplicate =
+      (urlKey !== '' && (existingKeys.has(urlKey) || seenKeys.has(urlKey))) ||
+      (canonicalKey !== '' && (existingKeys.has(canonicalKey) || seenKeys.has(canonicalKey))) ||
+      (srcKey !== '' && (existingKeys.has(srcKey) || seenKeys.has(srcKey))) ||
+      (titleKey !== '' && (existingKeys.has(titleKey) || seenKeys.has(titleKey)));
+
+    if (isDuplicate) {
       duplicatesCount++;
       continue;
     }
 
-    seenKeys.add(urlKey);
-    seenKeys.add(srcKey);
+    if (urlKey) seenKeys.add(urlKey);
+    if (canonicalKey) seenKeys.add(canonicalKey);
+    if (srcKey) seenKeys.add(srcKey);
+    if (titleKey) seenKeys.add(titleKey);
     uniqueItems.push(item);
   }
 

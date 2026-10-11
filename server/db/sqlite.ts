@@ -1,14 +1,15 @@
 import sqlite3 from 'sqlite3';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 import { SCHEMA_SQL } from './schema.js';
+import { hashPassword } from '../services/authService.js';
 
-const DB_DIR = path.resolve(process.cwd(), 'data');
+const DB_PATH = process.env.DB_PATH || path.resolve(process.cwd(), 'data', 'opportunity_engine.db');
+const DB_DIR = path.dirname(DB_PATH);
 if (!fs.existsSync(DB_DIR)) {
   fs.mkdirSync(DB_DIR, { recursive: true });
 }
-
-const DB_PATH = path.join(DB_DIR, 'opportunity_engine.db');
 
 export const db = new sqlite3.Database(DB_PATH, (err) => {
   if (err) {
@@ -71,7 +72,9 @@ export async function initDatabase(): Promise<void> {
     { name: 'origin', type: "TEXT DEFAULT 'template'" },
     { name: 'action_plan', type: "TEXT DEFAULT '[]'" },
     { name: 'learning_adjustment', type: "REAL DEFAULT 0" },
-    { name: 'learning_explanation', type: "TEXT" }
+    { name: 'learning_explanation', type: "TEXT" },
+    { name: 'canonical_key', type: "TEXT" },
+    { name: 'scan_id', type: "TEXT" }
   ];
 
   for (const col of missingCols) {
@@ -84,6 +87,8 @@ export async function initDatabase(): Promise<void> {
       }
     }
   }
+
+  await dbRun(`CREATE INDEX IF NOT EXISTS idx_opportunities_canonical_key ON opportunities(canonical_key);`);
 
   // Ensure tool_combinations table exists
   await dbRun(`
@@ -112,6 +117,7 @@ export async function initDatabase(): Promise<void> {
       confidence TEXT DEFAULT 'Medium',
       learning_adjustment REAL DEFAULT 0,
       learning_explanation TEXT,
+      canonical_key TEXT,
       saved INTEGER DEFAULT 0,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       is_demo_data INTEGER DEFAULT 0
@@ -126,7 +132,8 @@ export async function initDatabase(): Promise<void> {
     { name: 'origin', type: "TEXT DEFAULT 'profile_hypothesis'" },
     { name: 'market_evidence', type: "TEXT DEFAULT 'limited'" },
     { name: 'learning_adjustment', type: "REAL DEFAULT 0" },
-    { name: 'learning_explanation', type: "TEXT" }
+    { name: 'learning_explanation', type: "TEXT" },
+    { name: 'canonical_key', type: "TEXT" }
   ];
   for (const col of missingComboCols) {
     if (!comboColNames.has(col.name)) {
@@ -138,6 +145,8 @@ export async function initDatabase(): Promise<void> {
       }
     }
   }
+
+  await dbRun(`CREATE INDEX IF NOT EXISTS idx_tool_combinations_canonical_key ON tool_combinations(canonical_key);`);
 
   // Ensure Phase 6 Action Plans & Progress tables exist
   const planCols = await dbAll<{ name: string }>("PRAGMA table_info(action_plans);");
@@ -254,17 +263,203 @@ export async function initDatabase(): Promise<void> {
   `);
 
   await dbRun(`
-    CREATE TABLE IF NOT EXISTS learning_profile (
-      id TEXT PRIMARY KEY DEFAULT 'user_learning_profile',
-      preferred_categories TEXT DEFAULT '{}',
-      preferred_capabilities TEXT DEFAULT '{}',
-      preferred_tools TEXT DEFAULT '{}',
-      preferred_work_types TEXT DEFAULT '{}',
-      total_signals INTEGER DEFAULT 0,
-      confidence_score REAL DEFAULT 0,
+    CREATE TABLE IF NOT EXISTS product_story (
+      id TEXT PRIMARY KEY,
+      version INTEGER NOT NULL DEFAULT 1,
+      headline TEXT NOT NULL,
+      summary TEXT NOT NULL,
+      theme_detected TEXT DEFAULT 'General AI Discovery',
+      narrative_stages TEXT NOT NULL DEFAULT '{}',
+      discovery_ids TEXT NOT NULL DEFAULT '[]',
+      is_current INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
   `);
+
+  // Seed default Product Story v1 if table is empty or update v1 to match curated narrative
+  const defaultStages = {
+    discover: {
+      id: "discover",
+      badge: "01 DISCOVER · LIVE MARKET RADAR",
+      headline: "Find what's newly available.",
+      body: "Opportunity OS scans daily AI releases, filters out the technical noise, and surfaces practical tools you can start using immediately."
+    },
+    understand: {
+      id: "understand",
+      badge: "02 UNDERSTAND · SKILL & TOOL FIT",
+      headline: "Match tools to what you already know.",
+      body: "Instantly see realistic client services you can deliver with free tools like Gemini, Canva, and WhatsApp—zero coding required."
+    },
+    combine: {
+      id: "combine",
+      badge: "03 COMBINE · TOOL WORKFLOWS",
+      headline: "Combine tools into complete services.",
+      body: "Stack simple tools together to create end-to-end deliverables for local businesses, from social media kits to customer inquiry setups."
+    },
+    act: {
+      id: "act",
+      badge: "04 ACT · EXECUTION ROADMAP",
+      headline: "Turn opportunity into a step-by-step plan.",
+      body: "Follow clear, bite-sized checklists with copy-paste prompts and client outreach templates to land your first buyer."
+    },
+    learn: {
+      id: "learn",
+      badge: "05 LEARN · SMARTER MATCHING",
+      headline: "Your results sharpen what comes next.",
+      body: "Every completed project refines your matching engine to recommend higher-value opportunities tailored to your track record."
+    }
+  };
+
+  const storyCount = await dbGet<{ count: number }>('SELECT COUNT(*) as count FROM product_story;');
+  if (!storyCount || storyCount.count === 0) {
+    const now = new Date().toISOString();
+    await dbRun(
+      `INSERT INTO product_story (
+        id, version, headline, summary, theme_detected, narrative_stages, discovery_ids, is_current, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?);`,
+      [
+        'story_v1',
+        1,
+        "Find what's newly available.",
+        "Opportunity OS scans daily AI releases, filters out the technical noise, and surfaces practical tools you can start using immediately.",
+        "Live Market Radar",
+        JSON.stringify(defaultStages),
+        '[]',
+        now,
+        now
+      ]
+    );
+    console.log('[SQLite Seed] Default Product Story (v1) initialized.');
+  } else {
+    // Update active story if it contains legacy uncurated stages
+    await dbRun(
+      `UPDATE product_story SET
+        headline = 'Find what''s newly available.',
+        summary = 'Opportunity OS scans daily AI releases, filters out the technical noise, and surfaces practical tools you can start using immediately.',
+        theme_detected = 'Live Market Radar',
+        narrative_stages = ?
+      WHERE is_current = 1 AND (narrative_stages LIKE '%SADC%' OR narrative_stages LIKE '%Grounded in%' OR headline LIKE '%Evolving%');`,
+      [JSON.stringify(defaultStages)]
+    );
+  }
+
+  // Safe one-time cleanup of synthetic seed/test data in local SQLite tables
+  try {
+    await dbRun(`DELETE FROM skills WHERE id IN ('skill_1', 'skill_2', 'skill_3', 'skill_4');`);
+    await dbRun(`DELETE FROM tools WHERE id IN ('tool_1', 'tool_2', 'tool_3', 'tool_4', 'tool_5');`);
+    await dbRun(`DELETE FROM goals WHERE id IN ('goal_1', 'goal_2');`);
+    await dbRun(`DELETE FROM interests WHERE id IN ('interest_1', 'interest_2');`);
+    await dbRun(`DELETE FROM projects WHERE id IN ('project_1');`);
+    await dbRun(`DELETE FROM action_plans WHERE title LIKE '%Phase 8%' OR title LIKE '%chronocode7%' OR title LIKE '%SH98%' OR title LIKE '%Test%';`);
+    await dbRun(`DELETE FROM progress_logs WHERE action_plan_id NOT IN (SELECT id FROM action_plans);`);
+  } catch (err: any) {
+    console.warn('[SQLite Migration] Safe cleanup note:', err?.message);
+  }
+
+  // Multi-Tenant SaaS Migration & Ownership Backfill
+  const userScopedTables = [
+    'profiles',
+    'skills',
+    'tools',
+    'goals',
+    'interests',
+    'projects',
+    'opportunities',
+    'tool_combinations',
+    'action_plans',
+    'action_steps',
+    'progress_logs',
+    'feedback',
+    'learning_signals',
+    'learning_profile',
+    'scan_records',
+    'subscriptions',
+    'payment_transactions'
+  ];
+
+  for (const tableName of userScopedTables) {
+    try {
+      const cols = await dbAll<{ name: string }>(`PRAGMA table_info(${tableName});`);
+      const names = new Set(cols.map(c => c.name));
+      if (cols.length > 0 && !names.has('user_id')) {
+        await dbRun(`ALTER TABLE ${tableName} ADD COLUMN user_id TEXT;`);
+        console.log(`[SQLite Migration] Added 'user_id' column to ${tableName} table.`);
+      }
+      if (cols.length > 0) {
+        await dbRun(`CREATE INDEX IF NOT EXISTS idx_${tableName}_user_id ON ${tableName}(user_id);`);
+      }
+    } catch (err: any) {
+      console.warn(`[SQLite Migration] Note adding user_id to ${tableName}:`, err?.message);
+    }
+  }
+
+  // Seed legacy owner user if not already present
+  const legacyUser = await dbGet<any>('SELECT id FROM users WHERE id = "user-default-legacy";');
+  if (!legacyUser) {
+    const legacyEmail = process.env.INITIAL_OWNER_EMAIL || 'owner@opportunityos.local';
+    const isProd = process.env.NODE_ENV === 'production';
+    const legacyPassword = process.env.INITIAL_OWNER_PASSWORD || (isProd ? crypto.randomBytes(24).toString('hex') : 'OpportunityOS!2026');
+    const { hash, salt } = await hashPassword(legacyPassword);
+    const now = new Date().toISOString();
+    await dbRun(
+      `INSERT INTO users (id, email, password_hash, salt, name, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?);`,
+      ['user-default-legacy', legacyEmail, hash, salt, 'Supreme Tej', now, now]
+    );
+    console.log(`[SQLite Migration] Legacy owner account initialized for user-default-legacy (${legacyEmail})`);
+  }
+
+  // Safe, non-destructive legacy data backfill: associate existing unowned records with legacy owner
+  await dbRun(`UPDATE profiles SET user_id = 'user-default-legacy' WHERE user_id IS NULL OR user_id = '';`);
+  await dbRun(`UPDATE skills SET user_id = COALESCE((SELECT user_id FROM profiles WHERE profiles.id = skills.profile_id), 'user-default-legacy') WHERE user_id IS NULL OR user_id = '';`);
+  await dbRun(`UPDATE tools SET user_id = COALESCE((SELECT user_id FROM profiles WHERE profiles.id = tools.profile_id), 'user-default-legacy') WHERE user_id IS NULL OR user_id = '';`);
+  await dbRun(`UPDATE goals SET user_id = COALESCE((SELECT user_id FROM profiles WHERE profiles.id = goals.profile_id), 'user-default-legacy') WHERE user_id IS NULL OR user_id = '';`);
+  await dbRun(`UPDATE interests SET user_id = COALESCE((SELECT user_id FROM profiles WHERE profiles.id = interests.profile_id), 'user-default-legacy') WHERE user_id IS NULL OR user_id = '';`);
+  await dbRun(`UPDATE projects SET user_id = COALESCE((SELECT user_id FROM profiles WHERE profiles.id = projects.profile_id), 'user-default-legacy') WHERE user_id IS NULL OR user_id = '';`);
+  await dbRun(`UPDATE opportunities SET user_id = 'user-default-legacy' WHERE user_id IS NULL OR user_id = '';`);
+  await dbRun(`UPDATE tool_combinations SET user_id = 'user-default-legacy' WHERE user_id IS NULL OR user_id = '';`);
+  await dbRun(`UPDATE action_plans SET user_id = 'user-default-legacy' WHERE user_id IS NULL OR user_id = '';`);
+  await dbRun(`UPDATE action_steps SET user_id = COALESCE((SELECT user_id FROM action_plans WHERE action_plans.id = action_steps.action_plan_id), 'user-default-legacy') WHERE user_id IS NULL OR user_id = '';`);
+  await dbRun(`UPDATE progress_logs SET user_id = COALESCE((SELECT user_id FROM action_plans WHERE action_plans.id = progress_logs.action_plan_id), 'user-default-legacy') WHERE user_id IS NULL OR user_id = '';`);
+  await dbRun(`UPDATE feedback SET user_id = 'user-default-legacy' WHERE user_id IS NULL OR user_id = '';`);
+  await dbRun(`UPDATE learning_signals SET user_id = 'user-default-legacy' WHERE user_id IS NULL OR user_id = '';`);
+  await dbRun(`UPDATE learning_profile SET user_id = 'user-default-legacy' WHERE user_id IS NULL OR user_id = '';`);
+  await dbRun(`UPDATE learning_profile SET id = 'user_learning_profile' WHERE user_id = 'user-default-legacy';`);
+  await dbRun(`UPDATE scan_records SET user_id = 'user-default-legacy' WHERE user_id IS NULL OR user_id = '';`);
+
+  // Provision subscription for legacy owner if not already present
+  const legacySub = await dbGet<any>('SELECT id FROM subscriptions WHERE user_id = "user-default-legacy";');
+  if (!legacySub) {
+    const now = new Date().toISOString();
+    const futureDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+    await dbRun(
+      `INSERT INTO subscriptions (id, user_id, plan_id, plan_name, amount_paise, currency, status, trial_started_at, trial_expires_at, current_period_start, current_period_end, created_at, updated_at)
+       VALUES (?, ?, 'monthly_tier_8', 'Opportunity OS Pro', 800, 'INR', 'active', ?, ?, ?, ?, ?, ?);`,
+      ['sub_legacy_owner', 'user-default-legacy', now, futureDate, now, futureDate, now, now]
+    );
+  }
+
+  // Backfill subscriptions for any other existing users without subscriptions
+  try {
+    const unseededUsers = await dbAll<{ id: string; created_at: string }>(
+      'SELECT id, created_at FROM users WHERE id NOT IN (SELECT user_id FROM subscriptions);'
+    );
+    for (const u of unseededUsers) {
+      const createdAt = u.created_at || new Date().toISOString();
+      const trialStart = new Date(createdAt).getTime();
+      const trialExpires = new Date(trialStart + 3 * 24 * 60 * 60 * 1000).toISOString();
+      const isExpired = Date.now() > trialStart + 3 * 24 * 60 * 60 * 1000;
+      const status = isExpired ? 'expired' : 'trialing';
+      await dbRun(
+        `INSERT INTO subscriptions (id, user_id, plan_id, plan_name, amount_paise, currency, status, trial_started_at, trial_expires_at, created_at, updated_at)
+         VALUES (?, ?, 'monthly_tier_8', 'Opportunity OS Pro', 800, 'INR', ?, ?, ?, ?, ?);`,
+        [`sub_${u.id}`, u.id, status, new Date(trialStart).toISOString(), trialExpires, createdAt, createdAt]
+      );
+    }
+  } catch (err: any) {
+    console.warn('[SQLite Migration] Note seeding existing user subscriptions:', err?.message);
+  }
 
   console.log('[SQLite] All database tables initialized successfully.');
 }

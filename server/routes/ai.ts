@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { aiRouter } from '../services/aiRouter.js';
 import { AIRequest } from '../services/ai/types.js';
+import { requireAuth } from '../middleware/auth.js';
+import { requireSubscription } from '../middleware/subscription.js';
 
 export const aiApiRouter = Router();
 
@@ -15,8 +17,8 @@ aiApiRouter.get('/status', async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/ai/test — Development-only route to test AI Router task processing
-aiApiRouter.post('/test', async (req: Request, res: Response) => {
+// POST /api/ai/test — Protected route to test AI Router task processing
+aiApiRouter.post('/test', requireAuth, requireSubscription, async (req: Request, res: Response) => {
   try {
     const { taskType, input, context, preferredMode, outputFormat } = req.body;
 

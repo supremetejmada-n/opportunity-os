@@ -83,6 +83,13 @@ export interface NormalizedDiscovery {
   relevanceScore?: number;
   rawMeta?: Record<string, any>;
   isDemoData: boolean;
+  whyItMatchesYou?: string;
+  whatItHelpsYouDo?: string;
+  whyItIsUsefulNow?: string;
+  whatYouNeedToUseIt?: string;
+  costExplanation?: string;
+  nextStep?: string;
+  connections?: any[];
 }
 
 export interface SourceStatusReport {

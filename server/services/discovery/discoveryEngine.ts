@@ -5,6 +5,7 @@ import { deduplicateDiscoveries } from './deduplicator.js';
 import { verifyDiscovery, validateDiscoveryClaims } from './verifier.js';
 import { classifyDiscovery } from './classifier.js';
 import { dbAll, dbGet, dbRun } from '../../db/sqlite.js';
+import { getUserProfileContext, evaluateProfileRelevance, UserProfileContext } from './relevanceGate.js';
 
 export class DiscoveryEngine {
   private isScanRunning = false;
@@ -276,14 +277,17 @@ export class DiscoveryEngine {
     };
   }
 
-  async getDiscoveries(filters: {
-    type?: string;
-    category?: string;
-    source?: string;
-    verificationStatus?: string;
-    pricingStatus?: string;
-    limit?: number;
-  } = {}): Promise<NormalizedDiscovery[]> {
+  async getDiscoveries(
+    filters: {
+      type?: string;
+      category?: string;
+      source?: string;
+      verificationStatus?: string;
+      pricingStatus?: string;
+      limit?: number;
+    } = {},
+    customProfileContext?: UserProfileContext
+  ): Promise<NormalizedDiscovery[]> {
     let sql = 'SELECT * FROM discoveries WHERE 1=1';
     const params: any[] = [];
 
@@ -309,13 +313,41 @@ export class DiscoveryEngine {
     }
 
     sql += ' ORDER BY first_discovered_at DESC';
-    if (filters.limit) {
-      sql += ' LIMIT ?';
-      params.push(filters.limit);
-    }
 
     const rows = await dbAll(sql, params);
-    return rows.map(r => this.mapRowToDiscovery(r));
+    const candidates = rows.map(r => this.mapRowToDiscovery(r));
+
+    // Load profile context
+    const profile = customProfileContext || (await getUserProfileContext());
+
+    // 1. Strict Profile Relevance Gate & Explanation Attachment
+    const eligible: NormalizedDiscovery[] = [];
+    for (const candidate of candidates) {
+      const evalResult = evaluateProfileRelevance(candidate, profile);
+      if (evalResult.passed) {
+        eligible.push({
+          ...candidate,
+          relevanceScore: evalResult.score,
+          whyItMatchesYou: evalResult.whyItMatchesYou,
+          whatItHelpsYouDo: evalResult.whatItHelpsYouDo,
+          whyItIsUsefulNow: evalResult.whyItIsUsefulNow,
+          whatYouNeedToUseIt: evalResult.whatYouNeedToUseIt,
+          costExplanation: evalResult.costExplanation,
+          nextStep: evalResult.nextStep,
+          connections: evalResult.connections
+        });
+      }
+    }
+
+    // 2. Deterministic Ranking among eligible tools
+    eligible.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
+
+    // 3. Apply limit if provided
+    if (filters.limit && filters.limit > 0) {
+      return eligible.slice(0, filters.limit);
+    }
+
+    return eligible;
   }
 
   async getDiscoveryById(id: string): Promise<NormalizedDiscovery | null> {

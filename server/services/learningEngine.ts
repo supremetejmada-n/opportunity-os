@@ -88,7 +88,8 @@ export class LearningEngine {
     category?: string;
     toolName?: string;
     createdAt?: string;
-  }): Promise<LearningSignal | null> {
+  }, userId?: string): Promise<LearningSignal | null> {
+    const effectiveUserId = userId || 'user-default-legacy';
     const { sourceType, sourceId, signalType } = params;
     const signalValue = params.signalValue !== undefined ? params.signalValue : 1.0;
     const category = params.category || undefined;
@@ -97,10 +98,10 @@ export class LearningEngine {
 
     const weight = INITIAL_SIGNAL_WEIGHTS[signalType] ?? 0;
 
-    // Idempotency check: verify tuple (source_type, source_id, signal_type) doesn't exist
+    // Idempotency check: verify tuple (user_id, source_type, source_id, signal_type) doesn't exist
     const existing = await dbGet<any>(
-      'SELECT * FROM learning_signals WHERE source_type = ? AND source_id = ? AND signal_type = ?',
-      [sourceType, sourceId, signalType]
+      'SELECT * FROM learning_signals WHERE user_id = ? AND source_type = ? AND source_id = ? AND signal_type = ?',
+      [effectiveUserId, sourceType, sourceId, signalType]
     );
 
     if (existing) {
@@ -119,9 +120,9 @@ export class LearningEngine {
 
     const id = crypto.randomUUID();
     await dbRun(
-      `INSERT INTO learning_signals (id, source_type, source_id, signal_type, signal_value, weight, category, tool_name, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, sourceType, sourceId, signalType, signalValue, weight, category || null, toolName || null, createdAt]
+      `INSERT OR IGNORE INTO learning_signals (id, user_id, source_type, source_id, signal_type, signal_value, weight, category, tool_name, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, effectiveUserId, sourceType, sourceId, signalType, signalValue, weight, category || null, toolName || null, createdAt]
     );
 
     return {
@@ -146,16 +147,17 @@ export class LearningEngine {
     rating: FeedbackRating;
     reason?: string;
     comments?: string;
-  }): Promise<FeedbackRecord> {
+  }, userId?: string): Promise<FeedbackRecord> {
+    const effectiveUserId = userId || 'user-default-legacy';
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
     const oppId = params.sourceType === 'opportunity' ? params.sourceId : null;
     const comboId = params.sourceType === 'combination' ? params.sourceId : null;
 
     await dbRun(
-      `INSERT INTO feedback (id, source_type, source_id, opportunity_id, combination_id, rating, reason, comments, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, params.sourceType, params.sourceId, oppId, comboId, params.rating, params.reason || null, params.comments || null, now]
+      `INSERT INTO feedback (id, user_id, source_type, source_id, opportunity_id, combination_id, rating, reason, comments, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, effectiveUserId, params.sourceType, params.sourceId, oppId, comboId, params.rating, params.reason || null, params.comments || null, now]
     );
 
     // Map rating to learning signal type
@@ -193,10 +195,10 @@ export class LearningEngine {
       category: itemCategory,
       toolName: itemTool,
       createdAt: now
-    });
+    }, effectiveUserId);
 
     // Automatically refresh learning profile summary
-    await this.rebuildLearningProfile();
+    await this.rebuildLearningProfile(effectiveUserId);
 
     return {
       id,
@@ -214,9 +216,17 @@ export class LearningEngine {
   /**
    * Retrieves all submitted feedback records
    */
-  async getFeedback(params?: { sourceType?: string; sourceId?: string }): Promise<FeedbackRecord[]> {
+  async getFeedback(params?: { sourceType?: string; sourceId?: string }, userId?: string): Promise<FeedbackRecord[]> {
     let query = 'SELECT * FROM feedback WHERE 1=1';
     const args: any[] = [];
+    if (userId) {
+      if (userId === 'user-default-legacy') {
+        query += ' AND (user_id = ? OR user_id IS NULL)';
+      } else {
+        query += ' AND user_id = ?';
+      }
+      args.push(userId);
+    }
     if (params?.sourceType) {
       query += ' AND source_type = ?';
       args.push(params.sourceType);
@@ -244,10 +254,18 @@ export class LearningEngine {
   /**
    * Retrieves raw learning signals from database
    */
-  async getLearningSignals(params?: { sourceType?: string; limit?: number }): Promise<LearningSignal[]> {
+  async getLearningSignals(params?: { sourceType?: string; limit?: number }, userId?: string): Promise<LearningSignal[]> {
     let query = 'SELECT * FROM learning_signals WHERE 1=1';
     const args: any[] = [];
 
+    if (userId) {
+      if (userId === 'user-default-legacy') {
+        query += ' AND (user_id = ? OR user_id IS NULL)';
+      } else {
+        query += ' AND user_id = ?';
+      }
+      args.push(userId);
+    }
     if (params?.sourceType) {
       query += ' AND source_type = ?';
       args.push(params.sourceType);
@@ -275,9 +293,10 @@ export class LearningEngine {
   /**
    * Rebuilds the user learning profile idempotently from raw SQLite evidence tables.
    */
-  async rebuildLearningProfile(): Promise<UserLearningProfile> {
+  async rebuildLearningProfile(userId?: string): Promise<UserLearningProfile> {
+    const effectiveUserId = userId || 'user-default-legacy';
     // 1. Sync signals from progress_logs
-    const logs = await dbAll<any>('SELECT * FROM progress_logs');
+    const logs = await dbAll<any>('SELECT * FROM progress_logs WHERE user_id = ? OR (user_id IS NULL AND ? = "user-default-legacy")', [effectiveUserId, effectiveUserId]);
     for (const log of logs) {
       const typeMap: Record<string, LearningSignalType> = {
         demo_created: 'demo_created',
@@ -295,12 +314,12 @@ export class LearningEngine {
           signalType: typeMap[log.result_type],
           signalValue: log.numeric_value !== null ? log.numeric_value : 1.0,
           createdAt: log.created_at
-        });
+        }, effectiveUserId);
       }
     }
 
     // 2. Sync signals from action_plans
-    const plans = await dbAll<any>('SELECT * FROM action_plans');
+    const plans = await dbAll<any>('SELECT * FROM action_plans WHERE user_id = ? OR (user_id IS NULL AND ? = "user-default-legacy")', [effectiveUserId, effectiveUserId]);
     for (const plan of plans) {
       if (plan.status === 'in_progress') {
         await this.recordSignal({
@@ -308,26 +327,26 @@ export class LearningEngine {
           sourceId: plan.id,
           signalType: 'started_plan',
           createdAt: plan.created_at
-        });
+        }, effectiveUserId);
       } else if (plan.status === 'completed') {
         await this.recordSignal({
           sourceType: 'action_plan',
           sourceId: plan.id,
           signalType: 'completed_plan',
           createdAt: plan.updated_at || plan.created_at
-        });
+        }, effectiveUserId);
       } else if (plan.status === 'abandoned') {
         await this.recordSignal({
           sourceType: 'action_plan',
           sourceId: plan.id,
           signalType: 'abandoned_plan',
           createdAt: plan.updated_at || plan.created_at
-        });
+        }, effectiveUserId);
       }
     }
 
     // 3. Sync signals from saved/ignored opportunities & combinations
-    const opps = await dbAll<any>('SELECT * FROM opportunities WHERE saved = 1 OR status = "ignored"');
+    const opps = await dbAll<any>('SELECT * FROM opportunities WHERE (user_id = ? OR (user_id IS NULL AND ? = "user-default-legacy")) AND (saved = 1 OR status = "ignored")', [effectiveUserId, effectiveUserId]);
     for (const opp of opps) {
       if (opp.saved) {
         await this.recordSignal({
@@ -336,7 +355,7 @@ export class LearningEngine {
           signalType: 'saved',
           category: opp.customer_type || opp.service_type || undefined,
           createdAt: opp.created_at
-        });
+        }, effectiveUserId);
       }
       if (opp.status === 'ignored') {
         await this.recordSignal({
@@ -345,11 +364,11 @@ export class LearningEngine {
           signalType: 'ignored',
           category: opp.customer_type || opp.service_type || undefined,
           createdAt: opp.created_at
-        });
+        }, effectiveUserId);
       }
     }
 
-    const combos = await dbAll<any>('SELECT * FROM tool_combinations WHERE saved = 1');
+    const combos = await dbAll<any>('SELECT * FROM tool_combinations WHERE (user_id = ? OR (user_id IS NULL AND ? = "user-default-legacy")) AND saved = 1', [effectiveUserId, effectiveUserId]);
     for (const combo of combos) {
       await this.recordSignal({
         sourceType: 'combination',
@@ -357,19 +376,22 @@ export class LearningEngine {
         signalType: 'saved',
         category: combo.workflow_pattern || undefined,
         createdAt: combo.created_at
-      });
+      }, effectiveUserId);
     }
 
     // 4. Clean orphan signals whose source items were deleted
+    const userScope = '(user_id = ? OR (user_id IS NULL AND ? = "user-default-legacy"))';
     await dbRun(`
       DELETE FROM learning_signals
-      WHERE (source_type = 'feedback' AND source_id NOT IN (SELECT id FROM feedback))
-         OR (source_type = 'progress_log' AND source_id NOT IN (SELECT id FROM progress_logs))
-         OR (source_type = 'action_plan' AND source_id NOT IN (SELECT id FROM action_plans))
-    `);
+      WHERE ${userScope} AND (
+        (source_type = 'feedback' AND source_id NOT IN (SELECT id FROM feedback WHERE ${userScope}))
+        OR (source_type = 'progress_log' AND source_id NOT IN (SELECT id FROM progress_logs WHERE ${userScope}))
+        OR (source_type = 'action_plan' AND source_id NOT IN (SELECT id FROM action_plans WHERE ${userScope}))
+      )
+    `, [effectiveUserId, effectiveUserId, effectiveUserId, effectiveUserId, effectiveUserId, effectiveUserId, effectiveUserId, effectiveUserId]);
 
     // 5. Aggregate all active signals into structured preference dimensions
-    const signals = await dbAll<any>('SELECT * FROM learning_signals');
+    const signals = await dbAll<any>('SELECT * FROM learning_signals WHERE user_id = ? OR (user_id IS NULL AND ? = "user-default-legacy")', [effectiveUserId, effectiveUserId]);
 
     const categoriesMap: Record<string, { pos: number; neg: number; net: number; count: number }> = {};
     const toolsMap: Record<string, { pos: number; neg: number; net: number; count: number }> = {};
@@ -427,12 +449,15 @@ export class LearningEngine {
     const overallConfidence = calculateConfidence(overallPos, overallNeg);
 
     const now = new Date().toISOString();
+    const profileId = effectiveUserId === 'user-default-legacy' ? 'user_learning_profile' : `profile_${effectiveUserId}`;
 
     await dbRun(
       `INSERT OR REPLACE INTO learning_profile (
-        id, preferred_categories, preferred_capabilities, preferred_tools, preferred_work_types, total_signals, confidence_score, updated_at
-      ) VALUES ('user_learning_profile', ?, ?, ?, ?, ?, ?, ?)`,
+        id, user_id, preferred_categories, preferred_capabilities, preferred_tools, preferred_work_types, total_signals, confidence_score, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
+        profileId,
+        effectiveUserId,
         JSON.stringify(prefCategories),
         JSON.stringify(prefCapabilities),
         JSON.stringify(prefTools),
@@ -444,7 +469,7 @@ export class LearningEngine {
     );
 
     return {
-      id: 'user_learning_profile',
+      id: profileId,
       preferred_categories: prefCategories,
       preferred_capabilities: prefCapabilities,
       preferred_tools: prefTools,
@@ -458,10 +483,12 @@ export class LearningEngine {
   /**
    * Retrieves stored user learning profile
    */
-  async getLearningProfile(): Promise<UserLearningProfile> {
-    const raw = await dbGet<any>('SELECT * FROM learning_profile WHERE id = "user_learning_profile"');
+  async getLearningProfile(userId?: string): Promise<UserLearningProfile> {
+    const effectiveUserId = userId || 'user-default-legacy';
+    const profileId = effectiveUserId === 'user-default-legacy' ? 'user_learning_profile' : `profile_${effectiveUserId}`;
+    let raw = await dbGet<any>('SELECT * FROM learning_profile WHERE user_id = ? OR id = ? LIMIT 1', [effectiveUserId, profileId]);
     if (!raw) {
-      return await this.rebuildLearningProfile();
+      return await this.rebuildLearningProfile(effectiveUserId);
     }
 
     const parseMap = (str?: string) => {
@@ -472,8 +499,12 @@ export class LearningEngine {
       }
     };
 
+    const effectiveProfileId = (effectiveUserId === 'user-default-legacy')
+      ? 'user_learning_profile'
+      : (raw.id || profileId);
+
     return {
-      id: 'user_learning_profile',
+      id: effectiveProfileId,
       preferred_categories: parseMap(raw.preferred_categories),
       preferred_capabilities: parseMap(raw.preferred_capabilities),
       preferred_tools: parseMap(raw.preferred_tools),
@@ -495,8 +526,8 @@ export class LearningEngine {
     customerType?: string;
     required_tools?: string[];
     requiredTools?: string[];
-  }): Promise<{ adjustment: number; explanation: string }> {
-    const profile = await this.getLearningProfile();
+  }, userId?: string): Promise<{ adjustment: number; explanation: string }> {
+    const profile = await this.getLearningProfile(userId);
     if (profile.total_signals === 0) {
       return {
         adjustment: 0,
@@ -561,8 +592,8 @@ export class LearningEngine {
     workflowPattern?: string;
     tool_names?: string[];
     toolNames?: string[];
-  }): Promise<{ adjustment: number; explanation: string }> {
-    const profile = await this.getLearningProfile();
+  }, userId?: string): Promise<{ adjustment: number; explanation: string }> {
+    const profile = await this.getLearningProfile(userId);
     if (profile.total_signals === 0) {
       return {
         adjustment: 0,

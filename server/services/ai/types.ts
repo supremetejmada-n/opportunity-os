@@ -1,12 +1,13 @@
 // Common AI Provider & Router Types
 
-export type AITaskType = 'classify' | 'summarize' | 'extract' | 'analyze' | 'score' | 'generate';
+export type AITaskType = 'classify' | 'summarize' | 'extract' | 'analyze' | 'score' | 'generate' | 'product_story_evolution';
 export type AIPriorityMode = 'auto' | 'local' | 'cloud' | 'fallback';
 export type AIOutputFormat = 'text' | 'json';
 
 export interface AIRequest {
   taskType: AITaskType;
   input: string;
+  prompt?: string;
   context?: Record<string, any>;
   systemPrompt?: string;
   preferredMode?: AIPriorityMode;

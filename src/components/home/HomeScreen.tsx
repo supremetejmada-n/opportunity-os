@@ -28,6 +28,8 @@ import { ZeroCostPhilosophy } from './ZeroCostPhilosophy.js';
 import { CreatorStory } from './CreatorStory.js';
 import { HomeClosingCTA } from './HomeClosingCTA.js';
 
+import { PRODUCT_STORY_SLIDES, getCuratedSlide } from '../../data/productStoryData.js';
+
 interface HomeScreenProps {
   profile: UserProfile | null;
   skills: UserSkill[];
@@ -36,6 +38,7 @@ interface HomeScreenProps {
   setActiveTab: (tab: NavTab) => void;
   onScanClick: () => void;
   isScanning: boolean;
+  dataVersion?: number;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
@@ -46,20 +49,43 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   setActiveTab,
   onScanClick,
   isScanning,
+  dataVersion,
 }) => {
   const [bestOpp, setBestOpp] = React.useState<any>(null);
+  const [productStory, setProductStory] = React.useState<any>(null);
+  const [hasCompletedScan, setHasCompletedScan] = React.useState<boolean>(false);
+  const [isLoadingStory, setIsLoadingStory] = React.useState<boolean>(true);
+
   const storyRef = useRef<HTMLDivElement>(null);
   const freeToolsCount = tools.filter(t => t.access_type.toLowerCase().includes('free') || t.access_type.toLowerCase().includes('open')).length;
 
-  React.useEffect(() => {
-    api.getOpportunities({ limit: '1' })
-      .then(res => {
-        if (res && res.bestOpportunity) {
-          setBestOpp(res.bestOpportunity);
-        }
+  const loadLatestOpportunity = React.useCallback(() => {
+    setIsLoadingStory(true);
+    Promise.all([
+      api.getCurrentProductStory().catch(err => {
+        console.warn('Error fetching Product Story:', err);
+        return null;
+      }),
+      api.getLatestScanOpportunity().catch(err => {
+        console.warn('Error fetching Product Story opportunity:', err);
+        return null;
       })
-      .catch(() => {});
+    ]).then(([storyRes, oppRes]) => {
+      if (storyRes?.success && storyRes.story) {
+        setProductStory(storyRes.story);
+      }
+      if (oppRes) {
+        setHasCompletedScan(Boolean(oppRes.hasCompletedScan));
+        setBestOpp(oppRes.bestOpportunity || null);
+      }
+    }).finally(() => {
+      setIsLoadingStory(false);
+    });
   }, []);
+
+  React.useEffect(() => {
+    loadLatestOpportunity();
+  }, [loadLatestOpportunity, isScanning, dataVersion]);
 
   const userName = profile?.name ? profile.name.split(' ')[0] : 'there';
 
@@ -71,8 +97,36 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     }
   };
 
+  // Extract narrative stages from productStory if available
+  const stages = productStory?.narrative_stages || productStory?.narrativeStages || {};
+  const s1 = getCuratedSlide('discover', stages.discover);
+  const s2 = getCuratedSlide('understand', stages.understand);
+  const s3 = getCuratedSlide('combine', stages.combine);
+  const s4 = getCuratedSlide('act', stages.act);
+  const s5 = getCuratedSlide('learn', stages.learn);
+
+  // Tools to display in Phase 03 Combine
+  const requiredToolsToDisplay = bestOpp?.requiredTools && Array.isArray(bestOpp.requiredTools) && bestOpp.requiredTools.length > 0
+    ? bestOpp.requiredTools
+    : (tools.length > 0 ? tools.map(t => t.name) : ['Python', 'LLM API', 'SQLite']);
+
+  // Execution phases to display in Phase 04 Act
+  const actionPhasesToDisplay = bestOpp?.actionPlan && Array.isArray(bestOpp.actionPlan) && bestOpp.actionPlan.length > 0
+    ? bestOpp.actionPlan.map((step: any, idx: number) => ({
+        phase: `${idx + 1}. ${step.dayOrPhase || `PHASE ${idx + 1}`}`,
+        text: step.title || step.description
+      }))
+    : [
+        { phase: '1. LEARN', text: `Analyze buyer demand for ${bestOpp?.title || 'service'}` },
+        { phase: '2. BUILD', text: `Create MVP demo in ~${bestOpp?.timeToDemo || '24h'}` },
+        { phase: '3. PORTFOLIO', text: 'Host public demo page' },
+        { phase: '4. PROSPECT', text: `Identify 10 ideal ${bestOpp?.customerType || 'buyers'}` },
+        { phase: '5. OUTREACH', text: 'Send tailored proposals' },
+        { phase: '6. RESULT', text: 'Log revenue & feedback' },
+      ];
+
   return (
-    <div className="space-y-12 sm:space-y-16 pb-16 w-full">
+    <div className="space-y-6 sm:space-y-8 pb-12 w-full">
       {/* SECTION 1 — HERO / FIRST IMPRESSION */}
       <HomeHero
         userName={userName}
@@ -80,7 +134,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         skills={skills}
         tools={tools}
         goals={goals}
-        onExploreClick={scrollToStory}
+        onExploreClick={() => setActiveTab('discover')}
         onScanClick={onScanClick}
         isScanning={isScanning}
       />
@@ -90,273 +144,308 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
       {/* SECTION 4 — HOW IT WORKS (SCROLL STORYTELLING STAGE) */}
       <div ref={storyRef} className="w-full">
-        <ScrollStorySection
-          /* STATE 1 — DISCOVER */
-          state1Content={
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center w-full my-auto">
-              <div className="lg:col-span-7 space-y-4 text-left">
-                <div className="flex items-center gap-2">
-                  <span className="px-3.5 py-1 rounded-full bg-peach-500/15 border border-peach-500/35 text-peach-400 text-xs font-mono font-bold tracking-wider uppercase">
-                    01 DISCOVER • LIVE PUBLIC VECTOR
-                  </span>
-                </div>
-
-                <div className="space-y-2.5">
-                  <h1 className="font-display text-3xl sm:text-5xl font-extrabold tracking-tight leading-[1.1] bg-gradient-to-r from-slate-100 via-slate-200 to-peach-400 bg-clip-text text-transparent">
-                    Find what's newly available.
-                  </h1>
-                  <p className="font-sans text-xs sm:text-sm text-slate-300 leading-relaxed max-w-xl">
-                    Opportunity OS continuously evaluates live public sources and emerging technology launches against your personal profile.
-                  </p>
-                </div>
-
-                <div className="pt-2">
-                  <button
-                    onClick={onScanClick}
-                    disabled={isScanning}
-                    className="btn-primary text-xs py-3 px-7 font-bold flex items-center gap-2 shadow-lg shadow-peach-500/20"
-                  >
-                    <Zap className={`h-4 w-4 ${isScanning ? 'animate-spin' : ''}`} />
-                    <span>{isScanning ? 'Scanning Live Sources...' : 'Initiate Discovery Scan'}</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="lg:col-span-5 bg-navy-950/70 p-5 rounded-2xl border border-white/10 space-y-4 shadow-inner">
-                <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
-                  <span className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider">Vector Status</span>
-                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold">
-                    Active
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 text-xs text-slate-300 font-sans">
-                  <div className="bg-navy-900/60 p-3 rounded-xl border border-white/5 space-y-1">
-                    <span className="flex items-center gap-1.5 text-slate-400 text-[10px] font-mono uppercase">
-                      <Zap className="h-3 w-3 text-peach-500" /> Active Skills
-                    </span>
-                    <p className="text-base font-bold text-slate-100 font-mono">{skills.length}</p>
-                  </div>
-
-                  <div className="bg-navy-900/60 p-3 rounded-xl border border-white/5 space-y-1">
-                    <span className="flex items-center gap-1.5 text-slate-400 text-[10px] font-mono uppercase">
-                      <Wrench className="h-3 w-3 text-emerald-400" /> Accessible Tools
-                    </span>
-                    <p className="text-base font-bold text-slate-100 font-mono">{tools.length} <span className="text-[10px] text-emerald-400">({freeToolsCount} free)</span></p>
-                  </div>
-
-                  <div className="bg-navy-900/60 p-3 rounded-xl border border-white/5 space-y-1">
-                    <span className="flex items-center gap-1.5 text-slate-400 text-[10px] font-mono uppercase">
-                      <Target className="h-3 w-3 text-amber-400" /> User Goals
-                    </span>
-                    <p className="text-base font-bold text-slate-100 font-mono">{goals.length}</p>
-                  </div>
-
-                  <div className="bg-navy-900/60 p-3 rounded-xl border border-white/5 space-y-1">
-                    <span className="flex items-center gap-1.5 text-slate-400 text-[10px] font-mono uppercase">
-                      <ShieldCheck className="h-3 w-3 text-emerald-400" /> Budget Limit
-                    </span>
-                    <p className="text-base font-bold text-emerald-400 font-mono">₹{profile?.preferred_budget ?? 0}</p>
-                  </div>
-                </div>
-              </div>
+        {isLoadingStory ? (
+          <div className="py-20 text-center space-y-3 bg-navy-950/60 rounded-3xl border border-white/10 my-8">
+            <div className="flex justify-center">
+              <Zap className="h-8 w-8 text-peach-400 animate-spin" />
             </div>
-          }
+            <p className="text-sm font-mono text-slate-300">Loading your latest opportunity from your discovery scan...</p>
+          </div>
+        ) : (
+          /* FULL DYNAMIC 5-PHASE PRODUCT STORY */
+          <ScrollStorySection
+            /* STATE 1 — DISCOVER */
+            state1Content={
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center w-full my-auto">
+                <div className="lg:col-span-7 space-y-4 text-left">
+                  <div className="max-w-xl overflow-hidden space-y-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-3.5 py-1 rounded-full bg-peach-500/15 border border-peach-500/35 text-peach-400 text-xs font-mono font-bold tracking-wider uppercase truncate max-w-full">
+                        {s1.badge}
+                      </span>
+                      {productStory && (
+                        <span className="px-2.5 py-0.5 rounded-full bg-navy-900 border border-peach-500/30 text-peach-300 text-[11px] font-mono font-semibold">
+                          Story v{productStory.version} • {productStory.theme_detected || productStory.themeDetected || 'Live Market Radar'}
+                        </span>
+                      )}
+                    </div>
 
-          /* STATE 2 — UNDERSTAND */
-          state2Content={
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center w-full my-auto">
-              <div className="lg:col-span-7 space-y-4 text-left">
-                <div className="flex items-center gap-3">
-                  <span className="px-3.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/35 text-emerald-400 text-xs font-mono font-bold tracking-wider uppercase">
-                    02 UNDERSTAND • MATCH FIT
-                  </span>
-                  {bestOpp && (
-                    <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-mono font-bold">
-                      {bestOpp.score}% Fit for You
+                    <h1 className="font-display text-3xl sm:text-5xl font-extrabold tracking-tight leading-[1.1] bg-gradient-to-r from-slate-100 via-slate-200 to-peach-400 bg-clip-text text-transparent line-clamp-2">
+                      {s1.headline}
+                    </h1>
+
+                    <p className="font-sans text-xs sm:text-sm text-slate-300 leading-relaxed line-clamp-3">
+                      {s1.body}
+                    </p>
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={onScanClick}
+                      disabled={isScanning}
+                      className="btn-primary text-xs py-3 px-7 font-bold flex items-center gap-2 shadow-lg shadow-peach-500/20 cursor-pointer"
+                    >
+                      <Zap className={`h-4 w-4 ${isScanning ? 'animate-spin' : ''}`} />
+                      <span>{isScanning ? 'Scanning Live Sources...' : 'Initiate Discovery Scan'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="lg:col-span-5 bg-navy-950/70 p-5 rounded-2xl border border-white/10 space-y-4 shadow-inner">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
+                    <span className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider">Vector Status</span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono font-bold">
+                      Active Scan Result
                     </span>
-                  )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-xs text-slate-300 font-sans">
+                    <div className="bg-navy-900/60 p-3 rounded-xl border border-white/5 space-y-1">
+                      <span className="flex items-center gap-1.5 text-slate-400 text-[10px] font-mono uppercase">
+                        <Zap className="h-3 w-3 text-peach-500" /> Active Skills
+                      </span>
+                      <p className="text-base font-bold text-slate-100 font-mono">{skills.length}</p>
+                    </div>
+
+                    <div className="bg-navy-900/60 p-3 rounded-xl border border-white/5 space-y-1">
+                      <span className="flex items-center gap-1.5 text-slate-400 text-[10px] font-mono uppercase">
+                        <Wrench className="h-3 w-3 text-emerald-400" /> Accessible Tools
+                      </span>
+                      <p className="text-base font-bold text-slate-100 font-mono">{tools.length} <span className="text-[10px] text-emerald-400">({freeToolsCount} free)</span></p>
+                    </div>
+
+                    <div className="bg-navy-900/60 p-3 rounded-xl border border-white/5 space-y-1">
+                      <span className="flex items-center gap-1.5 text-slate-400 text-[10px] font-mono uppercase">
+                        <Target className="h-3 w-3 text-amber-400" /> Source Origin
+                      </span>
+                      <p className="text-xs font-bold text-amber-300 font-mono truncate">{bestOpp?.origin === 'discovery_derived' ? (bestOpp?.evidence?.discoverySource || 'Live Launch') : (bestOpp ? 'Profile Match' : 'Live Discovery Vector')}</p>
+                    </div>
+
+                    <div className="bg-navy-900/60 p-3 rounded-xl border border-white/5 space-y-1">
+                      <span className="flex items-center gap-1.5 text-slate-400 text-[10px] font-mono uppercase">
+                        <ShieldCheck className="h-3 w-3 text-emerald-400" /> Budget Limit
+                      </span>
+                      <p className="text-base font-bold text-emerald-400 font-mono">
+                        {profile?.preferred_budget !== undefined && profile?.preferred_budget !== null && !isNaN(Number(profile.preferred_budget))
+                          ? Number(profile.preferred_budget) === 0
+                            ? "₹0 (Free Only)"
+                            : `₹${profile.preferred_budget}`
+                          : "₹0 (Free Only)"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            }
+
+            /* STATE 2 — UNDERSTAND */
+            state2Content={
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center w-full my-auto">
+                <div className="lg:col-span-7 space-y-4 text-left">
+                  <div className="max-w-xl overflow-hidden space-y-3">
+                    <div className="flex items-center gap-3">
+                      <span className="px-3.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/35 text-emerald-400 text-xs font-mono font-bold tracking-wider uppercase truncate max-w-full">
+                        {s2.badge}
+                      </span>
+                      <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-mono font-bold">
+                        {bestOpp?.score ? `${bestOpp.score}% Fit for You` : 'Vector Calibrated'}
+                      </span>
+                    </div>
+
+                    <h2 className="font-display text-2xl sm:text-4xl font-bold text-slate-100 line-clamp-2">
+                      {s2.headline}
+                    </h2>
+
+                    <p className="text-xs sm:text-sm text-slate-300 leading-relaxed line-clamp-3">
+                      {s2.body}
+                    </p>
+                  </div>
+
+                  <div className="pt-1">
+                    <MagneticButton
+                      onClick={() => setActiveTab('opportunities')}
+                      variant="primary"
+                      className="text-xs py-3 px-7 font-bold shadow-lg shadow-peach-500/30"
+                    >
+                      <span>See full action plan</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </MagneticButton>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <h2 className="font-display text-2xl sm:text-4xl font-bold text-slate-100">
-                    {bestOpp ? bestOpp.title : 'AI Document Audit & Automation Micro-SaaS'}
-                  </h2>
-                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                    {bestOpp ? bestOpp.summary : 'Evaluated against your accessible tools and zero-cost execution constraints.'}
-                  </p>
+                <div className="lg:col-span-5 grid grid-cols-1 gap-3">
+                  <div className="bg-navy-950/70 p-4 rounded-xl border border-white/10 space-y-1">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase">Possible Earnings</span>
+                    <p className="text-xl font-extrabold text-emerald-400 font-mono">
+                      {bestOpp?.earningPotential || 'Market Validation Pending'}
+                    </p>
+                  </div>
+                  <div className="bg-navy-950/70 p-4 rounded-xl border border-white/10 space-y-1">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase">Target Client</span>
+                    <p className="text-sm font-bold text-slate-200 font-mono">
+                      {bestOpp?.customerType || bestOpp?.target_customer || 'Local Businesses & Creators'}
+                    </p>
+                  </div>
+                  <div className="bg-navy-950/70 p-4 rounded-xl border border-white/10 space-y-1">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase">Time to Working Demo</span>
+                    <p className="text-xl font-bold text-slate-200 font-mono">
+                      ~{bestOpp?.timeToDemo || '1-2 days'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            }
+
+            /* STATE 3 — COMBINE */
+            state3Content={
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center w-full my-auto">
+                <div className="lg:col-span-5 space-y-4 text-left">
+                  <div className="max-w-xl overflow-hidden space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="px-3.5 py-1 rounded-full bg-burgundy-900/60 border border-crimson-500/40 text-peach-300 text-xs font-mono font-bold tracking-wider uppercase truncate max-w-full">
+                        {s3.badge}
+                      </span>
+                    </div>
+
+                    <h2 className="font-display text-2xl sm:text-4xl font-bold text-slate-100 line-clamp-2">
+                      {s3.headline}
+                    </h2>
+
+                    <p className="text-xs sm:text-sm text-slate-300 leading-relaxed line-clamp-3">
+                      {s3.body}
+                    </p>
+                  </div>
+
+                  <div className="pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('combine')}
+                      className="btn-secondary text-xs py-3 px-6 font-bold flex items-center gap-2 cursor-pointer"
+                    >
+                      <Cpu className="h-4 w-4 text-peach-400" />
+                      <span>Explore Tool Combiner →</span>
+                    </button>
+                  </div>
                 </div>
 
-                <div className="pt-1">
+                <div className="lg:col-span-7 bg-navy-950/70 rounded-xl border border-white/10 overflow-hidden relative h-56 sm:h-64 shadow-inner">
+                  <SpatialToolWeb 
+                    toolNames={requiredToolsToDisplay} 
+                    activeIndices={requiredToolsToDisplay.map((_: any, i: number) => i)} 
+                  />
+                </div>
+              </div>
+            }
+
+            /* STATE 4 — ACT */
+            state4Content={
+              <div className="space-y-5 w-full my-auto">
+                <div className="flex items-center justify-between">
+                  <span className="px-3.5 py-1 rounded-full bg-amber-950/60 border border-amber-500/40 text-amber-300 text-xs font-mono font-bold tracking-wider uppercase truncate max-w-full">
+                    {s4.badge}
+                  </span>
                   <MagneticButton
-                    onClick={() => setActiveTab('opportunities')}
+                    onClick={() => setActiveTab('progress')}
                     variant="primary"
-                    className="text-xs py-3 px-7 font-bold shadow-lg shadow-peach-500/30"
+                    className="text-xs py-2 px-5 font-bold shadow-lg shadow-peach-500/30 hidden sm:flex"
                   >
-                    <span>See full action plan</span>
-                    <ArrowRight className="h-4 w-4" />
+                    <Play className="h-3.5 w-3.5 fill-current" />
+                    <span>Execute Action Plan</span>
                   </MagneticButton>
                 </div>
-              </div>
 
-              <div className="lg:col-span-5 grid grid-cols-1 gap-3">
-                <div className="bg-navy-950/70 p-4 rounded-xl border border-white/10 space-y-1">
-                  <span className="text-[10px] font-mono text-slate-400 uppercase">Possible Earnings</span>
-                  <p className="text-xl font-extrabold text-emerald-400 font-mono">
-                    {bestOpp ? (bestOpp.earningPotential || bestOpp.earning_potential) : '₹5,000–₹25,000/mo'}
-                  </p>
-                </div>
-                <div className="bg-navy-950/70 p-4 rounded-xl border border-white/10 space-y-1">
-                  <span className="text-[10px] font-mono text-slate-400 uppercase">Time to Working Demo</span>
-                  <p className="text-xl font-bold text-slate-200 font-mono">
-                    ~{bestOpp ? (bestOpp.timeToDemo || bestOpp.time_to_demo) : '1-2 days'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          }
-
-          /* STATE 3 — COMBINE */
-          state3Content={
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center w-full my-auto">
-              <div className="lg:col-span-5 space-y-4 text-left">
-                <div className="flex items-center gap-2">
-                  <span className="px-3.5 py-1 rounded-full bg-burgundy-900/60 border border-crimson-500/40 text-peach-300 text-xs font-mono font-bold tracking-wider uppercase">
-                    03 COMBINE • TOOL SYNERGY
-                  </span>
-                </div>
-
-                <div className="space-y-2">
-                  <h2 className="font-display text-2xl sm:text-4xl font-bold text-slate-100">
-                    Combine tools you already access.
+                <div className="max-w-xl overflow-hidden space-y-1 text-left">
+                  <h2 className="font-display text-2xl sm:text-3xl font-bold text-slate-100 line-clamp-2">
+                    {s4.headline}
                   </h2>
-                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                    The engine links 2–4 accessible tools into high-value zero-cost workflows.
+                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed line-clamp-3">
+                    {s4.body}
                   </p>
                 </div>
 
-                <div className="pt-1">
-                  <button
-                    onClick={() => setActiveTab('combine')}
-                    className="btn-secondary text-xs py-3 px-6 font-bold flex items-center gap-2"
-                  >
-                    <Cpu className="h-4 w-4 text-peach-400" />
-                    <span>Explore Tool Combiner →</span>
-                  </button>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-1">
+                  {actionPhasesToDisplay.map((item: any, idx: number) => (
+                    <div key={idx} className="bg-navy-950/70 p-3.5 rounded-xl border border-white/10 space-y-1.5 text-left">
+                      <span className="text-[10px] font-mono font-bold text-peach-400 block">{item.phase}</span>
+                      <p className="text-xs text-slate-200 font-sans font-medium leading-snug">{item.text}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
+            }
 
-              <div className="lg:col-span-7 bg-navy-950/70 rounded-xl border border-white/10 overflow-hidden relative h-56 sm:h-64 shadow-inner">
-                <SpatialToolWeb 
-                  toolNames={tools.length > 0 ? tools.map(t => t.name) : ['Python', 'ChatGPT API', 'SQLite', 'Vite']} 
-                  activeIndices={[0, 1, 2]} 
-                />
-              </div>
-            </div>
-          }
+            /* STATE 5 — LEARN */
+            state5Content={
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center w-full my-auto">
+                <div className="lg:col-span-6 space-y-4 text-left">
+                  <div className="max-w-xl overflow-hidden space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="px-3.5 py-1 rounded-full bg-purple-950/60 border border-purple-500/40 text-purple-300 text-xs font-mono font-bold tracking-wider uppercase truncate max-w-full">
+                        {s5.badge}
+                      </span>
+                    </div>
 
-          /* STATE 4 — ACT */
-          state4Content={
-            <div className="space-y-5 w-full my-auto">
-              <div className="flex items-center justify-between">
-                <span className="px-3.5 py-1 rounded-full bg-amber-950/60 border border-amber-500/40 text-amber-300 text-xs font-mono font-bold tracking-wider uppercase">
-                  04 ACT • EXECUTION ROADMAP
-                </span>
-                <MagneticButton
-                  onClick={() => setActiveTab('progress')}
-                  variant="primary"
-                  className="text-xs py-2 px-5 font-bold shadow-lg shadow-peach-500/30 hidden sm:flex"
-                >
-                  <Play className="h-3.5 w-3.5 fill-current" />
-                  <span>Execute Action Plan</span>
-                </MagneticButton>
-              </div>
+                    <h2 className="font-display text-2xl sm:text-4xl font-bold text-slate-100 line-clamp-2">
+                      {s5.headline}
+                    </h2>
 
-              <div className="space-y-1 text-left">
-                <h2 className="font-display text-2xl sm:text-3xl font-bold text-slate-100">
-                  Turn opportunity into a clear roadmap.
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                  Follow structured execution phases to build demos and acquire real buyers.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-1">
-                {[
-                  { phase: '1. LEARN', text: 'Understand buyer demand' },
-                  { phase: '2. BUILD', text: 'Create MVP demo in 24h' },
-                  { phase: '3. PORTFOLIO', text: 'Host public demo page' },
-                  { phase: '4. PROSPECT', text: 'Identify 10 ideal buyers' },
-                  { phase: '5. OUTREACH', text: 'Send tailored proposals' },
-                  { phase: '6. RESULT', text: 'Log revenue & feedback' },
-                ].map((item, idx) => (
-                  <div key={idx} className="bg-navy-950/70 p-3.5 rounded-xl border border-white/10 space-y-1.5 text-left">
-                    <span className="text-[10px] font-mono font-bold text-peach-400 block">{item.phase}</span>
-                    <p className="text-xs text-slate-200 font-sans font-medium leading-snug">{item.text}</p>
+                    <p className="text-xs sm:text-sm text-slate-300 leading-relaxed line-clamp-3">
+                      {s5.body}
+                    </p>
                   </div>
-                ))}
-              </div>
-            </div>
-          }
 
-          /* STATE 5 — LEARN */
-          state5Content={
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center w-full my-auto">
-              <div className="lg:col-span-6 space-y-4 text-left">
-                <div className="flex items-center gap-2">
-                  <span className="px-3.5 py-1 rounded-full bg-purple-950/60 border border-purple-500/40 text-purple-300 text-xs font-mono font-bold tracking-wider uppercase">
-                    05 LEARN • ADAPTIVE FEEDBACK
-                  </span>
+                  <div className="pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('opportunities')}
+                      className="btn-primary text-xs py-3 px-7 font-bold flex items-center gap-2 cursor-pointer"
+                    >
+                      <span>Explore Ways to Earn →</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <h2 className="font-display text-2xl sm:text-4xl font-bold text-slate-100">
-                    Your results improve what comes next.
-                  </h2>
-                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                    Every logged action, demo created, and buyer interaction fine-tunes your match vector.
-                  </p>
-                </div>
-
-                <div className="pt-1">
-                  <button
-                    onClick={() => setActiveTab('discover')}
-                    className="btn-primary text-xs py-3 px-7 font-bold flex items-center gap-2"
-                  >
-                    <span>Explore Full Opportunity Engine</span>
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="lg:col-span-6 grid grid-cols-2 gap-3">
-                <div className="bg-navy-950/70 p-4 rounded-xl border border-white/10 text-center space-y-1">
-                  <span className="text-[10px] font-mono text-slate-400 uppercase block">Active Vector</span>
-                  <p className="text-base font-bold text-peach-400 font-mono">100% Calibrated</p>
-                </div>
-                <div className="bg-navy-950/70 p-4 rounded-xl border border-white/10 text-center space-y-1">
-                  <span className="text-[10px] font-mono text-slate-400 uppercase block">Matches Ready</span>
-                  <p className="text-base font-bold text-emerald-400 font-mono">High Quality</p>
-                </div>
-                <div className="bg-navy-950/70 p-4 rounded-xl border border-white/10 text-center space-y-1">
-                  <span className="text-[10px] font-mono text-slate-400 uppercase block">Execution Cost</span>
-                  <p className="text-base font-bold text-slate-100 font-mono">₹0 Upfront</p>
-                </div>
-                <div className="bg-navy-950/70 p-4 rounded-xl border border-white/10 text-center space-y-1">
-                  <span className="text-[10px] font-mono text-slate-400 uppercase block">Feedback Status</span>
-                  <p className="text-base font-bold text-amber-400 font-mono">Active</p>
+                <div className="lg:col-span-6 grid grid-cols-2 gap-3">
+                  <div className="bg-navy-950/70 p-4 rounded-xl border border-white/10 text-center space-y-1">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase block">Active Match Score</span>
+                    <p className="text-base font-bold text-peach-400 font-mono">{bestOpp?.score ? `${bestOpp.score}% Fit` : 'Calibrated'}</p>
+                  </div>
+                  <div className="bg-navy-950/70 p-4 rounded-xl border border-white/10 text-center space-y-1">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase block">Confidence</span>
+                    <p className="text-base font-bold text-emerald-400 font-mono">{bestOpp?.confidence || 'High'}</p>
+                  </div>
+                  <div className="bg-navy-950/70 p-4 rounded-xl border border-white/10 text-center space-y-1">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase block">Execution Cost</span>
+                    <p className="text-base font-bold text-slate-100 font-mono">{bestOpp?.startupCost === 0 ? '₹0 Upfront' : (bestOpp?.startupCost ? `₹${bestOpp.startupCost}` : '₹0 Upfront')}</p>
+                  </div>
+                  <div className="bg-navy-950/70 p-4 rounded-xl border border-white/10 text-center space-y-1">
+                    <span className="text-[10px] font-mono text-slate-400 uppercase block">Feedback Status</span>
+                    <p className="text-base font-bold text-amber-400 font-mono">
+                      {bestOpp?.learningAdjustment ? `Adjusted (${bestOpp.learningAdjustment > 0 ? '+' : ''}${bestOpp.learningAdjustment} pts)` : 'Active Calibration'}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          }
-        />
+            }
+          />
+        )}
       </div>
 
       {/* SECTION 5 — WHAT YOU ACTUALLY GET */}
       <ProductOutcomes />
 
       {/* SECTION 6 & 7 — PRODUCT IN ACTION & WHO IS THIS FOR? */}
-      <ProductInAction onNavigateTab={setActiveTab} />
+      <ProductInAction 
+        onNavigateTab={setActiveTab}
+        profile={profile}
+        skills={skills}
+        tools={tools}
+        goals={goals}
+        bestOpp={bestOpp}
+        hasCompletedScan={hasCompletedScan}
+      />
 
       {/* SECTION 8 — THE ₹0 PHILOSOPHY */}
       <ZeroCostPhilosophy />
@@ -365,7 +454,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       <CreatorStory />
 
       {/* SECTION 10 — FINAL INVITATION */}
-      <HomeClosingCTA onEnterClick={() => setActiveTab('opportunities')} />
+      <HomeClosingCTA onEnterClick={() => setActiveTab('discover')} />
     </div>
   );
 };

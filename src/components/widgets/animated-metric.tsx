@@ -14,7 +14,7 @@ export const AnimatedMetric: React.FC<AnimatedMetricProps> = ({
   value,
   prefix = '',
   suffix = '',
-  duration = 1.2,
+  duration = 0.6,
   decimals,
   className = '',
 }) => {
@@ -57,7 +57,7 @@ export const AnimatedMetric: React.FC<AnimatedMetricProps> = ({
 
     const controls = animate(0, targetNumber, {
       duration: duration,
-      ease: [0.25, 1, 0.5, 1],
+      ease: [0.16, 1, 0.3, 1],
       onUpdate: (latest) => {
         if (numDecimals > 0) {
           setDisplayValue(latest.toFixed(numDecimals));

@@ -1,5 +1,8 @@
 import { dbAll, dbGet, dbRun } from '../db/sqlite.js';
 import { learningEngine } from './learningEngine.js';
+import { getCanonicalOpportunityKey, reconcileDuplicateOpportunities, areTwinServices } from './canonicalIdentity.js';
+import { synthesizeUserFacingService, validateUserFacingTitle, sanitizeTechnicalTitle } from './serviceSynthesis.js';
+import { getUserProfileContext } from './discovery/relevanceGate.js';
 
 export interface ScoreBreakdown {
   skillMatch: number;      // 25% (0-25)
@@ -31,6 +34,8 @@ export type OpportunityOrigin = 'discovery_derived' | 'profile_hypothesis' | 'te
 
 export interface OpportunityRecord {
   id: string;
+  scanId?: string;
+  canonicalKey?: string;
   discoveryId?: string;
   discoveryIds: string[];
   toolIds: string[];
@@ -87,16 +92,39 @@ export class OpportunityEngine {
   /**
    * Fetches full profile dataset for the user
    */
-  async getFullUserProfile(): Promise<FullUserProfileData> {
-    const profile = await dbGet('SELECT * FROM profiles LIMIT 1') || {
-      id: 'default-profile',
-      name: 'Your Profile',
-      preferred_budget: 0,
-      available_hours_per_week: 20,
-      preferred_work_type: 'Freelance',
-      disliked_work: '',
-      learning_tolerance: 'High'
-    };
+  async getFullUserProfile(userId?: string): Promise<FullUserProfileData> {
+    let profile: any = null;
+    if (userId) {
+      profile = await dbGet('SELECT * FROM profiles WHERE user_id = ? LIMIT 1;', [userId]);
+    }
+    if (!profile && (!userId || userId === 'user-default-legacy')) {
+      profile = await dbGet('SELECT * FROM profiles WHERE user_id = "user-default-legacy" LIMIT 1;')
+             || await dbGet('SELECT * FROM profiles LIMIT 1;')
+             || {
+               id: 'default-profile',
+               name: 'Your Profile',
+               preferred_budget: 0,
+               available_hours_per_week: 20,
+               preferred_work_type: 'Freelance',
+               disliked_work: '',
+               remote_preference: 'Remote Only',
+               learning_tolerance: 'High'
+             };
+    }
+    if (!profile) {
+      profile = {
+        id: userId ? `profile_${userId}` : 'default-profile',
+        user_id: userId || 'unauthenticated',
+        name: 'Your Profile',
+        preferred_budget: 0,
+        available_hours_per_week: 20,
+        preferred_work_type: 'Freelance',
+        disliked_work: '',
+        remote_preference: 'Remote Only',
+        learning_tolerance: 'High'
+      };
+      return { profile, skills: [], tools: [], goals: [], interests: [], projects: [] };
+    }
 
     const skills = await dbAll('SELECT * FROM skills WHERE profile_id = ?', [profile.id]) || [];
     const tools = await dbAll('SELECT * FROM tools WHERE profile_id = ?', [profile.id]) || [];
@@ -155,7 +183,7 @@ export class OpportunityEngine {
     }
 
     // 2. Verified zero-cost obtainable tools
-    const freeObtainableList = ['canva', 'capcut', 'gemini', 'gemini api (free tier)', 'google sheets', 'ollama', 'python', 'open webui', 'n8n'];
+    const freeObtainableList = ['canva', 'capcut', 'gemini', 'gemini api (free tier)', 'google sheets', 'ollama', 'python', 'open webui', 'n8n', 'audacity', 'ffmpeg', 'whisper', 'crawl4ai'];
     const isFree = freeObtainableList.some(f => lower.includes(f)) || verifiedFreeTools.has(lower);
     if (isFree) {
       return {
@@ -199,8 +227,10 @@ export class OpportunityEngine {
     const skillEquivalences: Record<string, string[]> = {
       'graphic design': ['poster design', 'canva', 'social media graphics', 'flyer design', 'banner design'],
       'poster design': ['graphic design', 'canva', 'digital graphics', 'flyer design'],
-      'video editing': ['short-form video editing', 'reels', 'clipping', 'capcut', 'video editing & clipping'],
-      'automation': ['workflow automation', 'n8n', 'zapier', 'scripting', 'lead automation'],
+      'video editing': ['short-form video editing', 'reels', 'clipping', 'capcut', 'video editing & clipping', 'audio', 'transcription'],
+      'audio processing': ['video editing', 'podcasting', 'transcription', 'audio', 'voiceover', 'speech'],
+      'automation': ['workflow automation', 'n8n', 'zapier', 'scripting', 'lead automation', 'python'],
+      'data extraction': ['automation', 'python', 'scraping', 'research', 'analytics', 'crawl'],
       'copywriting': ['content writing', 'scriptwriting', 'prompt engineering', 'ad copy'],
       'local ai': ['ollama', 'model deployment', 'python', 'private ai', 'llama']
     };
@@ -223,9 +253,15 @@ export class OpportunityEngine {
 
     // Calculate score (0 to 25 pts)
     let score = 12; // neutral baseline
-    if (requiredSkills.length > 0) {
+    if (userSkills.length === 0) {
+      score = 12; // Neutral baseline when profile skills are unrecorded
+    } else if (requiredSkills.length > 0) {
       const matchRatio = matchedSkills.length / requiredSkills.length;
       score = Math.round(matchRatio * 25);
+      // If user has other verified skills, provide modest transferable baseline (8 pts) so accessible new tools are not discarded
+      if (score === 0 && userSkills.length > 0) {
+        score = 8;
+      }
     } else {
       score = 15;
     }
@@ -233,11 +269,13 @@ export class OpportunityEngine {
     // Cap within 0-25
     score = Math.max(0, Math.min(25, score));
 
-    const reasoning = matchedSkills.length === requiredSkills.length && requiredSkills.length > 0
+    const reasoning = userSkills.length === 0
+      ? 'Neutral skill evaluation: profile skills not yet recorded.'
+      : matchedSkills.length === requiredSkills.length && requiredSkills.length > 0
       ? `Strong skill match: user possesses all ${requiredSkills.length} required skill(s) (${matchedSkills.join(', ')}).`
       : matchedSkills.length > 0
       ? `Partial skill match: user has ${matchedSkills.join(', ')}, but lacks ${missingSkills.join(', ')}.`
-      : `Low skill match: user lacks verified skills for ${requiredSkills.join(', ')}.`;
+      : `Transferable baseline: user has digital skills, but lacks verified training for ${requiredSkills.join(', ')}.`;
 
     return { matchedSkills, missingSkills, score, reasoning };
   }
@@ -430,11 +468,17 @@ export class OpportunityEngine {
    * Generates actionable earning opportunities combining discoveries with user tools across 1 to 4 tool combinations.
    * Enforces strict evidence linking and applies quality threshold filtering.
    */
-  async evaluateOpportunities(): Promise<OpportunityRecord[]> {
-    const userData = await this.getFullUserProfile();
+  async evaluateOpportunities(scanId?: string, userId?: string): Promise<OpportunityRecord[]> {
+    const effectiveUserId = userId || 'user-default-legacy';
+    const userData = await this.getFullUserProfile(effectiveUserId);
     
     // Fetch real discoveries from database
-    const discoveries = await dbAll('SELECT * FROM discoveries ORDER BY rowid DESC LIMIT 50');
+    const discoveries = await dbAll('SELECT * FROM discoveries WHERE verification_status IS NULL OR verification_status != "rejected" ORDER BY rowid DESC LIMIT 50');
+    
+    // Hard gate: If profile has 0 tools, 0 skills AND 0 discoveries exist in DB, return empty array
+    if ((!userData.tools || userData.tools.length === 0) && (!userData.skills || userData.skills.length === 0) && discoveries.length === 0) {
+      return [];
+    }
     
     // Build set of verified zero-cost tools from actual discoveries in DB
     const verifiedFreeTools = new Set<string>();
@@ -447,6 +491,9 @@ export class OpportunityEngine {
     // Check if any verified market signal exists in discoveries
     const marketSignalDiscoveries = discoveries.filter(d => d.type === 'market_signal' || d.category === 'Market Signal');
     const hasMarketSignal = marketSignalDiscoveries.length > 0;
+
+    // Profile tool names list for mixed-stack synthesis
+    const profileToolNames = (userData.tools || []).map((t: any) => t.name);
 
     // Defined opportunity templates (baseline opportunity hypotheses)
     const opportunityTemplates = [
@@ -473,7 +520,6 @@ export class OpportunityEngine {
         isPaidAPI: false,
         isHeavyCoding: false,
         toolIds: ['canva-free', 'gemini-free'],
-        // Strict semantic matching terms only:
         semanticMatchTerms: ['flux', 'stable-diffusion', 'image-generation', 'sdxl']
       },
       {
@@ -555,7 +601,7 @@ export class OpportunityEngine {
 
     const candidates: OpportunityRecord[] = [];
 
-    // 1. Process templates with STRICT discovery linking (Zero fake discovery fallback)
+    // 1. Process templates with STRICT discovery linking & source context tagging
     for (const tmpl of opportunityTemplates) {
       // Find genuinely relevant discoveries matching semanticMatchTerms
       const matchingDisc = discoveries.filter((d: any) => {
@@ -564,16 +610,30 @@ export class OpportunityEngine {
         return tmpl.semanticMatchTerms.some(term => titleLower.includes(term) || descLower.includes(term));
       });
 
-      // Strict linking: only use genuine matches; NEVER fallback to arbitrary discoveries
       const discIds: string[] = matchingDisc.slice(0, 3).map((d: any) => d.id);
       const primaryDisc = matchingDisc.length > 0 ? matchingDisc[0] : null;
-
       const hasVerifiedDisc = Boolean(primaryDisc && (primaryDisc.verification_status === 'verified' || primaryDisc.verificationStatus === 'verified'));
+
+      // Include discovered tool in requiredTools list if matched
+      const cleanPrimaryDisc = primaryDisc ? sanitizeTechnicalTitle(primaryDisc.title) : null;
+      const effectiveTools = [...tmpl.requiredTools];
+      if (cleanPrimaryDisc && !effectiveTools.some(t => t.toLowerCase().includes(cleanPrimaryDisc.toLowerCase()))) {
+        effectiveTools.push(cleanPrimaryDisc);
+      }
+
+      // Check tool access sources
+      const userHasTools = tmpl.requiredTools.some(t => profileToolNames.some((pt: string) => pt.toLowerCase().includes(t.toLowerCase()) || t.toLowerCase().includes(pt.toLowerCase())));
+      let sourceLabel = 'Uses my saved tools';
+      if (primaryDisc && userHasTools) {
+        sourceLabel = 'Combines my tools with a new discovery';
+      } else if (primaryDisc) {
+        sourceLabel = 'Uses a newly discovered tool';
+      }
 
       const scoreResult = this.calculate8FactorScore({
         title: tmpl.title,
         summary: tmpl.summary,
-        requiredTools: tmpl.requiredTools,
+        requiredTools: effectiveTools,
         requiredSkills: tmpl.requiredSkills,
         startupCost: tmpl.startupCost,
         difficulty: tmpl.difficulty,
@@ -585,7 +645,7 @@ export class OpportunityEngine {
       }, userData, verifiedFreeTools);
 
       const skillEval = this.evaluateSkillMatch(tmpl.requiredSkills, userData);
-      const toolEvals = tmpl.requiredTools.map(t => this.evaluateToolAccess(t, userData, verifiedFreeTools));
+      const toolEvals = effectiveTools.map(t => this.evaluateToolAccess(t, userData, verifiedFreeTools));
       const allToolsAvailable = toolEvals.every(te => te.status === 'already_have' || te.status === 'free_to_obtain');
       const allSkillsMatched = skillEval.missingSkills.length === 0;
 
@@ -599,14 +659,44 @@ export class OpportunityEngine {
 
       const origin: OpportunityOrigin = primaryDisc ? 'discovery_derived' : 'template';
 
-      // Build evidence record
+      // Build prerequisite notes honestly
+      const missingToolPrereqs = toolEvals.filter(te => te.status === 'requires_paid_access' || te.status === 'unknown');
+      const prereqNote = missingToolPrereqs.length > 0 
+        ? `Prerequisite: Requires access or setup for ${missingToolPrereqs.map(p => p.tool).join(', ')}.` 
+        : primaryDisc && !userHasTools ? `Prerequisite: Discovered tool '${cleanPrimaryDisc}' is available to setup.` : null;
+
+      let effectiveWorkflow = [...tmpl.workflow];
+      if (cleanPrimaryDisc) {
+        effectiveWorkflow = tmpl.workflow.map((step, idx) => {
+          if (idx === 0) {
+            return `Generate assets with ${cleanPrimaryDisc} (${step})`;
+          }
+          return step;
+        });
+        if (!effectiveWorkflow.some(w => w.toLowerCase().includes(cleanPrimaryDisc.toLowerCase()))) {
+          effectiveWorkflow.unshift(`Generate core deliverable assets using ${cleanPrimaryDisc}`);
+        }
+      }
+
+      let effectiveActionPlan = tmpl.actionPlan.map(ap => ({
+        ...ap,
+        toolsNeeded: [...ap.toolsNeeded]
+      }));
+      if (cleanPrimaryDisc && effectiveActionPlan.length > 0) {
+        if (!effectiveActionPlan[0].toolsNeeded.some(t => t.toLowerCase().includes(cleanPrimaryDisc.toLowerCase()))) {
+          effectiveActionPlan[0].toolsNeeded.push(cleanPrimaryDisc);
+        }
+      }
+
       const evidenceObj: Record<string, any> = {
         evidenceAvailable: Boolean(primaryDisc),
         origin,
+        sourceLabel,
         discoveryId: primaryDisc ? primaryDisc.id : null,
         discoveryUrl: primaryDisc ? primaryDisc.url : null,
         discoverySource: primaryDisc ? primaryDisc.source : null,
         verificationStatus: primaryDisc ? (primaryDisc.verification_status || 'unverified') : 'no_discovery_linked',
+        prerequisiteNote: prereqNote,
         marketEvidenceNote: hasMarketSignal ? 'Backed by real market signal discovery.' : 'Market demand evidence is currently limited; score is conservative.'
       };
 
@@ -617,7 +707,7 @@ export class OpportunityEngine {
         toolIds: tmpl.toolIds,
         title: tmpl.title,
         summary: tmpl.summary,
-        whyMatch: tmpl.whyMatch,
+        whyMatch: prereqNote ? `${tmpl.whyMatch} (${prereqNote})` : tmpl.whyMatch,
         earningPotential: `${tmpl.earningRange} (Hypothesis)`,
         earningHypothesis: {
           range: tmpl.earningRange,
@@ -626,13 +716,13 @@ export class OpportunityEngine {
         },
         customerType: tmpl.customerType,
         origin,
-        workflow: tmpl.workflow,
-        requiredTools: tmpl.requiredTools,
-        actionPlan: tmpl.actionPlan,
+        workflow: effectiveWorkflow,
+        requiredTools: effectiveTools,
+        actionPlan: effectiveActionPlan,
         startupCost: tmpl.startupCost,
         difficulty: tmpl.difficulty,
         timeToDemo: tmpl.timeToDemo,
-        risks: tmpl.risks,
+        risks: prereqNote ? [...tmpl.risks, prereqNote] : tmpl.risks,
         evidence: evidenceObj,
         score: scoreResult.totalScore,
         scoreBreakdown: scoreResult.breakdown,
@@ -640,27 +730,68 @@ export class OpportunityEngine {
         saved: false,
         status: 'new',
         createdAt: new Date().toISOString(),
-        isDemoData: false
+        isDemoData: false,
+        scanId
       };
 
       candidates.push(record);
     }
 
-    // 2. Dynamic generation from real discoveries (strictly genuine discovery_derived candidates)
-    for (const disc of discoveries.slice(0, 10)) {
+    // 2. Dynamic generation from real discoveries (Standalone + Mixed Stack with User Profile Tools)
+    const profileContext = await getUserProfileContext(userData.profile?.user_id);
+
+    for (const disc of discoveries.slice(0, 20)) {
       if (candidates.some(c => c.discoveryId === disc.id)) continue;
 
-      const isModel = disc.type === 'ai_model' || (disc.category || '').includes('Model');
-      const isAuto = disc.type === 'automation_tool' || (disc.title || '').toLowerCase().includes('agent');
-      
-      const title = isModel ? `Specialized Client Service with ${disc.title}` :
-                    isAuto ? `Automated ${disc.title} Integration for Clients` :
-                    `AI Solution Package built with ${disc.title}`;
+      const rawCaps = typeof disc.capabilities === 'string' ? JSON.parse(disc.capabilities || '[]') : (disc.capabilities || []);
 
-      const summary = `Utilize ${disc.title} (${disc.license || 'Open Source'}) combined with free AI tools for client workflows.`;
+      const synthesized = synthesizeUserFacingService({
+        title: disc.title,
+        description: disc.description,
+        summary: disc.description,
+        category: disc.category,
+        type: disc.type,
+        capabilities: rawCaps
+      }, profileContext);
 
-      const reqTools = ['Gemini', disc.title];
-      const reqSkills = isAuto ? ['Automation'] : isModel ? ['Local AI'] : [];
+      const title = synthesized.cleanTitle;
+
+      // Quality Gate: Validate user-facing title
+      const valRes = validateUserFacingTitle(title);
+      if (!valRes.isValid) {
+        continue; // Reject candidates failing title validation
+      }
+
+      // Extract clean human tool title for discovered tool
+      const cleanDiscTitle = sanitizeTechnicalTitle(disc.title);
+
+      // Embed the discovered tool into requiredTools
+      const reqTools: string[] = [];
+      if (profileToolNames.length > 0) {
+        const topProfileTool = profileToolNames[0];
+        reqTools.push(topProfileTool);
+        if (!reqTools.some(t => t.toLowerCase().includes(cleanDiscTitle.toLowerCase()))) {
+          reqTools.push(cleanDiscTitle);
+        }
+      } else {
+        reqTools.push(cleanDiscTitle);
+        // Include complementary helper tool if suggested by category
+        for (const st of synthesized.suggestedTools) {
+          if (!reqTools.some(t => t.toLowerCase() === st.toLowerCase())) {
+            reqTools.push(st);
+            break;
+          }
+        }
+      }
+
+      const isMixed = profileToolNames.length > 0 && reqTools.length > 1;
+      const sourceLabel = isMixed ? 'Combines my tools with a new discovery' : 'Uses a newly discovered tool';
+
+      const summary = isMixed
+        ? `Combine your saved ${profileToolNames[0]} with newly discovered ${cleanDiscTitle} to deliver ${synthesized.primaryOutcome.toLowerCase()} for ${synthesized.targetAudience.toLowerCase()}.`
+        : `Use newly discovered ${cleanDiscTitle} to offer ${synthesized.primaryOutcome.toLowerCase()} for ${synthesized.targetAudience.toLowerCase()}.`;
+
+      const reqSkills = [disc.category || 'Automation'];
 
       const scoreResult = this.calculate8FactorScore({
         title,
@@ -668,7 +799,7 @@ export class OpportunityEngine {
         requiredTools: reqTools,
         requiredSkills: reqSkills,
         startupCost: 0,
-        difficulty: 'Medium',
+        difficulty: 'Easy',
         timeToDemo: '1-2 days',
         hasVerifiedMarketSignal: false,
         hasVerifiedDiscovery: disc.verification_status === 'verified'
@@ -686,39 +817,71 @@ export class OpportunityEngine {
         allSkillsMatched: skillEval.missingSkills.length === 0
       });
 
+      const prereqNote = disc.open_source ? `Open source software: requires local setup or hosting.` : null;
+
+      const workflow = isMixed
+        ? [
+            `Generate assets or extract intelligence using newly discovered ${cleanDiscTitle}`,
+            `Refine layout and brand presentation in your saved ${profileToolNames[0]}`,
+            `Deliver ${synthesized.deliverable} directly to ${synthesized.targetAudience}`
+          ]
+        : [
+            `Configure ${cleanDiscTitle} environment for ${synthesized.primaryOutcome.toLowerCase()}`,
+            `Produce client deliverables using ${cleanDiscTitle} according to specifications`,
+            `Deliver completed ${synthesized.deliverable} to ${synthesized.targetAudience}`
+          ];
+
+      const actionPlan = [
+        {
+          dayOrPhase: 'Day 1: Setup',
+          title: `Setup ${cleanDiscTitle} Workflow`,
+          description: `Configure ${cleanDiscTitle} and test creating sample ${synthesized.deliverable}.`,
+          estimatedHours: 2,
+          toolsNeeded: reqTools
+        },
+        {
+          dayOrPhase: 'Day 2: Outreach',
+          title: `Show Sample to ${synthesized.targetAudience}`,
+          description: `Present sample ${synthesized.deliverable} produced with ${cleanDiscTitle} to potential clients.`,
+          estimatedHours: 3,
+          toolsNeeded: reqTools
+        }
+      ];
+
       const record: OpportunityRecord = {
         id: `opp-disc-${disc.id}`,
         discoveryId: disc.id,
         discoveryIds: [disc.id],
-        toolIds: ['gemini-free'],
+        toolIds: [disc.id],
         title,
         summary,
-        whyMatch: `Grounded in verified discovery from ${disc.source} (${disc.pricing_status || 'free'}). Evaluated against your profile budget limit (₹${userData.profile?.preferred_budget ?? 0}).`,
-        earningPotential: '₹4,000 – ₹20,000 / project (Hypothesis)',
+        whyMatch: isMixed 
+          ? `Pairs your active ${profileToolNames[0]} profile tool with newly discovered ${cleanDiscTitle}.`
+          : `Tailored to your profile interests. Provides ${synthesized.deliverable} using ${cleanDiscTitle}.`,
+        earningPotential: '₹5,000 – ₹25,000 / month (Hypothesis)',
         earningHypothesis: {
-          range: '₹4,000 – ₹20,000 / project',
+          range: '₹5,000 – ₹25,000 / month',
           basis: 'Hypothesis — validate with real client demand.',
           confidence: 'Low'
         },
-        customerType: 'Niche Freelance Clients & Small Businesses',
+        customerType: synthesized.targetAudience,
         origin: 'discovery_derived',
-        workflow: [`Extract ${disc.title} capabilities`, 'Integrate with Gemini for content/logic', 'Deliver finished service to client'],
+        workflow,
         requiredTools: reqTools,
-        actionPlan: [
-          { dayOrPhase: 'Day 1: Setup', title: `Test ${disc.title}`, description: `Verify ${disc.title} execution.`, estimatedHours: 2, toolsNeeded: [disc.title] },
-          { dayOrPhase: 'Day 2: Prototype', title: 'Build Demo', description: 'Create a functional demo showing the tool in action.', estimatedHours: 3, toolsNeeded: reqTools }
-        ],
+        actionPlan,
         startupCost: 0,
-        difficulty: 'Medium',
+        difficulty: 'Easy',
         timeToDemo: '1-2 days',
-        risks: ['Requires testing raw tool capabilities before pitching.'],
+        risks: prereqNote ? [prereqNote, 'Requires proactive outreach to local business owners.'] : ['Requires proactive outreach to local business owners.'],
         evidence: {
           evidenceAvailable: true,
           origin: 'discovery_derived',
+          sourceLabel,
           discoveryId: disc.id,
           discoveryUrl: disc.url,
           discoverySource: disc.source,
           verificationStatus: disc.verification_status || 'unverified',
+          prerequisiteNote: prereqNote,
           marketEvidenceNote: 'Market demand evidence is currently limited; score is conservative.'
         },
         score: scoreResult.totalScore,
@@ -727,18 +890,34 @@ export class OpportunityEngine {
         saved: false,
         status: 'new',
         createdAt: new Date().toISOString(),
-        isDemoData: false
+        isDemoData: false,
+        scanId
       };
 
       candidates.push(record);
     }
 
-    // 3. QUALITY THRESHOLD FILTERING: Prefer 3 highly relevant opportunities over 20 generic ones.
-    // Candidates scoring below MIN_RECOMMENDED_SCORE are excluded.
-    const qualifiedOpportunities = candidates
+    // 3. CANONICAL DEDUPLICATION & TWIN SERVICE COLLAPSE
+    const deduplicatedCandidates: OpportunityRecord[] = [];
+    for (const cand of candidates) {
+      cand.canonicalKey = getCanonicalOpportunityKey(cand);
+      const twinIndex = deduplicatedCandidates.findIndex(existing => areTwinServices(cand, existing).isTwin);
+      if (twinIndex === -1) {
+        deduplicatedCandidates.push(cand);
+      } else {
+        const existing = deduplicatedCandidates[twinIndex];
+        // Give verified discovery-derived opportunity precedence over a generic template
+        if (cand.origin === 'discovery_derived' && existing.origin === 'template') {
+          deduplicatedCandidates[twinIndex] = cand;
+        }
+      }
+    }
+
+    // 4. QUALITY THRESHOLD FILTERING: Exclude low-scoring candidates below MIN_RECOMMENDED_SCORE
+    const qualifiedOpportunities = deduplicatedCandidates
       .filter(c => c.score >= OpportunityEngine.MIN_RECOMMENDED_SCORE);
 
-    // 4. LEARNING ENGINE PERSONALIZATION: Apply bounded personalization adjustments (clamped ±10 points)
+    // 5. LEARNING ENGINE PERSONALIZATION: Apply bounded personalization adjustments (clamped ±10 points)
     for (const opp of qualifiedOpportunities) {
       const { adjustment, explanation } = await learningEngine.calculateOpportunityAdjustment(opp);
       opp.learningAdjustment = adjustment;
@@ -748,10 +927,13 @@ export class OpportunityEngine {
 
     qualifiedOpportunities.sort((a, b) => b.score - a.score);
 
-    // Persist qualified opportunities into SQLite
+    // Persist qualified opportunities into SQLite safely with canonical key check
     for (const rec of qualifiedOpportunities) {
-      await this.saveOpportunityToDb(rec);
+      await this.saveOpportunityToDb(rec, scanId, effectiveUserId);
     }
+
+    // Run safe, idempotent database reconciliation of duplicate records
+    await reconcileDuplicateOpportunities();
 
     return qualifiedOpportunities;
   }
@@ -759,13 +941,23 @@ export class OpportunityEngine {
   /**
    * Saves or updates an opportunity record in SQLite database
    */
-  async saveOpportunityToDb(rec: OpportunityRecord): Promise<void> {
-    const existing = await dbGet('SELECT id, saved FROM opportunities WHERE id = ?', [rec.id]);
+  async saveOpportunityToDb(rec: OpportunityRecord, scanId?: string, userId?: string): Promise<void> {
+    const effectiveUserId = userId || 'user-default-legacy';
+    if (!rec.canonicalKey) {
+      rec.canonicalKey = getCanonicalOpportunityKey(rec);
+    }
+
+    const existing = await dbGet(
+      'SELECT id, saved FROM opportunities WHERE (id = ? OR (canonical_key = ? AND canonical_key IS NOT NULL AND canonical_key != "")) AND (user_id = ? OR user_id IS NULL)',
+      [rec.id, rec.canonicalKey, effectiveUserId]
+    );
+    const targetId = existing ? existing.id : rec.id;
     const isSaved = existing ? existing.saved : (rec.saved ? 1 : 0);
 
     if (existing) {
       await dbRun(`
         UPDATE opportunities SET
+          user_id = ?,
           title = ?,
           summary = ?,
           why_match = ?,
@@ -790,9 +982,12 @@ export class OpportunityEngine {
           tool_ids = ?,
           saved = ?,
           learning_adjustment = ?,
-          learning_explanation = ?
+          learning_explanation = ?,
+          canonical_key = ?,
+          scan_id = ?
         WHERE id = ?
       `, [
+        effectiveUserId,
         rec.title,
         rec.summary,
         rec.whyMatch,
@@ -818,19 +1013,23 @@ export class OpportunityEngine {
         isSaved,
         rec.learningAdjustment || 0,
         rec.learningExplanation || null,
-        rec.id
+        rec.canonicalKey,
+        rec.scanId || scanId || null,
+        targetId
       ]);
     } else {
       await dbRun(`
         INSERT INTO opportunities (
-          id, discovery_id, discovery_ids, tool_ids, title, summary, why_match,
+          id, user_id, scan_id, discovery_id, discovery_ids, tool_ids, title, summary, why_match,
           earning_potential, earning_basis, earning_confidence, origin, customer_type,
           target_customer, workflow, required_tools, action_plan, startup_cost,
           difficulty, time_to_demo, risks, evidence, score, score_breakdown,
-          confidence, saved, status, learning_adjustment, learning_explanation, is_demo_data
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          confidence, saved, status, learning_adjustment, learning_explanation, is_demo_data, canonical_key
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         rec.id,
+        effectiveUserId,
+        rec.scanId || scanId || null,
         rec.discoveryId || null,
         JSON.stringify(rec.discoveryIds),
         JSON.stringify(rec.toolIds),
@@ -858,7 +1057,8 @@ export class OpportunityEngine {
         rec.status,
         rec.learningAdjustment || 0,
         rec.learningExplanation || null,
-        rec.isDemoData ? 1 : 0
+        rec.isDemoData ? 1 : 0,
+        rec.canonicalKey
       ]);
     }
   }
@@ -871,9 +1071,14 @@ export class OpportunityEngine {
     minScore?: number;
     difficulty?: string;
     limit?: number;
-  } = {}): Promise<OpportunityRecord[]> {
+  } = {}, userId?: string): Promise<OpportunityRecord[]> {
     let sql = 'SELECT * FROM opportunities WHERE 1=1';
     const params: any[] = [];
+
+    if (userId) {
+      sql += ' AND user_id = ?';
+      params.push(userId);
+    }
 
     if (filters.savedOnly) {
       sql += ' AND saved = 1';
@@ -901,17 +1106,32 @@ export class OpportunityEngine {
 
     // If no opportunities exist in DB yet, auto-evaluate
     if (rows.length === 0 && !filters.savedOnly) {
-      return this.evaluateOpportunities();
+      return this.evaluateOpportunities(undefined, userId);
     }
 
-    return rows.map(r => this.parseOpportunityRow(r));
+    const parsed = rows.map(r => this.parseOpportunityRow(r));
+    const uniqueMap = new Map<string, OpportunityRecord>();
+    for (const opp of parsed) {
+      const key = opp.canonicalKey || getCanonicalOpportunityKey(opp);
+      if (!uniqueMap.has(key)) {
+        uniqueMap.set(key, opp);
+      }
+    }
+
+    return Array.from(uniqueMap.values());
   }
 
   /**
    * Retrieves a single opportunity by ID
    */
-  async getOpportunityById(id: string): Promise<OpportunityRecord | null> {
-    const row = await dbGet('SELECT * FROM opportunities WHERE id = ?', [id]);
+  async getOpportunityById(id: string, userId?: string): Promise<OpportunityRecord | null> {
+    let sql = 'SELECT * FROM opportunities WHERE id = ?';
+    const params: any[] = [id];
+    if (userId) {
+      sql += ' AND user_id = ?';
+      params.push(userId);
+    }
+    const row = await dbGet(sql, params);
     if (!row) return null;
     return this.parseOpportunityRow(row);
   }
@@ -919,14 +1139,101 @@ export class OpportunityEngine {
   /**
    * Toggles saved status for an opportunity
    */
-  async toggleSaveOpportunity(id: string): Promise<OpportunityRecord | null> {
-    const opp = await this.getOpportunityById(id);
+  async toggleSaveOpportunity(id: string, userId?: string): Promise<OpportunityRecord | null> {
+    const opp = await this.getOpportunityById(id, userId);
     if (!opp) return null;
 
     const newSaved = !opp.saved;
-    await dbRun('UPDATE opportunities SET saved = ? WHERE id = ?', [newSaved ? 1 : 0, id]);
+    if (userId) {
+      await dbRun('UPDATE opportunities SET saved = ? WHERE id = ? AND user_id = ?', [newSaved ? 1 : 0, id, userId]);
+    } else {
+      await dbRun('UPDATE opportunities SET saved = ? WHERE id = ?', [newSaved ? 1 : 0, id]);
+    }
     opp.saved = newSaved;
     return opp;
+  }
+
+  /**
+   * Retrieves the best eligible opportunity generated by the user's latest completed Discovery Scan.
+   * If no completed scan exists, or if the latest scan produced no eligible opportunities (score >= 65),
+   * returns hasCompletedScan / bestOpportunity accordingly without falling back to demo templates.
+   */
+  async getBestOpportunityFromLatestCompletedScan(userId?: string): Promise<{
+    hasCompletedScan: boolean;
+    scanRecord: any | null;
+    bestOpportunity: OpportunityRecord | null;
+    message: string;
+  }> {
+    // 1. Query the latest completed or partial scan record
+    let scanSql = "SELECT * FROM scan_records WHERE status IN ('completed', 'partial') AND completed_at IS NOT NULL";
+    const scanParams: any[] = [];
+    if (userId) {
+      scanSql += ' AND user_id = ?';
+      scanParams.push(userId);
+    }
+    scanSql += ' ORDER BY completed_at DESC LIMIT 1;';
+    const latestScanRow = await dbGet<any>(scanSql, scanParams);
+
+    if (!latestScanRow) {
+      return {
+        hasCompletedScan: false,
+        scanRecord: null,
+        bestOpportunity: null,
+        message: 'No completed Discovery Scan found.'
+      };
+    }
+
+    const scanRecord = {
+      id: latestScanRow.id,
+      started_at: latestScanRow.started_at,
+      completed_at: latestScanRow.completed_at,
+      status: latestScanRow.status,
+      items_collected: latestScanRow.items_collected || 0,
+      opportunities_generated: latestScanRow.opportunities_generated || 0,
+      errors: [],
+      duration_ms: latestScanRow.duration_ms || 0,
+      created_at: latestScanRow.created_at
+    };
+
+    // 2. Query opportunities explicitly associated with this scanId OR created/updated during scan execution window
+    let oppSql = `SELECT * FROM opportunities 
+       WHERE (scan_id = ? OR created_at >= ? OR discovery_id IN (
+         SELECT id FROM discoveries WHERE last_updated_at >= ? OR first_discovered_at >= ?
+       ))
+       AND (is_demo_data = 0 OR is_demo_data IS NULL)
+       AND score >= ?`;
+    const oppParams: any[] = [
+      scanRecord.id,
+      scanRecord.started_at,
+      scanRecord.started_at,
+      scanRecord.started_at,
+      OpportunityEngine.MIN_RECOMMENDED_SCORE
+    ];
+    if (userId) {
+      oppSql += ' AND user_id = ?';
+      oppParams.push(userId);
+    }
+    oppSql += ' ORDER BY score DESC LIMIT 1;';
+
+    const row = await dbGet<any>(oppSql, oppParams);
+
+    if (!row) {
+      return {
+        hasCompletedScan: true,
+        scanRecord,
+        bestOpportunity: null,
+        message: 'Latest completed scan produced no eligible opportunities meeting score threshold.'
+      };
+    }
+
+    const bestOpportunity = this.parseOpportunityRow(row);
+
+    return {
+      hasCompletedScan: true,
+      scanRecord,
+      bestOpportunity,
+      message: 'Resolved best opportunity from latest completed scan.'
+    };
   }
 
   /**
@@ -937,8 +1244,23 @@ export class OpportunityEngine {
     const earningConfidence = (row.earning_confidence as any) || 'Low';
     const earningPotential = row.earning_potential || row.potential_monetization || '₹5,000–₹25,000/month (Hypothesis)';
 
+    const workflow = this.safeParseJSON(row.workflow, []);
+    const requiredTools = this.safeParseJSON(row.required_tools, []);
+    const customerType = row.customer_type || row.target_customer || 'Local Businesses';
+
+    const canonicalKey = row.canonical_key || getCanonicalOpportunityKey({
+      title: row.title,
+      summary: row.summary,
+      workflow,
+      requiredTools,
+      customerType,
+      targetCustomer: row.target_customer
+    });
+
     return {
       id: row.id,
+      scanId: row.scan_id || undefined,
+      canonicalKey,
       discoveryId: row.discovery_id,
       discoveryIds: this.safeParseJSON(row.discovery_ids, row.discovery_id ? [row.discovery_id] : []),
       toolIds: this.safeParseJSON(row.tool_ids, []),
@@ -951,10 +1273,10 @@ export class OpportunityEngine {
         basis: earningBasis,
         confidence: earningConfidence
       },
-      customerType: row.customer_type || row.target_customer || 'Local Businesses',
+      customerType,
       origin: (row.origin as OpportunityOrigin) || (row.discovery_id ? 'discovery_derived' : 'template'),
-      workflow: this.safeParseJSON(row.workflow, []),
-      requiredTools: this.safeParseJSON(row.required_tools, []),
+      workflow,
+      requiredTools,
       actionPlan: this.safeParseJSON(row.action_plan, []),
       startupCost: Number(row.startup_cost || 0),
       difficulty: (row.difficulty as any) || 'Medium',

@@ -1,591 +1,388 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Layers,
-  Wrench,
-  Zap,
-  Bookmark,
-  BookmarkCheck,
-  ChevronDown,
-  ChevronUp,
-  DollarSign,
-  Clock,
-  Sparkles,
-  Check,
-  AlertCircle,
-  Info,
-  Play,
-  RefreshCw,
-  Cpu
-} from 'lucide-react';
-import { UserTool, ToolCombination } from '../../types/index.js';
+import { Layers, ArrowRight, CheckCircle2, Sparkles } from 'lucide-react';
 import { api } from '../../services/api.js';
 import { GlassCard } from '../ui/GlassCard.js';
-import { SpatialToolWeb } from '../ui/SpatialToolWeb.js';
+import { MetalText } from 'metal-fx';
+import { 
+  translateCombinationToArchitecture, 
+  deduplicateItems,
+  UserFacingArchitecture 
+} from '../../utils/UserFacingViewModel.js';
+import { OpportunityDetailModal } from '../widgets/OpportunityDetailModal.js';
+
+import { NavTab } from '../layout/Navbar.js';
+import { useSubscription } from '../../context/SubscriptionContext.js';
 
 interface CombineScreenProps {
-  tools: UserTool[];
-  onStartPlan?: (planId: string) => void;
+  tools?: any[];
+  onNavigateTab?: (tab: NavTab) => void;
+  onStartPlan?: (id?: string) => void;
+  onOpenGuide?: (card: any) => void;
+  dataVersion?: number;
 }
 
-export const CombineScreen: React.FC<CombineScreenProps> = ({ tools, onStartPlan }) => {
-  const [selectedToolIds, setSelectedToolIds] = useState<string[]>(
-    tools.slice(0, 4).map(t => t.id)
+export const CombineScreen: React.FC<CombineScreenProps> = ({ tools = [], onNavigateTab, onStartPlan, onOpenGuide, dataVersion }) => {
+  const { isEntitled, subscription, openSubscriptionModal } = useSubscription();
+  const availableProfileTools: string[] = Array.from(
+    new Set(tools.map((t: any) => (typeof t === 'string' ? t : t.name)).filter(Boolean))
   );
-  const [combinations, setCombinations] = useState<ToolCombination[]>([]);
+
+  const [discoveredTools, setDiscoveredTools] = useState<string[]>([]);
+  const [selectedTools, setSelectedTools] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [startingPlanId, setStartingPlanId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [architectures, setArchitectures] = useState<UserFacingArchitecture[]>([]);
+  const [selectedArch, setSelectedArch] = useState<{ card: any; anchorEl: HTMLElement } | null>(null);
 
-  const [filterSavedOnly, setFilterSavedOnly] = useState(false);
-  const [filterZeroCostOnly, setFilterZeroCostOnly] = useState(false);
-  const [filterPattern, setFilterPattern] = useState<string>('all');
-  const [sortBy, setSortBy] = useState<'score' | 'time' | 'synergy'>('score');
+  // Load verified discoveries from database
+  useEffect(() => {
+    let isMounted = true;
+    const loadDiscoveries = async () => {
+      try {
+        const res = await api.getDiscoveries({ limit: '25' });
+        if (!isMounted) return;
+        const items = res.discoveries || [];
+        const names = items
+          .filter((d: any) => d.verification_status !== 'rejected')
+          .map((d: any) => d.title)
+          .filter(Boolean);
+        setDiscoveredTools(Array.from(new Set(names)));
+      } catch (err) {
+        console.error('Failed to load discoveries for combiner:', err);
+      }
+    };
+    loadDiscoveries();
+    return () => { isMounted = false; };
+  }, [dataVersion]);
 
-  const [showToolSelector, setShowToolSelector] = useState(true);
-  const [expandedBreakdowns, setExpandedBreakdowns] = useState<Record<string, boolean>>({});
-  const [feedbackStatus, setFeedbackStatus] = useState<Record<string, string>>({});
+  const allAvailableTools = Array.from(new Set([...availableProfileTools, ...discoveredTools]));
 
-  const handleFeedback = async (comboId: string, rating: 'useful' | 'not_useful' | 'not_relevant') => {
-    try {
-      await api.submitFeedback({ sourceType: 'combination', sourceId: comboId, rating });
-      setFeedbackStatus(prev => ({ ...prev, [comboId]: rating }));
-    } catch (err) {
-      console.error('Failed to submit feedback:', err);
+  useEffect(() => {
+    setSelectedTools(prev => prev.filter(t => allAvailableTools.includes(t)));
+  }, [tools, discoveredTools]);
+
+  const toggleTool = (tool: string) => {
+    let next: string[];
+    if (selectedTools.includes(tool)) {
+      next = selectedTools.filter((t) => t !== tool);
+    } else {
+      next = [...selectedTools, tool];
     }
+    setSelectedTools(next);
+    synthesizeArchitectures(next);
   };
 
-  const loadCombinations = async () => {
+  const synthesizeArchitectures = async (toolList: string[]) => {
     try {
       setLoading(true);
-      setError(null);
-      const res = await api.getCombinations();
-      setCombinations(res.combinations || []);
-      if (res.message && res.combinations.length === 0) {
-        setNotice(res.message);
+      if (toolList.length === 0) {
+        // Load pre-computed top combinations from SQLite database
+        const res = await api.getCombinations({ limit: '12' });
+        const syn = translateCombinationToArchitecture([], res.combinations || []);
+        setArchitectures(deduplicateItems(syn));
+        return;
       }
-    } catch (err: any) {
-      console.error('Error loading combinations:', err);
-      setError(err?.message || 'Failed to load tool combinations');
+      const res = await api.generateCombinations({ toolIds: toolList });
+      const syn = translateCombinationToArchitecture(toolList, res.combinations || []);
+      setArchitectures(deduplicateItems(syn));
+    } catch (err) {
+      console.error('Failed to combine tools:', err);
+      const fallback = translateCombinationToArchitecture(toolList);
+      setArchitectures(deduplicateItems(fallback));
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadCombinations();
-  }, []);
-
-  const toggleTool = (id: string) => {
-    setSelectedToolIds(prev =>
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
-    );
-  };
-
-  const handleSelectAll = () => {
-    setSelectedToolIds(tools.map(t => t.id));
-  };
-
-  const handleClearSelection = () => {
-    setSelectedToolIds([]);
-  };
-
-  const handleSelectFirst3 = () => {
-    setSelectedToolIds(tools.slice(0, 3).map(t => t.id));
-  };
-
-  const handleGenerate = async (useSelectedOnly: boolean) => {
-    try {
-      setGenerating(true);
-      setError(null);
-      setNotice(null);
-
-      const targetIds = useSelectedOnly ? selectedToolIds : undefined;
-      if (useSelectedOnly && targetIds && targetIds.length < 2) {
-        setError('Please select at least 2 tools to evaluate combinations.');
-        setGenerating(false);
-        return;
-      }
-
-      const res = await api.generateCombinations({ toolIds: targetIds });
-      setCombinations(res.combinations || []);
-      setNotice(res.message);
-      setTimeout(() => setNotice(null), 6000);
-    } catch (err: any) {
-      console.error('Error generating combinations:', err);
-      setError(err?.message || 'Failed to generate combinations');
-    } finally {
-      setGenerating(false);
-    }
-  };
-
-  const handleToggleSave = async (id: string) => {
-    try {
-      const res = await api.saveCombination(id);
-      if (res.success) {
-        setCombinations(prev =>
-          prev.map(c => (c.id === id ? { ...c, saved: res.saved } : c))
-        );
-      }
-    } catch (err: any) {
-      console.error('Error toggling save:', err);
-    }
-  };
-
-  const handleStartActionPlan = async (comboId: string) => {
-    try {
-      setStartingPlanId(comboId);
-      const res = await api.generateActionPlan({ combinationId: comboId });
-      if (res && res.success && res.plan) {
-        await api.startActionPlan(res.plan.id);
-        if (onStartPlan) {
-          onStartPlan(res.plan.id);
-        }
-      }
-    } catch (err: any) {
-      console.error('Error starting action plan:', err);
-      setError(err.message || 'Failed to start action plan');
-    } finally {
-      setStartingPlanId(null);
-    }
-  };
-
-  const toggleBreakdown = (id: string) => {
-    setExpandedBreakdowns(prev => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const filteredCombinations = combinations
-    .filter(combo => {
-      if (filterSavedOnly && !combo.saved) return false;
-      if (filterZeroCostOnly && !combo.is_zero_cost) return false;
-      if (filterPattern !== 'all' && combo.workflow_pattern !== filterPattern) return false;
-      return true;
-    })
-    .sort((a, b) => {
-      if (sortBy === 'score') return b.score - a.score;
-      if (sortBy === 'synergy') return b.score_breakdown.capabilitySynergy - a.score_breakdown.capabilitySynergy;
-      if (sortBy === 'time') return a.time_to_demo.localeCompare(b.time_to_demo);
-      return 0;
-    });
-
-  const savedCount = combinations.filter(c => c.saved).length;
-  const zeroCostCount = combinations.filter(c => c.is_zero_cost).length;
-  const selectedToolNames = tools.filter(t => selectedToolIds.includes(t.id)).map(t => t.name);
+    synthesizeArchitectures(selectedTools);
+  }, [dataVersion]);
 
   return (
-    <div className="space-y-6 py-4 max-w-6xl mx-auto">
+    <div className="space-y-6 w-full">
       {/* Top Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
-        <div>
-          <span className="text-[10px] font-sans font-semibold text-peach-500 uppercase tracking-wider">
-            Tool Combiner Engine
-          </span>
-          <h1 className="font-display text-2xl sm:text-3xl font-bold uppercase tracking-wider text-slate-100 flex items-center gap-2 pt-0.5">
-            <Layers className="h-5 w-5 text-peach-500" />
-            COMBINE TOOLS
-          </h1>
-          <p className="font-sans text-xs text-slate-300 mt-0.5">
-            Discover high-value workflows by synthesizing 2 or more of your accessible tools into zero-cost digital services.
-          </p>
-        </div>
-
-        <button
-          onClick={() => handleGenerate(false)}
-          disabled={generating}
-          className="btn-primary text-xs"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${generating ? 'animate-spin' : ''}`} />
-          <span>{generating ? 'Synthesizing...' : 'Generate New Combinations'}</span>
-        </button>
+      <div className="border-b border-white/10 pb-4">
+        <span className="text-[10px] font-mono font-bold text-peach-400 uppercase tracking-wider">TOOL COMBINER</span>
+        <h1 className="font-display text-2xl sm:text-3xl font-bold uppercase tracking-wider text-slate-100 flex items-center gap-2 pt-0.5 leading-snug sm:leading-normal">
+          <Layers className="h-6 w-6 text-peach-500" />
+          Combine Tools
+        </h1>
+        <p className="font-sans text-xs sm:text-sm text-slate-300 mt-1 leading-relaxed">
+          Select profile tools, newly discovered AI capabilities, or both. We'll show you practical workflows and services you can start right now.
+        </p>
       </div>
 
-      {/* 3D Capability Graph Banner */}
-      <GlassCard variant="primary" className="p-6 relative overflow-hidden">
-        <div className="flex items-center justify-between border-b border-white/10 pb-3">
-          <div className="flex items-center gap-2">
-            <Cpu className="h-4 w-4 text-peach-500" />
-            <h3 className="font-display text-lg font-bold text-slate-200 uppercase tracking-wider">3D Capability Graph</h3>
+      {/* Zero Tools Onboarding State or Tool Selection Grid */}
+      {allAvailableTools.length === 0 ? (
+        <div className="metal-panel-primary p-8 rounded-2xl border border-white/10 text-center space-y-4 max-w-lg mx-auto my-8 shadow-xl">
+          <div className="mx-auto w-12 h-12 rounded-full bg-peach-500/10 border border-peach-500/30 flex items-center justify-center text-peach-400">
+            <Layers className="h-6 w-6" />
           </div>
-          <span className="badge-tag badge-peach font-sans">3D Spatial Synthesis</span>
-        </div>
-
-        <SpatialToolWeb 
-          toolNames={tools.map(t => t.name)} 
-          activeIndices={tools.map((t, idx) => selectedToolIds.includes(t.id) ? idx : -1).filter(idx => idx !== -1)} 
-        />
-      </GlassCard>
-
-      {/* Notice Banner */}
-      {notice && (
-        <div className="bg-burgundy-900/40 border border-crimson-500/40 text-peach-300 text-xs px-4 py-2.5 rounded-xl flex items-center gap-2">
-          <Info className="h-4 w-4 text-peach-500 shrink-0" />
-          <span>{notice}</span>
-        </div>
-      )}
-
-      {/* Tool Selector Section */}
-      <GlassCard variant="secondary" className="p-5 space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
-          <div className="flex items-center gap-2">
-            <Wrench className="h-4 w-4 text-peach-500" />
-            <h2 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
-              Select Tools to Combine ({selectedToolIds.length} of {tools.length} selected)
-            </h2>
-          </div>
-
-          <div className="flex items-center gap-2 text-xs">
-            <button onClick={handleSelectFirst3} className="btn-ghost py-1 px-2.5 text-xs">Select First 3</button>
-            <button onClick={handleSelectAll} className="btn-ghost py-1 px-2.5 text-xs">Select All</button>
-            <button onClick={handleClearSelection} className="btn-ghost py-1 px-2.5 text-xs">Clear</button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
-          {tools.map(tool => {
-            const isSelected = selectedToolIds.includes(tool.id);
-            return (
-              <button
-                key={tool.id}
-                onClick={() => toggleTool(tool.id)}
-                className={`p-3 rounded-xl border text-left transition-all active:scale-[0.97] flex flex-col justify-between space-y-2 ${
-                  isSelected
-                    ? 'bg-burgundy-900/60 border-peach-500/80 text-slate-100 shadow-lg shadow-burgundy-900/50'
-                    : 'bg-navy-950/60 border-white/10 text-slate-400 hover:text-slate-200 hover:border-white/20'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-1 w-full">
-                  <span className="font-bold text-xs leading-tight line-clamp-1">{tool.name}</span>
-                  <div className={`h-4 w-4 rounded flex items-center justify-center text-[10px] shrink-0 ${
-                    isSelected ? 'bg-peach-500 text-navy-950 font-bold' : 'border border-slate-700'
-                  }`}>
-                    {isSelected && '✓'}
-                  </div>
-                </div>
-                <span className="text-[10px] font-mono opacity-75">{tool.category}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="pt-2 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <span className="text-slate-500 text-[11px]">
-            Tip: Select 2 to 4 tools to generate a focused combination recipe.
-          </span>
-          <button
-            onClick={() => handleGenerate(true)}
-            disabled={generating || selectedToolIds.length < 2 || selectedToolIds.length > 4}
-            className="btn-secondary text-xs py-1.5 px-4 disabled:opacity-40"
-          >
-            Combine Selected ({selectedToolIds.length}) Tools
-          </button>
-        </div>
-      </GlassCard>
-
-      {/* Filter Toolbar */}
-      <GlassCard variant="floating" className="p-3 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-slate-400 font-mono text-[11px] mr-2">
-            Found: <strong className="text-slate-200">{filteredCombinations.length}</strong>
-          </span>
-
-          <button
-            onClick={() => setFilterSavedOnly(!filterSavedOnly)}
-            className={`btn-secondary text-xs py-1 px-2.5 ${
-              filterSavedOnly ? 'bg-amber-950/40 border-amber-500 text-amber-300 font-semibold' : ''
-            }`}
-          >
-            ⭐ Saved ({savedCount})
-          </button>
-
-          <button
-            onClick={() => setFilterZeroCostOnly(!filterZeroCostOnly)}
-            className={`btn-secondary text-xs py-1 px-2.5 ${
-              filterZeroCostOnly ? 'bg-emerald-950/40 border-emerald-500 text-emerald-300 font-semibold' : ''
-            }`}
-          >
-            ₹0 Cost ({zeroCostCount})
-          </button>
-
-          <select
-            value={filterPattern}
-            onChange={e => setFilterPattern(e.target.value)}
-            className="bg-navy-950/80 border border-white/10 text-slate-300 rounded-lg px-2.5 py-1 text-xs focus:border-peach-500 focus:outline-none"
-          >
-            <option value="all">All Workflow Patterns</option>
-            <option value="GENERATE_DESIGN">Generate ➔ Design</option>
-            <option value="GENERATE_EDIT">Generate ➔ Edit Video</option>
-            <option value="CAPTURE_PROCESS_RESPOND">Capture ➔ Process ➔ Respond</option>
-            <option value="TRIGGER_AI_ACTION">Trigger ➔ AI ➔ Action</option>
-            <option value="LOCAL_AI_DOCUMENT_OUTPUT">Local AI ➔ Doc Audit</option>
-            <option value="EXTRACT_SYNTHESIZE_PUBLISH">Extract ➔ Briefing</option>
-            <option value="MONITOR_ANALYZE_ALERT">Monitor ➔ Alert Bot</option>
-          </select>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="text-slate-500 text-[11px]">Sort:</span>
-          <select
-            value={sortBy}
-            onChange={e => setSortBy(e.target.value as any)}
-            className="bg-navy-950/80 border border-white/10 text-slate-300 rounded-lg px-2.5 py-1 text-xs focus:border-peach-500 focus:outline-none"
-          >
-            <option value="score">Highest Score</option>
-            <option value="synergy">Highest Synergy</option>
-            <option value="time">Time to Demo</option>
-          </select>
-        </div>
-      </GlassCard>
-
-      {/* Combination Cards */}
-      {loading ? (
-        <div className="py-12 text-center text-xs text-slate-400 font-mono flex items-center justify-center gap-2">
-          <Sparkles className="h-4 w-4 animate-spin text-peach-500" />
-          Evaluating multi-tool synergy...
-        </div>
-      ) : filteredCombinations.length === 0 ? (
-        <GlassCard variant="secondary" className="p-8 text-center max-w-xl mx-auto space-y-4 my-6">
-          <Zap className="h-8 w-8 text-slate-600 mx-auto" />
-          <div className="space-y-1.5">
-            <h3 className="text-sm font-bold text-slate-200">No Matching Tool Combinations</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Combinations must score at least <strong>65/100</strong> and exhibit non-redundant capability synergy across distinct pipeline stages.
+          <div className="space-y-1">
+            <h3 className="font-display text-lg font-bold text-slate-100 uppercase tracking-wide">No Tools Available Yet</h3>
+            <p className="font-sans text-xs text-slate-300 leading-relaxed">
+              Add tools in your profile or trigger an AI discovery scan to unlock practical combinations and client workflows.
             </p>
           </div>
-          <button
-            onClick={() => {
-              setFilterSavedOnly(false);
-              setFilterZeroCostOnly(false);
-              setFilterPattern('all');
-              handleGenerate(false);
-            }}
-            className="btn-primary text-xs mx-auto"
-          >
-            Reset Filters & Evaluate All Tools
-          </button>
-        </GlassCard>
-      ) : (
-        <div className="space-y-5">
-          {filteredCombinations.map((combo) => {
-            const isBreakdownOpen = Boolean(expandedBreakdowns[combo.id]);
-            return (
-              <GlassCard key={combo.id} variant="secondary" interactive className="p-6 space-y-5">
-                <div className="flex flex-wrap items-start justify-between gap-3 border-b border-white/10 pb-4">
-                  <div className="space-y-1.5 max-w-2xl">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="badge-tag bg-indigo-950/60 text-indigo-300 border border-indigo-500/30 font-mono text-[10px]">
-                        {combo.workflow_pattern.replace(/_/g, ' ➔ ')}
-                      </span>
-                      {combo.is_zero_cost && (
-                        <span className="badge-tag badge-emerald flex items-center gap-1 text-[10px]">
-                          <DollarSign className="h-3 w-3" /> ₹0 Upfront Cost
-                        </span>
-                      )}
-                      <span className="badge-tag bg-slate-900 text-slate-400 border border-white/10 text-[10px] flex items-center gap-1">
-                        <Clock className="h-3 w-3" /> {combo.time_to_demo}
-                      </span>
-                    </div>
-                    <h3 className="text-base sm:text-lg font-bold text-slate-100">{combo.title}</h3>
-                    <p className="text-xs text-slate-400 leading-relaxed">{combo.summary}</p>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-black text-indigo-400 font-mono">{combo.score}</span>
-                        <span className="text-[10px] text-slate-500 font-mono">/ 100</span>
-                      </div>
-                      <span className="text-[10px] text-slate-500 block uppercase font-mono tracking-wider">
-                        {combo.confidence} Confidence
-                      </span>
-                    </div>
-
-                    <button
-                      onClick={() => handleStartActionPlan(combo.id)}
-                      disabled={startingPlanId === combo.id}
-                      className="btn-primary text-xs py-1.5 px-3 bg-emerald-600 border-emerald-500/50"
-                    >
-                      <Play className={`h-3.5 w-3.5 ${startingPlanId === combo.id ? 'animate-spin' : ''}`} />
-                      <span className="hidden sm:inline">{startingPlanId === combo.id ? 'Starting...' : 'Start Action Plan'}</span>
-                    </button>
-
-                    <button
-                      onClick={() => handleToggleSave(combo.id)}
-                      className={`btn-secondary p-2 ${
-                        combo.saved ? 'bg-amber-950/40 border-amber-500 text-amber-300' : ''
-                      }`}
-                    >
-                      {combo.saved ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Capability Chain Pipeline */}
-                <div className="space-y-2">
-                  <h4 className="text-[11px] font-mono uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                    <Layers className="h-3.5 w-3.5 text-indigo-400" />
-                    Capability Chain & Tool Handoff
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    {combo.capability_chain.map((stage, sIdx) => (
-                      <div
-                        key={sIdx}
-                        className="bg-slate-950/80 border border-white/10 rounded-xl p-3 space-y-1"
-                      >
-                        <div className="flex items-center justify-between text-[11px]">
-                          <span className="font-bold text-slate-200 flex items-center gap-1.5">
-                            <span className="h-4 w-4 rounded-full bg-indigo-600/30 text-indigo-300 text-[10px] flex items-center justify-center font-mono">
-                              {stage.stageIndex}
-                            </span>
-                            {stage.toolName}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-400 leading-snug">
-                          {stage.actionDescription}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Concrete Outcome & Monetization */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-                  <div className="bg-slate-950/80 border border-white/10 rounded-xl p-3.5 space-y-1.5">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block">
-                      Concrete Deliverable & Target Customer
-                    </span>
-                    <p className="text-xs text-slate-200 font-medium leading-snug">
-                      {combo.concrete_outcome}
-                    </p>
-                    <div className="pt-1 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-400">
-                      <span>Buyer Persona:</span>
-                      <strong className="text-slate-300">{combo.target_customer}</strong>
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-950/80 border border-white/10 rounded-xl p-3.5 space-y-1.5">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block">
-                      Monetization Hypothesis
-                    </span>
-                    <div className="flex items-baseline justify-between">
-                      <span className="text-sm font-bold text-emerald-400 font-mono">
-                        {combo.monetization_hypothesis.range}
-                      </span>
-                      <span className="text-[10px] text-slate-400 font-mono">
-                        {combo.monetization_hypothesis.pricingModel}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-400 leading-snug">
-                      {combo.monetization_hypothesis.basis}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Feedback Widget */}
-                <div className="bg-slate-950/80 border border-white/10 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
-                  <span className="text-slate-400 font-medium">Was this combination idea useful?</span>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => handleFeedback(combo.id, 'useful')}
-                      className={`btn-ghost text-xs border ${
-                        feedbackStatus[combo.id] === 'useful'
-                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                          : 'border-white/10'
-                      }`}
-                    >
-                      👍 Useful
-                    </button>
-                    <button
-                      onClick={() => handleFeedback(combo.id, 'not_useful')}
-                      className={`btn-ghost text-xs border ${
-                        feedbackStatus[combo.id] === 'not_useful'
-                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                          : 'border-white/10'
-                      }`}
-                    >
-                      👎 Not Useful
-                    </button>
-                    <button
-                      onClick={() => handleFeedback(combo.id, 'not_relevant')}
-                      className={`btn-ghost text-xs border ${
-                        feedbackStatus[combo.id] === 'not_relevant'
-                          ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                          : 'border-white/10'
-                      }`}
-                    >
-                      🚫 Not Relevant
-                    </button>
-                  </div>
-                </div>
-
-                {/* Score Breakdown Accordion */}
-                <div className="pt-2 border-t border-white/10">
-                  <button
-                    onClick={() => toggleBreakdown(combo.id)}
-                    className="btn-ghost text-xs text-slate-400 w-full justify-between"
-                  >
-                    <span>{isBreakdownOpen ? 'Hide' : 'Inspect'} 8-Factor Score Breakdown & Rationale</span>
-                    {isBreakdownOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-                  </button>
-
-                  {isBreakdownOpen && (
-                    <div className="mt-3 p-4 bg-slate-950/90 rounded-xl border border-white/10 space-y-3 animate-fade-in">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                        <div className="p-2.5 bg-slate-900/80 rounded-lg border border-white/5 space-y-1">
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="text-slate-400">Tool Availability</span>
-                            <span className="font-mono text-indigo-400 font-bold">
-                              {combo.score_breakdown.userToolAvailability} / 20
-                            </span>
-                          </div>
-                          <p className="text-[10px] text-slate-500 leading-tight">
-                            {combo.score_breakdown.reasoning?.userToolAvailability}
-                          </p>
-                        </div>
-
-                        <div className="p-2.5 bg-slate-900/80 rounded-lg border border-white/5 space-y-1">
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="text-slate-400">Capability Synergy</span>
-                            <span className="font-mono text-indigo-400 font-bold">
-                              {combo.score_breakdown.capabilitySynergy} / 20
-                            </span>
-                          </div>
-                          <p className="text-[10px] text-slate-500 leading-tight">
-                            {combo.score_breakdown.reasoning?.capabilitySynergy}
-                          </p>
-                        </div>
-
-                        <div className="p-2.5 bg-slate-900/80 rounded-lg border border-white/5 space-y-1">
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="text-slate-400">Skill Fit</span>
-                            <span className="font-mono text-indigo-400 font-bold">
-                              {combo.score_breakdown.personalSkillFit} / 15
-                            </span>
-                          </div>
-                          <p className="text-[10px] text-slate-500 leading-tight">
-                            {combo.score_breakdown.reasoning?.personalSkillFit}
-                          </p>
-                        </div>
-
-                        <div className="p-2.5 bg-slate-900/80 rounded-lg border border-white/5 space-y-1">
-                          <div className="flex justify-between items-center text-xs">
-                            <span className="text-slate-400">₹0 Feasibility</span>
-                            <span className="font-mono text-emerald-400 font-bold">
-                              {combo.score_breakdown.zeroCostFeasibility} / 10
-                            </span>
-                          </div>
-                          <p className="text-[10px] text-slate-500 leading-tight">
-                            {combo.score_breakdown.reasoning?.zeroCostFeasibility}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </GlassCard>
-            );
-          })}
+          {onNavigateTab && (
+            <button
+              type="button"
+              onClick={() => onNavigateTab('profile')}
+              className="btn-primary text-xs py-2.5 px-5 font-bold shadow-lg shadow-peach-500/30 inline-flex items-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
+              <span>Set Up Your Tools →</span>
+            </button>
+          )}
         </div>
+      ) : (
+        <>
+          {/* Tool Selection Grid */}
+          <div className="metal-panel-primary p-4 sm:p-5 rounded-2xl border border-white/15 space-y-4 shadow-xl">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider">
+                CHOOSE YOUR TOOLS
+              </span>
+              <span className="text-xs font-mono font-bold">
+                <MetalText font="700 12px Inter, sans-serif" color="#ffaa8a">
+                  {`${selectedTools.length} Selected`}
+                </MetalText>
+              </span>
+            </div>
+
+            {/* Profile Tools Group */}
+            {availableProfileTools.length > 0 && (
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-mono text-slate-400 uppercase font-semibold block">
+                  My Profile Tools
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {availableProfileTools.map((tool) => {
+                    const isSelected = selectedTools.includes(tool);
+                    return (
+                      <button
+                        key={`prof-${tool}`}
+                        onClick={() => toggleTool(tool)}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition-all active:scale-[0.97] flex items-center gap-1.5 cursor-pointer ${
+                          isSelected
+                            ? 'bg-peach-500 text-navy-950 border border-peach-400 shadow-md shadow-peach-500/20'
+                            : 'bg-white/[0.05] text-slate-300 hover:bg-white/10 border border-white/10'
+                        }`}
+                      >
+                        {isSelected && <CheckCircle2 className="h-3.5 w-3.5 fill-current" />}
+                        <span>{tool}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Discovered Tools Group */}
+            {discoveredTools.length > 0 && (
+              <div className="space-y-1.5 pt-1 border-t border-white/5">
+                <div className="flex items-center gap-1.5">
+                  <Sparkles className="h-3 w-3 text-cyan-400" />
+                  <span className="text-[10px] font-mono text-cyan-300 uppercase font-semibold block">
+                    Discovered AI Tools
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {discoveredTools.map((tool) => {
+                    const isSelected = selectedTools.includes(tool);
+                    return (
+                      <button
+                        key={`disc-${tool}`}
+                        onClick={() => toggleTool(tool)}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-mono font-bold transition-all active:scale-[0.97] flex items-center gap-1.5 cursor-pointer ${
+                          isSelected
+                            ? 'bg-cyan-500 text-navy-950 border border-cyan-400 shadow-md shadow-cyan-500/20'
+                            : 'bg-cyan-950/30 text-cyan-200 hover:bg-cyan-900/40 border border-cyan-500/30'
+                        }`}
+                      >
+                        {isSelected && <CheckCircle2 className="h-3.5 w-3.5 fill-current" />}
+                        <span>{tool}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Synthesize CTA & Status */}
+            <div className="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-white/10">
+              <button
+                onClick={() => synthesizeArchitectures(selectedTools)}
+                disabled={loading}
+                className={`py-2 px-5 rounded-xl font-mono font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${
+                  !loading
+                    ? 'bg-peach-500 hover:bg-peach-400 text-navy-950 shadow-md shadow-peach-500/20 active:scale-[0.98]'
+                    : 'bg-white/5 text-slate-500 border border-white/10 cursor-not-allowed'
+                }`}
+              >
+                <span>{loading ? 'Synthesizing...' : selectedTools.length === 0 ? 'Refresh Top Combinations' : 'Synthesize Selected Tools'}</span>
+                <ArrowRight className="h-4 w-4" />
+              </button>
+
+              {selectedTools.length === 0 ? (
+                <span className="text-xs font-mono text-slate-400">Showing top pre-evaluated combinations</span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedTools([]);
+                    synthesizeArchitectures([]);
+                  }}
+                  className="text-xs font-mono text-slate-400 hover:text-slate-200 underline cursor-pointer"
+                >
+                  Clear Selection
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Results */}
+          <div className="space-y-4 pt-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-mono font-bold text-peach-400 uppercase tracking-wider">
+                {selectedTools.length === 0 
+                  ? 'Recommended Workflows & Combinations'
+                  : selectedTools.length === 1 
+                    ? 'Standalone Service Opportunities' 
+                    : 'Practical Workflows & Service Ideas'}
+              </span>
+              {loading && <span className="text-xs font-mono text-slate-400 animate-pulse">Evaluating tool capabilities...</span>}
+            </div>
+
+            {/* Results Grid */}
+            {!isEntitled && (subscription?.status === 'expired' || subscription?.trial?.isExpired) ? (
+              <div className="metal-panel-primary p-8 rounded-2xl border border-peach-500/30 text-center space-y-4 max-w-lg mx-auto my-6 shadow-2xl bg-slate-950/80">
+                <div className="mx-auto w-12 h-12 rounded-full bg-peach-500/10 border border-peach-500/30 flex items-center justify-center text-peach-400">
+                  <Sparkles className="h-6 w-6" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="font-display text-lg font-bold text-slate-100 uppercase tracking-wide">3-Day Free Trial Expired</h3>
+                  <p className="font-sans text-xs text-slate-300 leading-relaxed">
+                    Your free trial has ended. Subscribe to Opportunity OS Pro for ₹8/month to unlock real-time multi-tool combinations, service synthesis, and actionable monetization workflows.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={openSubscriptionModal}
+                  data-testid="paywall-combine-subscribe-btn"
+                  className="btn-primary text-xs py-2.5 px-6 font-bold shadow-lg shadow-peach-500/30 inline-flex items-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  <span>Unlock Pro Access (₹8/month)</span>
+                </button>
+              </div>
+            ) : architectures.length === 0 && !loading ? (
+              <div className="metal-panel-primary p-8 rounded-2xl border border-white/10 text-center space-y-2">
+                <Layers className="h-8 w-8 text-slate-500 mx-auto" />
+                <h3 className="font-display text-sm font-bold text-slate-200 uppercase">No Compatible Services Found</h3>
+                <p className="font-sans text-xs text-slate-400 max-w-md mx-auto">
+                  No service combinations met the quality threshold for this specific selection. Try selecting complementary tools (such as combining a text generator like Gemini with a design tool like Canva).
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
+                {architectures.map((arch) => (
+                  <GlassCard
+                    key={arch.id}
+                    interactive
+                    onClick={(e) => {
+                      const payload = {
+                        id: arch.id,
+                        title: arch.title,
+                        whatYouMake: arch.whatYouCouldSell,
+                        whoPaysForIt: arch.whoPaysForIt,
+                        estimatedEarnings: 'Free tier setup',
+                        toolsYouUse: arch.toolsUsed,
+                        technicalDetails: {
+                          rawId: arch.id,
+                          rawTitle: arch.title,
+                          rawSource: 'tool_combination',
+                        },
+                      };
+                      if (onOpenGuide) {
+                        onOpenGuide(payload);
+                      } else {
+                        setSelectedArch({ card: arch, anchorEl: e.currentTarget });
+                      }
+                    }}
+                    className="p-5 flex flex-col justify-between space-y-4 hover:border-peach-500/40 transition-all group min-w-0"
+                  >
+                    <div className="space-y-3 min-w-0">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="px-2.5 py-0.5 rounded bg-peach-500/20 text-peach-300 border border-peach-500/30 text-[10px] font-mono font-bold tracking-wider uppercase whitespace-normal break-words inline-block">
+                          {arch.toolsUsed.length === 1 ? 'STANDALONE SERVICE' : 'TOOL COMBINATION'}
+                        </span>
+                        {arch.sourceLabel && (
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold tracking-wider uppercase ${
+                            arch.sourceLabel.includes('discovery') || arch.sourceLabel.includes('discovery')
+                              ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                              : 'bg-white/10 text-slate-300 border border-white/15'
+                          }`}>
+                            {arch.sourceLabel}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="min-w-0">
+                        <span className="text-[10px] font-mono text-slate-400 uppercase font-semibold block mb-0.5">What you could sell</span>
+                        <h3 className="font-display text-base sm:text-lg font-bold text-white group-hover:text-peach-300 transition-colors leading-snug break-words">
+                          {arch.whatYouCouldSell}
+                        </h3>
+                      </div>
+
+                      {/* Tool Flow */}
+                      <div className="p-3 bg-navy-950/80 rounded-xl border border-white/8 space-y-1 text-xs min-w-0">
+                        <span className="text-[10px] font-mono text-slate-400 uppercase font-semibold block">
+                          {arch.toolsUsed.length === 1 ? 'SERVICE EXECUTION' : 'HOW THE TOOLS WORK TOGETHER'}
+                        </span>
+                        <p className="font-sans text-peach-300 leading-relaxed text-xs break-words">{arch.toolFlowFormatted}</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 border-t border-white/10 pt-3 text-xs min-w-0">
+                      <div className="min-w-0">
+                        <span className="text-[10px] font-mono text-slate-400 uppercase font-semibold block">Who pays for it</span>
+                        <span className="font-bold text-slate-200 mt-0.5 block break-words">{arch.whoPaysForIt}</span>
+                      </div>
+
+                      <div className="pt-2">
+                        <button type="button" className="w-full py-2.5 px-4 rounded-xl bg-peach-500 text-navy-950 font-mono font-bold uppercase tracking-wider text-xs shadow-md shadow-peach-500/20 flex items-center justify-center gap-2 group-hover:bg-peach-400 transition-colors cursor-pointer">
+                          <span>Open Guide →</span>
+                          <ArrowRight className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </GlassCard>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Step-by-Step Guide Modal */}
+      {selectedArch && (
+        <OpportunityDetailModal
+          card={{
+            id: selectedArch.card.id,
+            whatYouMake: selectedArch.card.whatYouCouldSell,
+            whoPaysForIt: selectedArch.card.whoPaysForIt,
+            estimatedEarnings: 'Free tier setup',
+            toolsYouUse: selectedArch.card.toolsUsed,
+            technicalDetails: {
+              rawId: selectedArch.card.id,
+              rawTitle: selectedArch.card.title,
+              rawSource: 'tool_combination',
+            },
+          }}
+          anchorEl={selectedArch.anchorEl}
+          onClose={() => setSelectedArch(null)}
+          onStartPlan={onStartPlan}
+          backLabel="Back to Combine Tools"
+        />
       )}
     </div>
   );

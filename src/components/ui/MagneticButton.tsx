@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 
 interface MagneticButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
@@ -16,28 +16,62 @@ export const MagneticButton: React.FC<MagneticButtonProps> = ({
   ...props
 }) => {
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const [transform, setTransform] = useState({ x: 0, y: 0 });
-  const [shine, setShine] = useState({ x: 50, y: 50, opacity: 0 });
+  const frameRef = useRef<number | null>(null);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (!buttonRef.current) return;
-    const rect = buttonRef.current.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    
-    const deltaX = (e.clientX - centerX) * strength;
-    const deltaY = (e.clientY - centerY) * strength;
+  useEffect(() => {
+    return () => {
+      if (frameRef.current) {
+        cancelAnimationFrame(frameRef.current);
+      }
+    };
+  }, []);
 
-    const shineX = ((e.clientX - rect.left) / rect.width) * 100;
-    const shineY = ((e.clientY - rect.top) / rect.height) * 100;
+  const handlePointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (e.pointerType === 'touch' || !buttonRef.current) return;
 
-    setTransform({ x: deltaX, y: deltaY });
-    setShine({ x: shineX, y: shineY, opacity: 1 });
+    const clientX = e.clientX;
+    const clientY = e.clientY;
+
+    if (frameRef.current) return;
+
+    frameRef.current = requestAnimationFrame(() => {
+      frameRef.current = null;
+      if (!buttonRef.current) return;
+      const rect = buttonRef.current.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      
+      const deltaX = (clientX - centerX) * strength;
+      const deltaY = (clientY - centerY) * strength;
+
+      const shineX = ((clientX - rect.left) / (rect.width || 1)) * 100;
+      const shineY = ((clientY - rect.top) / (rect.height || 1)) * 100;
+
+      buttonRef.current.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0)`;
+      buttonRef.current.style.transition = 'transform 100ms cubic-bezier(0.16, 1, 0.3, 1)';
+      const shineEl = buttonRef.current.querySelector('.specular-shine') as HTMLElement;
+      if (shineEl) {
+        shineEl.style.opacity = '1';
+        shineEl.style.background = `radial-gradient(circle 60px at ${shineX}% ${shineY}%, rgba(255, 255, 255, 0.3), transparent 80%)`;
+      }
+    });
+
+    if (props.onPointerMove) props.onPointerMove(e);
   };
 
-  const handleMouseLeave = () => {
-    setTransform({ x: 0, y: 0 });
-    setShine(prev => ({ ...prev, opacity: 0 }));
+  const handlePointerLeave = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (frameRef.current) {
+      cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    }
+    if (!buttonRef.current) return;
+    buttonRef.current.style.transform = 'translate3d(0px, 0px, 0)';
+    buttonRef.current.style.transition = 'transform 200ms cubic-bezier(0.22, 1, 0.36, 1)';
+    const shineEl = buttonRef.current.querySelector('.specular-shine') as HTMLElement;
+    if (shineEl) {
+      shineEl.style.opacity = '0';
+    }
+    if (props.onPointerLeave) props.onPointerLeave(e);
   };
 
   const variantClasses = {
@@ -48,26 +82,17 @@ export const MagneticButton: React.FC<MagneticButtonProps> = ({
 
   return (
     <button
+      type={props.type || "button"}
       ref={buttonRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
+      onPointerMove={handlePointerMove}
+      onPointerLeave={handlePointerLeave}
       onClick={onClick}
-      style={{
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-        transition: transform.x === 0 && transform.y === 0
-          ? 'transform 350ms var(--ease-spring), box-shadow 200ms var(--ease-out)'
-          : 'transform 100ms ease-out, box-shadow 200ms var(--ease-out)',
-      }}
       className={`relative overflow-hidden group select-none ${variantClasses} ${className}`}
       {...props}
     >
       {/* Specular cursor reflection overlay */}
       <div
-        className="pointer-events-none absolute inset-0 transition-opacity duration-300"
-        style={{
-          opacity: shine.opacity,
-          background: `radial-gradient(circle 60px at ${shine.x}% ${shine.y}%, rgba(255, 255, 255, 0.3), transparent 80%)`,
-        }}
+        className="specular-shine pointer-events-none absolute inset-0 transition-opacity duration-200 opacity-0"
       />
       <span className="relative z-10 flex items-center justify-center gap-2">
         {children}

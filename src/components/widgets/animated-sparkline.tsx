@@ -71,17 +71,17 @@ export const AnimatedSparkline: React.FC<AnimatedSparklineProps> = ({
             </linearGradient>
           </defs>
 
-          {/* Underline Gradient Area Fill - Fades in immediately after stroke completes (opacity 0 -> 0.35 at delay 1.1s) */}
+          {/* Underline Gradient Area Fill */}
           <motion.path
             d={dArea}
             fill={`url(#${gradientId})`}
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 0.35 }}
             viewport={{ once: false, amount: 0.3 }}
-            transition={{ duration: 0.4, delay: 1.1, ease: 'easeOut' }}
+            transition={{ duration: 0.3, delay: 0.4, ease: 'easeOut' }}
           />
 
-          {/* Line Stroke Draw - Animates pathLength 0 -> 1 over 1.1s */}
+          {/* Line Stroke Draw */}
           <motion.path
             d={dLine}
             fill="none"
@@ -92,7 +92,7 @@ export const AnimatedSparkline: React.FC<AnimatedSparklineProps> = ({
             initial={{ pathLength: 0 }}
             whileInView={{ pathLength: 1 }}
             viewport={{ once: false, amount: 0.3 }}
-            transition={{ duration: 1.1, ease: 'easeInOut' }}
+            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
           />
         </svg>
       </div>

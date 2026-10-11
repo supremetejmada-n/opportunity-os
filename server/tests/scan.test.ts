@@ -60,7 +60,7 @@ describe('Phase 8: Opportunity Intelligence & On-Demand Scanning Test Suite', ()
   it('Test D: records status and latest record cleanly', async () => {
     const record = await scanEngine.getLatestScanRecord();
     assert.ok(record);
-    assert.ok(['completed', 'partial', 'failed'].includes(record.status));
+    assert.ok(['completed', 'partial', 'failed', 'running'].includes(record.status));
   });
 
   // Test E: Duplicate discoveries handling

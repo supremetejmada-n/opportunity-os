@@ -22,9 +22,8 @@ const SpatialScrollContext = createContext<SpatialScrollContextType>({
 export const useSpatialScroll = () => useContext(SpatialScrollContext);
 
 export const SpatialScrollProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [scrollY, setScrollY] = useState(0);
-  const [scrollProgress, setScrollProgress] = useState(0);
   const mousePosRef = useRef({ x: 0, y: 0, normalizedX: 0, normalizedY: 0 });
+  const scrollRef = useRef({ scrollY: 0, scrollProgress: 0 });
   const [isReducedMotion, setIsReducedMotion] = useState(false);
 
   useEffect(() => {
@@ -34,7 +33,7 @@ export const SpatialScrollProvider: React.FC<{ children: React.ReactNode }> = ({
     const handleMediaChange = (e: MediaQueryListEvent) => setIsReducedMotion(e.matches);
     mediaQuery.addEventListener('change', handleMediaChange);
 
-    // Scroll listener with RAF throttle
+    // Scroll listener updating ref directly (zero React re-renders)
     let rafId: number;
     const handleScroll = () => {
       cancelAnimationFrame(rafId);
@@ -42,8 +41,7 @@ export const SpatialScrollProvider: React.FC<{ children: React.ReactNode }> = ({
         const currentScroll = window.scrollY;
         const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
         const progress = totalHeight > 0 ? currentScroll / totalHeight : 0;
-        setScrollY(currentScroll);
-        setScrollProgress(progress);
+        scrollRef.current = { scrollY: currentScroll, scrollProgress: progress };
       });
     };
 
@@ -73,8 +71,8 @@ export const SpatialScrollProvider: React.FC<{ children: React.ReactNode }> = ({
   return (
     <SpatialScrollContext.Provider
       value={{
-        scrollY,
-        scrollProgress,
+        scrollY: scrollRef.current.scrollY,
+        scrollProgress: scrollRef.current.scrollProgress,
         mousePos: mousePosRef.current,
         mousePosRef,
         isReducedMotion,

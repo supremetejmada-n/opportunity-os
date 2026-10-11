@@ -140,6 +140,8 @@ export interface ActionPlanStep {
 
 export interface Opportunity {
   id: string;
+  canonical_key?: string;
+  canonicalKey?: string;
   discovery_id?: string;
   discoveryId?: string;
   discovery_ids?: string[];
@@ -193,7 +195,7 @@ export interface Opportunity {
 
 // Action Plan schema (Phase 6 Engine)
 export type ActionStepPhase = 'LEARN' | 'BUILD' | 'PORTFOLIO' | 'PROSPECT' | 'OUTREACH' | 'RESULT';
-export type ActionStepStatus = 'not_started' | 'in_progress' | 'completed' | 'skipped';
+export type ActionStepStatus = 'not_started' | 'in_progress' | 'completed' | 'skipped' | 'blocked';
 export type ActionPlanStatus = 'not_started' | 'in_progress' | 'completed' | 'paused' | 'abandoned';
 
 export interface ActionStep {
@@ -296,7 +298,8 @@ export type WorkflowPattern =
   | 'TRIGGER_AI_ACTION'
   | 'LOCAL_AI_DOCUMENT_OUTPUT'
   | 'EXTRACT_SYNTHESIZE_PUBLISH'
-  | 'MONITOR_ANALYZE_ALERT';
+  | 'MONITOR_ANALYZE_ALERT'
+  | string;
 
 export interface CapabilityChainStage {
   stageIndex: number;
@@ -329,6 +332,8 @@ export interface CombinerMonetizationHypothesis {
 
 export interface ToolCombination {
   id: string;
+  canonical_key?: string;
+  canonicalKey?: string;
   title: string;
   summary: string;
   tool_ids: string[];
@@ -489,9 +494,25 @@ export interface IntelligenceResult {
   changeType: DiscoveryChangeType;
 }
 
+export interface ProductStory {
+  id: string;
+  version: number;
+  headline: string;
+  summary: string;
+  themeDetected: string;
+  narrativeStages: Record<string, any>;
+  discoveryIds: string[];
+  isCurrent: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ScanResult {
   scanRecord: ScanRecord;
   recommendations: Opportunity[];
   totalRecommended: number;
+  newDiscoveryCount?: number;
+  storyUpdated?: boolean;
+  productStory?: ProductStory;
 }
 
